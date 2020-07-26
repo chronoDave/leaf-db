@@ -4,7 +4,7 @@ const crypto = require('crypto');
  * Generate unique ID
  * @param {number} length - ID length (can be shorter if ID contains invalid characters)
  * */
-const getUid = (length = 8) => crypto
+const getUid = (length = 16) => crypto
   .randomBytes(Math.ceil((length * 5) / 4))
   .toString('base64')
   .replace(/[+/]/g, '')

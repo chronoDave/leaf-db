@@ -3,7 +3,7 @@ const { assert } = require('chai');
 const {
   getUid,
   equalSome
-} = require('./utils');
+} = require('../src/lib/utils');
 
 describe('utils', () => {
   describe('getUid()', () => {

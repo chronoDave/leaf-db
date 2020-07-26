@@ -3,7 +3,7 @@ const { assert, expect } = require('chai').use(chaiAsPromised);
 const fse = require('fs-extra');
 const path = require('path');
 
-const Datastore = require('./datastore');
+const Datastore = require('../src/lib/datastore');
 
 describe('Datastore', () => {
   beforeEach(() => {
@@ -20,24 +20,33 @@ describe('Datastore', () => {
   });
 
   describe('load()', () => {
-    it('should load the database', () => {
+    it('should create the database file if file does not exist', () => {
       this.db.load();
 
       const exists = fse.existsSync(this.file);
 
       assert.isTrue(exists);
     });
-  });
 
-  describe('parseRaw()', () => {
-    it('should parse the database file', () => {
+    it('should parse the database file if file exists', () => {
       const data = { id: 'mocha' };
       const raw = JSON.stringify(data);
 
-      this.db.parseRaw(raw);
+      fse.writeFileSync(this.file, raw);
+
+      this.db.load();
 
       assert.isArray(this.db.data);
       assert.deepStrictEqual(this.db.data[0], data);
+    });
+
+    it('should parse the database file if it is empty', () => {
+      fse.writeFileSync(this.file, '');
+
+      this.db.load();
+
+      assert.isArray(this.db.data);
+      assert.isEmpty(this.db.data);
     });
   });
 
@@ -61,15 +70,15 @@ describe('Datastore', () => {
     });
   });
 
-  describe('insert()', () => {
+  describe('create()', () => {
     it('should throw an error if no data is provided', () => (
-      expect(this.db.insert()).to.be.rejected
+      expect(this.db.create()).to.be.rejected
     ));
 
     it('should insert single object', async () => {
       const payload = { data: 'mocha' };
 
-      const newDocs = await this.db.insert(payload);
+      const newDocs = await this.db.create(payload);
 
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, 1);
@@ -79,7 +88,7 @@ describe('Datastore', () => {
     it('should insert multiple objects', async () => {
       const payload = [{ data: 1 }, { data: 2 }, { data: 3 }];
 
-      const newDocs = await this.db.insert(payload);
+      const newDocs = await this.db.create(payload);
 
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, payload.length);
@@ -99,7 +108,7 @@ describe('Datastore', () => {
         valid
       ];
 
-      const newDocs = await this.db.insert(payload);
+      const newDocs = await this.db.create(payload);
 
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, 1);
@@ -107,17 +116,17 @@ describe('Datastore', () => {
     });
   });
 
-  describe('find()', () => {
+  describe('read()', () => {
     it('should throw an error on invalid query', () => (
-      expect(this.db.find(null)).to.be.rejected
+      expect(this.db.read(null)).to.be.rejected
     ));
 
     it('should return first document on empty query', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
-      const newDoc = await this.db.find();
+      const newDoc = await this.db.read();
 
       assert.isNotArray(newDoc);
       assert.hasAnyKeys(newDoc, data[0]);
@@ -126,9 +135,9 @@ describe('Datastore', () => {
     it('should return null if query does not match', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
-      const newDoc = await this.db.find({ d: 4 });
+      const newDoc = await this.db.read({ d: 4 });
 
       assert.isNull(newDoc);
     });
@@ -136,9 +145,9 @@ describe('Datastore', () => {
     it('should return all documents if query is empty and multi is true', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
-      const newDocs = await this.db.find({}, { multi: true });
+      const newDocs = await this.db.read({}, { multi: true });
 
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, data.length);
@@ -148,9 +157,9 @@ describe('Datastore', () => {
     it('should return matches documents if multi is true', async () => {
       const data = [{ a: 1 }, { a: 1, b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
-      const newDocs = await this.db.find({ a: 1 }, { multi: true });
+      const newDocs = await this.db.read({ a: 1 }, { multi: true });
 
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, 2);
@@ -160,9 +169,9 @@ describe('Datastore', () => {
     it('should return an empty array if query does not match and multi is true', async () => {
       const data = [{ a: 1 }, { a: 1, b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
-      const newDocs = await this.db.find({ d: 1 }, { multi: true });
+      const newDocs = await this.db.read({ d: 1 }, { multi: true });
 
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, 0);
@@ -174,10 +183,18 @@ describe('Datastore', () => {
       expect(this.db.update(null)).to.be.rejected
     ));
 
+    it('should throw an error on invalid newDoc', () => (
+      expect(this.db.update({}, null)).to.be.rejected
+    ));
+
+    it('should throw an error if update contains _id', () => (
+      expect(this.db.update({}, { _id: null })).to.be.rejected
+    ));
+
     it('should replace the first entry with empty object (incl. _id) if no query and newDoc are provided', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nUpdated = await this.db.update();
 
@@ -189,7 +206,7 @@ describe('Datastore', () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
       const query = { b: 2 };
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nUpdated = await this.db.update(query);
 
@@ -203,7 +220,7 @@ describe('Datastore', () => {
       const query = { b: 2 };
       const newDoc = { data: 'mocha' };
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nUpdated = await this.db.update(query, newDoc);
 
@@ -216,7 +233,7 @@ describe('Datastore', () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
       const newDoc = { data: 'mocha' };
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nUpdated = await this.db.update({}, newDoc, { multi: true });
 
@@ -233,7 +250,7 @@ describe('Datastore', () => {
     it('should remove the first element on empty query', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nRemoved = await this.db.remove();
 
@@ -244,7 +261,7 @@ describe('Datastore', () => {
     it('should remove the first matching element on query', async () => {
       const data = [{ a: 1 }, { a: 1, b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nRemoved = await this.db.remove({ a: 1 });
 
@@ -255,7 +272,7 @@ describe('Datastore', () => {
     it('should remove no item if query does not match', async () => {
       const data = [{ a: 1 }, { a: 1, b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nRemoved = await this.db.remove({ d: 1 });
 
@@ -266,7 +283,7 @@ describe('Datastore', () => {
     it('should remove all items if no query and multi is true', async () => {
       const data = [{ a: 1 }, { a: 1, b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nRemoved = await this.db.remove({}, { multi: true });
 
@@ -277,7 +294,7 @@ describe('Datastore', () => {
     it('should remove matching elements if multi is true', async () => {
       const data = [{ a: 1 }, { a: 1, b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nRemoved = await this.db.remove({ a: 1 }, { multi: true });
 
@@ -289,7 +306,7 @@ describe('Datastore', () => {
     it('should remove no items if query does not match and multi is true', async () => {
       const data = [{ a: 1 }, { a: 1, b: 2 }, { c: 3 }];
 
-      await this.db.insert(data);
+      await this.db.create(data);
 
       const nRemoved = await this.db.remove({ d: 1 }, { multi: true });
 

@@ -39,27 +39,15 @@ module.exports = class Datastore {
       const exists = fse.existsSync(this.file);
 
       if (exists) {
-        const data = fse.readFileSync(this.file, 'utf-8');
-        this.parseRaw(data);
+        const raw = fse.readFileSync(this.file, 'utf-8');
+        for (let i = 0, data = raw.split('\n'); i < data.length; i += 1) {
+          if (data[i] !== '') this.data.push(JSON.parse(data[i]));
+        }
       } else {
         fse.writeFileSync(this.file, '', 'utf-8');
       }
     } catch (err) {
       console.error(err);
-    }
-  }
-
-  /** Parse raw data from file */
-  parseRaw(raw) {
-    const data = raw.split('\n');
-
-    try {
-      for (let i = 0; i < data.length; i += 1) {
-        this.data.push(JSON.parse(data[i]));
-      }
-    } catch (err) {
-      // Corrupted data
-      console.log(err);
     }
   }
 
@@ -79,7 +67,7 @@ module.exports = class Datastore {
    * Inserts a new document
    * @param {object|object[]} newDocs
    */
-  async insert(newDocs) {
+  async create(newDocs) {
     try {
       if (!Array.isArray(newDocs) && !isObject(newDocs)) {
         return Promise.reject(new Error(`Invalid newDocs: ${newDocs}`));
@@ -112,7 +100,7 @@ module.exports = class Datastore {
    * @param {object} options
    * @param {object} options.multi - Can find multiple documents (default `false`)
    */
-  async find(query = {}, { multi = false } = {}) {
+  async read(query = {}, { multi = false } = {}) {
     try {
       if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${query}`));
@@ -146,6 +134,14 @@ module.exports = class Datastore {
     try {
       if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${query}`));
+      }
+
+      if (!isObject(newDoc)) {
+        return Promise.reject(new Error(`Invalid newDoc: ${newDoc}`));
+      }
+
+      if (Object.keys(newDoc).includes('_id')) {
+        return Promise.reject(new Error(`Cannot update field _id: ${JSON.stringify(newDoc)}`));
       }
 
       let nUpdated = 0;

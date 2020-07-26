@@ -13,8 +13,7 @@
   "author": "Chronocide",
   "license": "GPLv3",
   "scripts": {
-    "start": "node ./debug.js",
-    "test": "mocha 'src/**/*.test.js'"
+    "test": "mocha 'test/**/*.test.js'"
   },
   "devDependencies": {
     "chai": "^4.2.0",
