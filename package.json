@@ -1,0 +1,30 @@
+{
+  "name": "nodb",
+  "version": "1.0.0",
+  "description": "Spiritual successor to Louis Chatriot's NeDB",
+  "main": "src/index.js",
+  "keywords": [
+    "database",
+    "nedb",
+    "javascript",
+    "node"
+  ],
+  "repository": "https://github.com/chronoDave/nodb.git",
+  "author": "Chronocide",
+  "license": "GPLv3",
+  "scripts": {
+    "start": "node ./debug.js",
+    "test": "mocha 'src/**/*.test.js'"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "eslint": "^7.5.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "^2.22.0",
+    "mocha": "^8.0.1"
+  },
+  "dependencies": {
+    "fs-extra": "^9.0.1"
+  }
+}
