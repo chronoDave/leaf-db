@@ -10,20 +10,31 @@ const {
   equalSome
 } = require('./utils');
 
+// Validation
+const {
+  hasModifiers,
+  hasMixedFieldModifiers,
+  isValidQuery,
+  isValidUpdate
+} = require('./validation');
+
 module.exports = class Datastore {
   /**
    * @param {object} options
    * @param {string} options.root - Database root path
    * @param {string} options.name - Database filename
    * @param {boolean} options.autoLoad - Should database be loaded on creation (default `true`)
+   * @param {boolean} options.strict - Should silent errors be thrown (default `false`)
    */
   constructor({
     root = null,
     name = null,
-    autoLoad = true
+    autoLoad = true,
+    strict = false
   } = {}) {
     this.root = root;
     this.name = name;
+    this.strict = strict;
 
     this.file = path.resolve(this.root, `${name}.txt`);
     this.data = [];
@@ -74,17 +85,24 @@ module.exports = class Datastore {
       }
 
       const inserted = [];
-      for (let i = 0, array = toArray(newDocs); i < array.length; i += 1) {
+      const array = toArray(newDocs);
+      for (let i = 0; i < array.length; i += 1) {
         const newDoc = array[i];
 
-        // Silent fail invalid newDocs
         if (isObject(newDoc)) {
+          if (hasModifiers(newDoc)) {
+            return Promise.reject(new Error(`Doc cannot contain modifiers: ${JSON.stringify(newDoc)}`));
+          }
+
           const payload = { _id: getUid(), ...newDoc };
           const payloadString = `${JSON.stringify(payload)}\n`;
 
           fse.appendFileSync(this.file, payloadString, 'utf-8');
           inserted.push(payload);
           this.data.push(payload);
+        } else if (this.strict) {
+          // If not strict, silent fail instead
+          return Promise.reject(new Error(`Invalid doc: ${newDoc}`));
         }
       }
 
@@ -102,8 +120,8 @@ module.exports = class Datastore {
    */
   async read(query = {}, { multi = false } = {}) {
     try {
-      if (!isObject(query)) {
-        return Promise.reject(new Error(`Invalid query: ${query}`));
+      if (!isValidQuery(query)) {
+        return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
       if (isEmptyObject(query)) {
@@ -126,22 +144,18 @@ module.exports = class Datastore {
   /**
    * Update document matching `query`
    * @param {object} query - Empty query updates all documents (default `{}`)
-   * @param {object} newDoc - New document (default `{}`)
+   * @param {object} update - New document (default `{}`) / Update query
    * @param {object} options
    * @param {boolean} options.multi - Can update multiple documents (default `false`)
    */
-  async update(query = {}, newDoc = {}, { multi = false } = {}) {
+  async update(query = {}, update = {}, { multi = false } = {}) {
     try {
-      if (!isObject(query)) {
-        return Promise.reject(new Error(`Invalid query: ${query}`));
+      if (!isValidQuery(query)) {
+        return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
-      if (!isObject(newDoc)) {
-        return Promise.reject(new Error(`Invalid newDoc: ${newDoc}`));
-      }
-
-      if (Object.keys(newDoc).includes('_id')) {
-        return Promise.reject(new Error(`Cannot update field _id: ${JSON.stringify(newDoc)}`));
+      if (!isValidUpdate(update)) {
+        return Promise.reject(new Error(`Invalid update: ${JSON.stringify(update)}`));
       }
 
       let nUpdated = 0;
@@ -152,7 +166,8 @@ module.exports = class Datastore {
 
           if (canUpdate && matches) {
             nUpdated += 1;
-            return { _id: item._id, ...newDoc };
+
+            return { _id: item._id, ...update };
           }
           return item;
         });
@@ -168,8 +183,8 @@ module.exports = class Datastore {
 
   async remove(query = {}, { multi = false } = {}) {
     try {
-      if (!isObject(query)) {
-        return Promise.reject(new Error(`Invalid query: ${query}`));
+      if (!isValidQuery(query)) {
+        return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
       let nRemoved = 0;

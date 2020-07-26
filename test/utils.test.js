@@ -2,7 +2,8 @@ const { assert } = require('chai');
 
 const {
   getUid,
-  equalSome
+  equalSome,
+  objectSomeKey
 } = require('../src/lib/utils');
 
 describe('utils', () => {
@@ -34,6 +35,23 @@ describe('utils', () => {
       const b = { c: 3, a: 2 };
 
       assert.isFalse(equalSome(a, b));
+    });
+  });
+
+  describe('objectSomeKey', () => {
+    it('should return false on no match', () => {
+      const object = { a: 1, c: { d: { e: 2 }, g: [{ h: 1 }] } };
+
+      assert.isFalse(objectSomeKey(object, 'f'));
+      assert.isFalse(objectSomeKey(object, key => key === 'f'));
+    });
+
+    it('should return true on match', () => {
+      const object = { a: 1, c: { d: { e: 2 }, g: [{ h: 1 }] } };
+
+      assert.isTrue(objectSomeKey(object, 'a'));
+      assert.isTrue(objectSomeKey(object, 'd'));
+      assert.isTrue(objectSomeKey(object, 'h'));
     });
   });
 });

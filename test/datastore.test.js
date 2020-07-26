@@ -75,24 +75,29 @@ describe('Datastore', () => {
       expect(this.db.create()).to.be.rejected
     ));
 
-    it('should insert single object', async () => {
-      const payload = { data: 'mocha' };
+    it('should throw an error if invalid doc is provided', () => (
+      expect(this.db.create(null)).to.be.rejected
+    ));
 
-      const newDocs = await this.db.create(payload);
+    it('should throw an error if modifiers are provided', () => (
+      expect(this.db.create({ $invalid: true })).to.be.rejected
+    ));
 
-      assert.isArray(newDocs);
-      assert.strictEqual(newDocs.length, 1);
-      assert.hasAnyKeys(newDocs[0], payload);
-    });
+    it('should throw an error if invalid data is provided and strict is enabled', () => {
+      this.db.strict = true;
 
-    it('should insert multiple objects', async () => {
-      const payload = [{ data: 1 }, { data: 2 }, { data: 3 }];
+      const payload = [
+        1,
+        null,
+        undefined,
+        [],
+        true,
+        '',
+        () => null,
+        { valid: true }
+      ];
 
-      const newDocs = await this.db.create(payload);
-
-      assert.isArray(newDocs);
-      assert.strictEqual(newDocs.length, payload.length);
-      assert.hasAnyKeys(newDocs[0], payload[0]); // Order should be the same
+      return expect(this.db.create(payload)).to.be.rejected;
     });
 
     it('should silently fail is invalid data is provided', async () => {
@@ -113,6 +118,26 @@ describe('Datastore', () => {
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, 1);
       assert.hasAnyKeys(newDocs[0], valid);
+    });
+
+    it('should insert single object', async () => {
+      const payload = { data: 'mocha' };
+
+      const newDocs = await this.db.create(payload);
+
+      assert.isArray(newDocs);
+      assert.strictEqual(newDocs.length, 1);
+      assert.hasAnyKeys(newDocs[0], payload);
+    });
+
+    it('should insert multiple objects', async () => {
+      const payload = [{ data: 1 }, { data: 2 }, { data: 3 }];
+
+      const newDocs = await this.db.create(payload);
+
+      assert.isArray(newDocs);
+      assert.strictEqual(newDocs.length, payload.length);
+      assert.hasAnyKeys(newDocs[0], payload[0]); // Order should be the same
     });
   });
 
@@ -189,6 +214,10 @@ describe('Datastore', () => {
 
     it('should throw an error if update contains _id', () => (
       expect(this.db.update({}, { _id: null })).to.be.rejected
+    ));
+
+    it('should throw an error if modifiers and fields are mixed', () => (
+      expect(this.db.update({}, { field: true, $modified: false })).to.be.rejected
     ));
 
     it('should replace the first entry with empty object (incl. _id) if no query and newDoc are provided', async () => {
