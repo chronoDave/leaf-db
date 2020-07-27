@@ -9,12 +9,16 @@ const {
 
 describe('Modifiers', () => {
   describe('modifierInc()', () => {
-    it('should throw an error on non-number field', () => (
-      expect(() => modifierInc({ a: 3 }, { a: '3' })).to.throw()
-    ));
-
     it('should throw an error on non-number value', () => (
       expect(() => modifierInc({ a: '3' }, { a: 3 })).to.throw()
+    ));
+
+    it('should ignore on non-number field', () => (
+      expect(() => modifierInc({ a: 3 }, { a: '3' })).to.not.throw()
+    ));
+
+    it('should ignore if field does not exist', () => (
+      expect(() => modifierInc({ b: 3 }, { a: '3' })).to.not.throw()
     ));
 
     it('should increase value if field is number', () => {

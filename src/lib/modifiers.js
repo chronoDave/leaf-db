@@ -12,11 +12,8 @@ const modifierInc = (modifier, object) => {
       if (typeof value !== 'number') {
         throw new Error(`Value must be of type 'number': ${value}`);
       }
-      if (typeof modified[key] !== 'number') {
-        throw new Error(`Field value must be of type 'number': ${modified[key]}`);
-      }
 
-      modified[key] += value;
+      if (typeof modified[key] === 'number') modified[key] += value;
     });
 
   return object;

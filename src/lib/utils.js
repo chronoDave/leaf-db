@@ -14,7 +14,10 @@ const getUid = (length = 16) => crypto
   .replace(/[+/]/g, '')
   .slice(0, length);
 
-/** Return if some `a` values matches with `b` values */
+/**
+ * Return if some `a` values matches with `b` values
+ * - Does not traverse nested values
+ * */
 const equalSome = (a, b) => Object
   .keys(b)
   .some(key => a[key] === b[key]);

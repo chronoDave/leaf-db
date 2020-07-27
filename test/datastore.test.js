@@ -269,6 +269,18 @@ describe('Datastore', () => {
       assert.strictEqual(nUpdated, data.length);
       assert.hasAnyKeys(this.db.data[2], newDoc); // Sample test
     });
+
+    it('should accept modifiers', async () => {
+      const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
+      const update = { $set: { d: 4 }, $inc: { c: 3 } };
+
+      await this.db.create(data);
+
+      const nUpdated = await this.db.update({}, update, { multi: true });
+
+      assert.strictEqual(nUpdated, data.length);
+      assert.hasAnyKeys(this.db.data[2], { d: 4, c: 6 }); // Sample test
+    });
   });
 
   describe('remove()', () => {
