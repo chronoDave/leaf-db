@@ -10,7 +10,7 @@ describe('Datastore', () => {
     this.db = new Datastore({
       root: __dirname,
       name: 'mocha',
-      autoLoad: false
+      autoload: true
     });
     this.file = path.resolve(__dirname, 'mocha.txt');
   });
@@ -283,7 +283,7 @@ describe('Datastore', () => {
     });
   });
 
-  describe('remove()', () => {
+  describe('delete()', () => {
     it('should throw an error on invalid query', () => (
       expect(this.db.update(null)).to.be.rejected
     ));
@@ -293,7 +293,7 @@ describe('Datastore', () => {
 
       await this.db.create(data);
 
-      const nRemoved = await this.db.remove();
+      const nRemoved = await this.db.delete();
 
       assert.strictEqual(nRemoved, 1);
       assert.hasAnyKeys(this.db.data[0], data[1]);
@@ -304,7 +304,7 @@ describe('Datastore', () => {
 
       await this.db.create(data);
 
-      const nRemoved = await this.db.remove({ a: 1 });
+      const nRemoved = await this.db.delete({ a: 1 });
 
       assert.strictEqual(nRemoved, 1);
       assert.hasAnyKeys(this.db.data[0], data[1]);
@@ -315,7 +315,7 @@ describe('Datastore', () => {
 
       await this.db.create(data);
 
-      const nRemoved = await this.db.remove({ d: 1 });
+      const nRemoved = await this.db.delete({ d: 1 });
 
       assert.strictEqual(nRemoved, 0);
       assert.hasAnyKeys(this.db.data[0], data[0]);
@@ -326,7 +326,7 @@ describe('Datastore', () => {
 
       await this.db.create(data);
 
-      const nRemoved = await this.db.remove({}, { multi: true });
+      const nRemoved = await this.db.delete({}, { multi: true });
 
       assert.strictEqual(nRemoved, data.length);
       assert.strictEqual(this.db.data.length, 0);
@@ -337,7 +337,7 @@ describe('Datastore', () => {
 
       await this.db.create(data);
 
-      const nRemoved = await this.db.remove({ a: 1 }, { multi: true });
+      const nRemoved = await this.db.delete({ a: 1 }, { multi: true });
 
       assert.strictEqual(nRemoved, 2);
       assert.strictEqual(this.db.data.length, 1);
@@ -349,7 +349,7 @@ describe('Datastore', () => {
 
       await this.db.create(data);
 
-      const nRemoved = await this.db.remove({ d: 1 }, { multi: true });
+      const nRemoved = await this.db.delete({ d: 1 }, { multi: true });
 
       assert.strictEqual(nRemoved, 0);
       assert.strictEqual(this.db.data.length, data.length);

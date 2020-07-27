@@ -25,13 +25,13 @@ module.exports = class Datastore {
    * @param {object} options
    * @param {string} options.root - Database root path
    * @param {string} options.name - Database filename
-   * @param {boolean} options.autoLoad - Should database be loaded on creation (default `true`)
+   * @param {boolean} options.autoload - Should database be loaded on creation (default `true`)
    * @param {boolean} options.strict - Should silent errors be thrown (default `false`)
    */
   constructor({
     root = null,
     name = null,
-    autoLoad = true,
+    autoload = true,
     strict = false
   } = {}) {
     this.root = root;
@@ -41,7 +41,7 @@ module.exports = class Datastore {
     this.file = path.resolve(this.root, `${name}.txt`);
     this.data = [];
 
-    if (autoLoad) this.load();
+    if (autoload) this.load();
   }
 
   /** Initialize database */
@@ -116,7 +116,7 @@ module.exports = class Datastore {
    * Find all documents matching `query`
    * @param {object} query - Query object (default `{}`)
    * @param {object} options
-   * @param {object} options.multi - Can find multiple documents (default `false`)
+   * @param {boolean} options.multi - Can find multiple documents (default `false`)
    */
   async read(query = {}, { multi = false } = {}) {
     try {
@@ -189,7 +189,7 @@ module.exports = class Datastore {
     }
   }
 
-  async remove(query = {}, { multi = false } = {}) {
+  async delete(query = {}, { multi = false } = {}) {
     try {
       if (!isValidQuery(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));

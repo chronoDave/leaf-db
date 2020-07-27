@@ -12,6 +12,7 @@ module.exports = {
     'arrow-parens': ['error', 'as-needed'],
     'no-nested-ternary': 'off',
     'max-len': 'off',
-    'no-underscore-dangle': 'off'
+    'no-underscore-dangle': 'off',
+    'no-await-in-loop': 'warn'
   }
 };
