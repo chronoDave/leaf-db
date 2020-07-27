@@ -1,16 +1,23 @@
 {
-  "name": "nodb",
+  "name": "nedbr",
   "version": "1.0.0",
-  "description": "Spiritual successor to Louis Chatriot's NeDB",
+  "description": "File-based embedded data store for node.js",
   "main": "src/index.js",
   "keywords": [
     "database",
+    "datastore",
+    "embedded",
     "nedb",
     "javascript",
     "node"
   ],
   "repository": "https://github.com/chronoDave/nodb.git",
   "author": "Chronocide",
+  "contributors": [{
+    "name": "Louis Chatriot",
+    "email": "louis.chatriot@gmail.com",
+    "url": "https://github.com/louischatriot/nedb"
+  }],
   "license": "GPLv3",
   "scripts": {
     "test": "mocha 'test/**/*.test.js'"
