@@ -17,4 +17,7 @@ NeDB-R makes the following changes:
 - Less external depedencies.
 - Dropped support for browser; it's a _node_ embedded database, not JavaScript.
 - Dropped `.` query support.
+- Dropped upsert support for `update()`.
+- Renamed `insert()` and `find()` to `create()` and `read()` respectively (following CRUD naming convention).
+- Removed `findOne()`, use `multi` options instead. This makes `read()` and `update()` consistent with each other.
 
