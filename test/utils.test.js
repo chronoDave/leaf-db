@@ -6,7 +6,7 @@ const {
   objectSomeKey
 } = require('../src/lib/utils');
 
-describe('utils', () => {
+describe('Utils', () => {
   describe('getUid()', () => {
     it('should return unique IDs', () => {
       assert.isString(getUid());

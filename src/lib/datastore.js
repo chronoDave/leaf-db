@@ -1,6 +1,9 @@
 const fse = require('fs-extra');
 const path = require('path');
 
+// Modifiers
+const { applyModifier } = require('./modifiers');
+
 // Utils
 const {
   getUid,
@@ -13,7 +16,6 @@ const {
 // Validation
 const {
   hasModifiers,
-  hasMixedFieldModifiers,
   isValidQuery,
   isValidUpdate
 } = require('./validation');
@@ -44,21 +46,19 @@ module.exports = class Datastore {
 
   /** Initialize database */
   load() {
-    try {
-      fse.mkdirpSync(this.root);
+    fse.mkdirpSync(this.root);
 
-      const exists = fse.existsSync(this.file);
+    const exists = fse.existsSync(this.file);
 
-      if (exists) {
-        const raw = fse.readFileSync(this.file, 'utf-8');
-        for (let i = 0, data = raw.split('\n'); i < data.length; i += 1) {
-          if (data[i] !== '') this.data.push(JSON.parse(data[i]));
-        }
-      } else {
-        fse.writeFileSync(this.file, '', 'utf-8');
-      }
-    } catch (err) {
-      console.error(err);
+    if (exists) {
+      fse
+        .readFileSync(this.file, 'utf-8')
+        .split('\n')
+        .forEach(line => {
+          if (line !== '') this.data.push(JSON.parse(line)); 
+        });
+    } else {
+      fse.writeFileSync(this.file, '', 'utf-8');
     }
   }
 
@@ -86,7 +86,7 @@ module.exports = class Datastore {
 
       const inserted = [];
       const array = toArray(newDocs);
-      for (let i = 0; i < array.length; i += 1) {
+      for (let i = 0, l = array.length; i < l; i += 1) {
         const newDoc = array[i];
 
         if (isObject(newDoc)) {
@@ -166,6 +166,14 @@ module.exports = class Datastore {
 
           if (canUpdate && matches) {
             nUpdated += 1;
+
+            if (hasModifiers(update)) {
+              const modified = Object
+                .entries(update)
+                .map(([modifier, value]) => applyModifier(modifier, value, item))
+                .reduce((acc, cur) => ({ ...acc, ...cur }), {});
+              return { _id: item._id, ...modified };
+            }
 
             return { _id: item._id, ...update };
           }
