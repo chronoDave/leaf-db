@@ -1,9 +1,8 @@
-const chaiAsPromised = require('chai-as-promised');
-const { assert, expect } = require('chai').use(chaiAsPromised);
+const { assert, expect } = require('chai');
 const fse = require('fs-extra');
 const path = require('path');
 
-const Datastore = require('../src/lib/datastore');
+const Datastore = require('../src/datastore');
 
 describe('Datastore', () => {
   beforeEach(() => {
@@ -71,53 +70,25 @@ describe('Datastore', () => {
   });
 
   describe('create()', () => {
-    it('should throw an error if no data is provided', () => (
-      expect(this.db.create()).to.be.rejected
-    ));
-
-    it('should throw an error if invalid doc is provided', () => (
-      expect(this.db.create(null)).to.be.rejected
-    ));
-
-    it('should throw an error if modifiers are provided', () => (
-      expect(this.db.create({ $invalid: true })).to.be.rejected
-    ));
-
-    it('should throw an error if invalid data is provided and strict is enabled', () => {
-      this.db.strict = true;
-
-      const payload = [
-        1,
-        null,
-        undefined,
-        [],
-        true,
-        '',
-        () => null,
-        { valid: true }
-      ];
-
-      return expect(this.db.create(payload)).to.be.rejected;
-    });
-
-    it('should silently fail is invalid data is provided', async () => {
-      const valid = { valid: true };
-      const payload = [
-        1,
-        null,
-        undefined,
-        [],
-        true,
-        '',
-        () => null,
-        valid
-      ];
-
-      const newDocs = await this.db.create(payload);
+    it('should resolve if no data is provided', async () => {
+      const newDocs = await this.db.create();
 
       assert.isArray(newDocs);
-      assert.strictEqual(newDocs.length, 1);
-      assert.hasAnyKeys(newDocs[0], valid);
+      assert.strictEqual(newDocs.length, 0);
+    });
+
+    it('should resolve if no data is provided', async () => {
+      const newDocs = await this.db.create(null);
+
+      assert.isArray(newDocs);
+      assert.strictEqual(newDocs.length, 0);
+    });
+
+    it('should resolve if modifiers are provided', async () => {
+      const newDocs = await this.db.create({ $mocha: true });
+
+      assert.isArray(newDocs);
+      assert.strictEqual(newDocs.length, 0);
     });
 
     it('should insert single object', async () => {
@@ -139,12 +110,93 @@ describe('Datastore', () => {
       assert.strictEqual(newDocs.length, payload.length);
       assert.hasAnyKeys(newDocs[0], payload[0]); // Order should be the same
     });
+
+    it('should insert valid items and ignore invalid items', async () => {
+      const valid = { valid: true };
+      const payload = [
+        1,
+        null,
+        undefined,
+        [],
+        true,
+        '',
+        () => null,
+        valid
+      ];
+
+      const newDocs = await this.db.create(payload);
+
+      assert.isArray(newDocs);
+      assert.strictEqual(newDocs.length, 1);
+      assert.hasAnyKeys(newDocs[0], valid);
+    });
+
+    describe('Strict', () => {
+      it('should reject if no data is provided', async () => {
+        this.db.strict = true;
+
+        try {
+          await this.db.create();
+          assert.fail();
+        } catch (err) {
+          assert.isTrue(true);
+        }
+      });
+
+      it('should reject if invalid data is provided', async () => {
+        this.db.strict = true;
+
+        try {
+          await this.db.create(null);
+          assert.fail();
+        } catch (err) {
+          assert.isTrue(true);
+        }
+      });
+
+      it('should reject if modifiers are provided', async () => {
+        this.db.strict = true;
+
+        try {
+          await this.db.create({ $mocha: true });
+          assert.fail();
+        } catch (err) {
+          assert.isTrue(true);
+        }
+      });
+
+      it('should reject on invalid items', async () => {
+        this.db.strict = true;
+
+        try {
+          const valid = { valid: true };
+          const payload = [
+            1,
+            null,
+            undefined,
+            [],
+            true,
+            '',
+            () => null,
+            valid
+          ];
+          await this.db.create(payload);
+        } catch (err) {
+          assert.isTrue(true);
+        }
+      });
+    });
   });
 
   describe('read()', () => {
-    it('should throw an error on invalid query', () => (
-      expect(this.db.read(null)).to.be.rejected
-    ));
+    it('should reject on invalid query', async () => {
+      try {
+        await this.db.read(null);
+        assert.fail();
+      } catch (err) {
+        assert.isTrue(true);
+      }
+    });
 
     it('should return first document on empty query', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
@@ -201,26 +253,49 @@ describe('Datastore', () => {
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, 0);
     });
+
+    it('should return matches if nested query matches', async () => {
+      const data = [{ a: { b: { c: [{ d: 1 }] } } }];
+
+      await this.db.create(data);
+
+      const newDocs = await this.db.read({ $gte: { 'a.b.c[0].d': 1 } }, { multi: true });
+
+      assert.isArray(newDocs);
+      assert.strictEqual(newDocs.length, 1);
+      assert.hasAnyKeys(newDocs[0], data[0]);
+    });
   });
 
   describe('update()', () => {
-    it('should throw an error on invalid query', () => (
-      expect(this.db.update(null)).to.be.rejected
-    ));
+    it('should reject on invalid query', async () => {
+      try {
+        await this.db.update(null);
+        assert.fail();
+      } catch (err) {
+        assert.isTrue(true);
+      }
+    });
 
-    it('should throw an error on invalid newDoc', () => (
-      expect(this.db.update({}, null)).to.be.rejected
-    ));
+    it('should reject on invalid update', async () => {
+      try {
+        await this.db.update({}, null);
+        assert.fail();
+      } catch (err) {
+        assert.isTrue(true);
+      }
+    });
 
-    it('should throw an error if update contains _id', () => (
-      expect(this.db.update({}, { _id: null })).to.be.rejected
-    ));
+    it('should reject on mixed modifiers', async () => {
+      try {
+        await this.db.update({}, { a: 1, $mocha: true });
+        assert.fail();
+      } catch (err) {
+        assert.isTrue(true);
+      }
+    });
 
-    it('should throw an error if modifiers and fields are mixed', () => (
-      expect(this.db.update({}, { field: true, $modified: false })).to.be.rejected
-    ));
-
-    it('should replace the first entry with empty object (incl. _id) if no query and newDoc are provided', async () => {
+    it('should replace the first entry with empty object if no query and newDoc are provided', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
 
       await this.db.create(data);
@@ -228,10 +303,10 @@ describe('Datastore', () => {
       const nUpdated = await this.db.update();
 
       assert.strictEqual(nUpdated, 1);
-      assert.hasAllKeys(this.db.data[0], '_id'); // Should only contain _id
+      assert.hasAllKeys(this.db.data[0], ['_id']);
     });
 
-    it('should replace first entry matching query with empty object (incl. _id)', async () => {
+    it('should replace first entry matching query with empty object', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
       const query = { b: 2 };
 
@@ -240,8 +315,7 @@ describe('Datastore', () => {
       const nUpdated = await this.db.update(query);
 
       assert.strictEqual(nUpdated, 1);
-      assert.hasAllKeys(this.db.data[1], '_id');
-      assert.hasAllKeys(this.db.data[0], ['a', '_id']);
+      assert.hasAllKeys(this.db.data[1], ['_id']);
     });
 
     it('should replace the first entry matching query with newDoc', async () => {
@@ -272,21 +346,26 @@ describe('Datastore', () => {
 
     it('should accept modifiers', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
-      const update = { $set: { d: 4 }, $inc: { c: 3 } };
+      const update = { $inc: { c: 3 } };
 
       await this.db.create(data);
 
       const nUpdated = await this.db.update({}, update, { multi: true });
 
       assert.strictEqual(nUpdated, data.length);
-      assert.hasAnyKeys(this.db.data[2], { d: 4, c: 6 }); // Sample test
+      assert.hasAnyKeys(this.db.data[2], { c: 6 }); // Sample test
     });
   });
 
   describe('delete()', () => {
-    it('should throw an error on invalid query', () => (
-      expect(this.db.update(null)).to.be.rejected
-    ));
+    it('should throw an error on invalid query', async () => {
+      try {
+        await this.db.delete(null);
+        assert.fail();
+      } catch (err) {
+        assert.isTrue(true);
+      }
+    });
 
     it('should remove the first element on empty query', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];

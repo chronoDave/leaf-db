@@ -1,23 +1,20 @@
 const fse = require('fs-extra');
 const path = require('path');
 
-// Modifiers
-const { applyModifier } = require('./modifiers');
-
 // Utils
 const {
   getUid,
   toArray,
-  isObject,
-  isEmptyObject,
-  equalSome
+  objectModify
 } = require('./utils');
 
 // Validation
 const {
+  isObject,
+  isEmptyObject,
+  isQueryMatch,
   hasModifiers,
-  isValidQuery,
-  isValidUpdate
+  hasMixedModifiers
 } = require('./validation');
 
 module.exports = class Datastore {
@@ -55,7 +52,7 @@ module.exports = class Datastore {
         .readFileSync(this.file, 'utf-8')
         .split('\n')
         .forEach(line => {
-          if (line !== '') this.data.push(JSON.parse(line)); 
+          if (line !== '') this.data.push(JSON.parse(line));
         });
     } else {
       fse.writeFileSync(this.file, '', 'utf-8');
@@ -76,33 +73,28 @@ module.exports = class Datastore {
 
   /**
    * Inserts a new document
+   *  - If `strict` is enabled, will fail if any `newDocs` is invalid
+   *  - If `strict` is disabled, will only insert valid `newDocs`
    * @param {object|object[]} newDocs
    */
   async create(newDocs) {
     try {
-      if (!Array.isArray(newDocs) && !isObject(newDocs)) {
-        return Promise.reject(new Error(`Invalid newDocs: ${newDocs}`));
+      if (!Array.isArray(newDocs) && !isObject(newDocs) && this.strict) {
+        return Promise.reject(new Error(`Invalid newDocs: ${JSON.stringify(newDocs)}`));
       }
 
       const inserted = [];
-      const array = toArray(newDocs);
-      for (let i = 0, l = array.length; i < l; i += 1) {
-        const newDoc = array[i];
+      for (let i = 0, a = toArray(newDocs); i < a.length; i += 1) {
+        const newDoc = a[i];
 
-        if (isObject(newDoc)) {
-          if (hasModifiers(newDoc)) {
-            return Promise.reject(new Error(`Doc cannot contain modifiers: ${JSON.stringify(newDoc)}`));
-          }
-
+        if (isObject(newDoc) && !hasModifiers(newDoc)) {
           const payload = { _id: getUid(), ...newDoc };
-          const payloadString = `${JSON.stringify(payload)}\n`;
 
-          fse.appendFileSync(this.file, payloadString, 'utf-8');
+          fse.appendFileSync(this.file, `${JSON.stringify(payload)}\n`);
           inserted.push(payload);
           this.data.push(payload);
         } else if (this.strict) {
-          // If not strict, silent fail instead
-          return Promise.reject(new Error(`Invalid doc: ${newDoc}`));
+          return Promise.reject(new Error(`Invalid newDoc: ${JSON.stringify(newDoc)}`));
         }
       }
 
@@ -120,21 +112,20 @@ module.exports = class Datastore {
    */
   async read(query = {}, { multi = false } = {}) {
     try {
-      if (!isValidQuery(query)) {
+      if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
       if (isEmptyObject(query)) {
-        if (multi) return Promise.resolve(this.data);
-        return Promise.resolve(this.data[0]);
+        return Promise.resolve(multi ? this.data : this.data[0]);
       }
 
       if (multi) {
-        const docs = this.data.filter(item => equalSome(item, query));
+        const docs = this.data.filter(item => isQueryMatch(item, query));
         return Promise.resolve(docs);
       }
 
-      const doc = this.data.find(item => equalSome(item, query));
+      const doc = this.data.find(item => isQueryMatch(item, query));
       return Promise.resolve(doc || null);
     } catch (err) {
       return Promise.reject(err);
@@ -150,38 +141,37 @@ module.exports = class Datastore {
    */
   async update(query = {}, update = {}, { multi = false } = {}) {
     try {
-      if (!isValidQuery(query)) {
+      if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
-      if (!isValidUpdate(update)) {
+      if (!isObject(update) || hasMixedModifiers(update)) {
         return Promise.reject(new Error(`Invalid update: ${JSON.stringify(update)}`));
       }
 
       let nUpdated = 0;
-      const newDocs = this.data
-        .map(item => {
-          const canUpdate = multi || nUpdated < 1;
-          const matches = isEmptyObject(query) || equalSome(item, query);
+      for (let i = 0; i < this.data.length; i += 1) {
+        const doc = this.data[i];
 
-          if (canUpdate && matches) {
-            nUpdated += 1;
-
-            if (hasModifiers(update)) {
-              const modified = Object
-                .entries(update)
-                .map(([modifier, value]) => applyModifier(modifier, value, item))
-                .reduce((acc, cur) => ({ ...acc, ...cur }), {});
-              return { _id: item._id, ...modified };
-            }
-
-            return { _id: item._id, ...update };
+        if (isQueryMatch(doc, query)) {
+          if (hasModifiers(update)) {
+            this.data[i] = {
+              ...objectModify(doc, update),
+              _id: doc._id
+            };
+          } else {
+            this.data[i] = {
+              ...update,
+              _id: doc._id
+            };
           }
-          return item;
-        });
+          nUpdated += 1;
+        }
 
-      this.persist(newDocs);
-      this.data = newDocs;
+        if (!multi && nUpdated > 0) break;
+      }
+
+      this.persist();
 
       return Promise.resolve(nUpdated);
     } catch (err) {
@@ -191,7 +181,7 @@ module.exports = class Datastore {
 
   async delete(query = {}, { multi = false } = {}) {
     try {
-      if (!isValidQuery(query)) {
+      if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
@@ -199,7 +189,7 @@ module.exports = class Datastore {
       const newDocs = this.data
         .filter(item => {
           const canRemove = multi || nRemoved < 1;
-          const matches = isEmptyObject(query) || equalSome(item, query);
+          const matches = isEmptyObject(query) || isQueryMatch(item, query);
 
           if (canRemove && matches) {
             nRemoved += 1;

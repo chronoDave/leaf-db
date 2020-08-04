@@ -2,9 +2,9 @@ const { assert } = require('chai');
 
 const {
   getUid,
-  equalSome,
-  objectSomeKey
-} = require('../src/lib/utils');
+  objectHas,
+  objectModify
+} = require('../src/utils');
 
 describe('Utils', () => {
   describe('getUid()', () => {
@@ -22,36 +22,32 @@ describe('Utils', () => {
     });
   });
 
-  describe('equalSome()', () => {
-    it('should return true if some values match', () => {
-      const a = { a: 1, b: 2 };
-      const b = { b: 2, c: 3 };
-
-      assert.isTrue(equalSome(a, b));
-    });
-
-    it('should return false if no values match', () => {
-      const a = { a: 1, b: 2 };
-      const b = { c: 3, a: 2 };
-
-      assert.isFalse(equalSome(a, b));
+  describe('objectHas()', () => {
+    it('should return true if object has key or value, at any depth', () => {
+      assert.isTrue(objectHas({ a: 1 }, ({ key }) => key === 'a'));
+      assert.isFalse(objectHas({ a: 1 }, ({ key }) => key === 'b'));
+      assert.isTrue(objectHas({ a: 1 }, ({ value }) => value === 1));
+      assert.isFalse(objectHas({ a: 1 }, ({ value }) => value === 2));
+      assert.isTrue(objectHas({ a: { b: 1 } }, ({ key }) => key === 'b'));
+      assert.isTrue(objectHas({ a: { b: 1 } }, ({ value }) => value === 1));
+      assert.isTrue(objectHas({ a: { b: [{ c: 1 }] } }, ({ key }) => key === 'c'));
+      assert.isTrue(objectHas({ a: { b: [{ c: 1 }] } }, ({ value }) => value === 1));
     });
   });
 
-  describe('objectSomeKey', () => {
-    it('should return false on no match', () => {
-      const object = { a: 1, c: { d: { e: 2 }, g: [{ h: 1 }] } };
-
-      assert.isFalse(objectSomeKey(object, 'f'));
-      assert.isFalse(objectSomeKey(object, key => key === 'f'));
+  describe('objectModify()', () => {
+    it('should throw an error if invalid modifier is provided', () => {
+      assert.throws(() => objectModify({ a: 1 }, { $mocha: { a: 1 } }));
     });
 
-    it('should return true on match', () => {
-      const object = { a: 1, c: { d: { e: 2 }, g: [{ h: 1 }] } };
-
-      assert.isTrue(objectSomeKey(object, 'a'));
-      assert.isTrue(objectSomeKey(object, 'd'));
-      assert.isTrue(objectSomeKey(object, 'h'));
+    describe('Modifiers', () => {
+      it('$inc', () => {
+        assert.strictEqual(objectModify({ a: 1 }, { $inc: { a: 2 } }).a, 3);
+        assert.strictEqual(objectModify({ a: 1 }, { $inc: { a: -2 } }).a, -1);
+        assert.doesNotHaveAnyKeys(objectModify({ a: 1 }, { $inc: { b: 2 } }), 'b');
+        assert.strictEqual(objectModify({ a: { b: 1 } }, { $inc: { 'a.b': 2 } }).a.b, 3);
+        assert.strictEqual(objectModify({ a: { b: [{ c: 1 }] } }, { $inc: { 'a.b.0.c': 2 } }).a.b[0].c, 3);
+      });
     });
   });
 });

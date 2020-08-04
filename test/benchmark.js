@@ -3,11 +3,12 @@ const fse = require('fs-extra');
 const { performance } = require('perf_hooks');
 const path = require('path');
 
-const Datastore = require('../src/lib/datastore');
+const Datastore = require('../src/datastore');
 
-const logBench = (ts, te, n) => {
+const logBench = (title, ts, te, n) => {
+  console.log(title);
   console.log(`Total: ${(te - ts).toFixed(3)}ms`);
-  console.log(`Avg: ${((te - ts) / n).toFixed(3)}ms (${n} samples)`);
+  console.log(`Avg: ${((te - ts) / n).toFixed(3)}ms (${n} samples)\n`);
 };
 
 /**
@@ -39,9 +40,9 @@ const bench = async (n = 1) => {
     for (let i = 0; i < n; i += 1) {
       // Generate random samples
       await db.create({ i, r: Math.random().toFixed(3) });
+      if (i % 1000 === 0) console.log(`Inserted ${i} elements`);
     }
     const te1 = performance.now();
-    logBench(ts1, te1, n);
 
     console.log('\nStarting benchmark: read()\n');
 
@@ -51,9 +52,9 @@ const bench = async (n = 1) => {
     const ts2 = performance.now();
     for (let i = 0; i < n; i += 1) {
       await db.read({ r: Math.random().toFixed(3) }, { multi: true });
+      if (i % 1000 === 0) console.log(`Read ${i} elements`);
     }
     const te2 = performance.now();
-    logBench(ts2, te2, n);
 
     console.log('\nStarting benchmark: update()\n');
 
@@ -68,7 +69,6 @@ const bench = async (n = 1) => {
       { multi: true }
     );
     const te3 = performance.now();
-    console.log(`Total: ${(te3 - ts3).toFixed(3)}ms`);
 
     /**
      * Only benching the time it takes to find and delete `n` fields,
@@ -82,7 +82,11 @@ const bench = async (n = 1) => {
       { multi: true }
     );
     const te4 = performance.now();
-    console.log(`Total: ${(te4 - ts4).toFixed(3)}ms`);
+
+    logBench('create()', ts1, te1, n);
+    logBench('read()', ts2, te2, n);
+    console.log(`update()\nTotal: ${(te3 - ts3).toFixed(3)}ms\n`);
+    console.log(`delete()\nTotal: ${(te4 - ts4).toFixed(3)}ms`);
   } catch (err) {
     console.log(err);
   }
