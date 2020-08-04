@@ -42,11 +42,45 @@ describe('Utils', () => {
 
     describe('Modifiers', () => {
       it('$inc', () => {
-        assert.strictEqual(objectModify({ a: 1 }, { $inc: { a: 2 } }).a, 3);
-        assert.strictEqual(objectModify({ a: 1 }, { $inc: { a: -2 } }).a, -1);
-        assert.doesNotHaveAnyKeys(objectModify({ a: 1 }, { $inc: { b: 2 } }), 'b');
-        assert.strictEqual(objectModify({ a: { b: 1 } }, { $inc: { 'a.b': 2 } }).a.b, 3);
-        assert.strictEqual(objectModify({ a: { b: [{ c: 1 }] } }, { $inc: { 'a.b.0.c': 2 } }).a.b[0].c, 3);
+        assert.strictEqual(objectModify(
+          { a: 1 },
+          { $inc: { a: 2 } }
+        ).a, 3);
+        assert.strictEqual(objectModify(
+          { a: 1 },
+          { $inc: { a: -2 } }
+        ).a, -1);
+        assert.doesNotHaveAnyKeys(objectModify(
+          { a: 1 },
+          { $inc: { b: 2 } }
+        ), 'b');
+        assert.strictEqual(objectModify(
+          { a: { b: 1 } },
+          { $inc: { 'a.b': 2 } }
+        ).a.b, 3);
+        assert.strictEqual(objectModify(
+          { a: { b: [{ c: 1 }] } },
+          { $inc: { 'a.b.0.c': 2 } }
+        ).a.b[0].c, 3);
+      });
+
+      it('$set', () => {
+        assert.hasAllKeys(objectModify(
+          { a: 1 },
+          { $set: { a: { b: 1 } } }
+        ), { a: { b: 1 } });
+        assert.hasAllKeys(objectModify(
+          { a: { c: 1 } },
+          { $set: { a: { b: 1 } } }
+        ), { a: { b: 1 } });
+        assert.hasAllKeys(objectModify(
+          { a: { b: 1 } },
+          { $set: { 'a.b': { c: 1 } } }
+        ), { a: { b: { c: 1 } } });
+        assert.hasAllKeys(objectModify(
+          { a: { b: [{ c: 1 }] } },
+          { $set: { 'a.b.0.c': { d: 1 } } }
+        ), { a: { b: [{ c: { d: 1 } }] } });
       });
     });
   });

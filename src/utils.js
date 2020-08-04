@@ -52,6 +52,10 @@ const objectModify = (object, modifiers) => {
           }
           break;
         }
+        case '$set': {
+          objectSet(newObject, key, value);
+          break;
+        }
         default:
           throw new Error(`Invalid modifier: ${modifier}`);
       }
