@@ -14,20 +14,21 @@ const {
   isEmptyObject,
   isQueryMatch,
   hasModifiers,
+  hasDot,
   hasMixedModifiers
 } = require('./validation');
 
 module.exports = class Datastore {
   /**
    * @param {object} options
-   * @param {string} options.root - Database root path
-   * @param {string} options.name - Database filename
+   * @param {string} options.name - Database filename (default `db`)
+   * @param {string} options.root - Database root path (default `process.cwd()`)
    * @param {boolean} options.autoload - Should database be loaded on creation (default `true`)
    * @param {boolean} options.strict - Should silent errors be thrown (default `false`)
    */
   constructor({
-    root = null,
-    name = null,
+    name = 'db',
+    root = process.cwd(),
     autoload = true,
     strict = false
   } = {}) {
@@ -87,15 +88,18 @@ module.exports = class Datastore {
       for (let i = 0, a = toArray(newDocs); i < a.length; i += 1) {
         const newDoc = a[i];
 
-        if (isObject(newDoc) && !hasModifiers(newDoc)) {
+        if (isObject(newDoc) && !hasModifiers(newDoc) && !hasDot(newDoc)) {
           const payload = { _id: getUid(), ...newDoc };
 
           fse.appendFileSync(this.file, `${JSON.stringify(payload)}\n`);
           inserted.push(payload);
-          this.data.push(payload);
         } else if (this.strict) {
           return Promise.reject(new Error(`Invalid newDoc: ${JSON.stringify(newDoc)}`));
         }
+      }
+
+      for (let i = 0; i < inserted.length; i += 1) {
+        this.data.push(inserted[i]);
       }
 
       return Promise.resolve(inserted);
@@ -117,7 +121,7 @@ module.exports = class Datastore {
       }
 
       if (isEmptyObject(query)) {
-        return Promise.resolve(multi ? this.data : this.data[0]);
+        return Promise.resolve(multi ? this.data : [this.data[0]]);
       }
 
       if (multi) {
@@ -126,7 +130,7 @@ module.exports = class Datastore {
       }
 
       const doc = this.data.find(item => isQueryMatch(item, query));
-      return Promise.resolve(doc || null);
+      return Promise.resolve(doc ? [doc] : []);
     } catch (err) {
       return Promise.reject(err);
     }
@@ -145,7 +149,11 @@ module.exports = class Datastore {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
-      if (!isObject(update) || hasMixedModifiers(update)) {
+      if (
+        !isObject(update) ||
+        hasMixedModifiers(update) ||
+        (!hasModifiers(update) && hasDot(update))
+      ) {
         return Promise.reject(new Error(`Invalid update: ${JSON.stringify(update)}`));
       }
 
@@ -154,17 +162,13 @@ module.exports = class Datastore {
         const doc = this.data[i];
 
         if (isQueryMatch(doc, query)) {
-          if (hasModifiers(update)) {
-            this.data[i] = {
-              ...objectModify(doc, update),
-              _id: doc._id
-            };
-          } else {
-            this.data[i] = {
-              ...update,
-              _id: doc._id
-            };
-          }
+          const newDoc = hasModifiers(update) ?
+            objectModify(doc, update) :
+            update;
+          this.data[i] = {
+            ...newDoc,
+            _id: doc._id
+          };
           nUpdated += 1;
         }
 

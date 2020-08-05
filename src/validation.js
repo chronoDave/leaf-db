@@ -2,7 +2,13 @@ const deepEqual = require('fast-deep-equal');
 const objectGet = require('lodash.get');
 
 // Utils
-const { objectHas } = require('./utils');
+const {
+  toArray,
+  objectHas
+} = require('./utils');
+
+// Operators
+const operator = require('./operator');
 
 /** Test if object */
 const isObject = any => any !== null && !Array.isArray(any) && typeof any === 'object';
@@ -16,36 +22,43 @@ const isEmptyObject = object => Object.keys(object).length === 0;
  * @param {object} object
  */
 const isQueryMatch = (object, query) => {
-  const qEntries = Object.entries(query);
-
-  for (let i = 0; i < qEntries.length; i += 1) {
-    const [qKey, qValue] = qEntries[i];
+  for (let i = 0, qe = Object.entries(query); i < qe.length; i += 1) {
+    const [key, value] = qe[i];
 
     // Operators
-    if (qKey[0] === '$') {
-      const oEntries = Object.entries(qValue);
+    if (key[0] === '$') {
+      for (let j = 0, ofe = Object.entries(value); j < ofe.length; j += 1) {
+        const [field, testValue] = ofe[j];
+        const originalValue = objectGet(object, field); // Object value
 
-      for (let j = 0; j < oEntries.length; j += 1) {
-        const [oKey, oValue] = oEntries[j];
-
-        switch (qKey) {
+        switch (key) {
           case '$gt':
-            if (!(objectGet(object, oKey) > oValue)) return false;
+            if (!operator.isGt(originalValue, testValue)) return false;
             break;
           case '$gte':
-            if (!(objectGet(object, oKey) >= oValue)) return false;
+            if (!operator.isGte(originalValue, testValue)) return false;
             break;
           case '$lt':
-            if (!(objectGet(object, oKey) < oValue)) return false;
+            if (!operator.isLt(originalValue, testValue)) return false;
             break;
           case '$lte':
-            if (!(objectGet(object, oKey) <= oValue)) return false;
+            if (!operator.isLte(originalValue, testValue)) return false;
+            break;
+          case '$exists':
+            if (!operator.isKey(object, toArray(testValue))) return false;
+            break;
+          case '$has':
+            if (!Array.isArray(originalValue)) {
+              throw new Error(`operator '$has' must point to array: ${JSON.stringify(objectValue)}`);
+            }
+            if (!operator.isInclude(originalValue, testValue)) return false;
             break;
           default:
-            throw new Error(`Invalid operator: ${qKey}`);
+            throw new Error(`Invalid operator: ${operator}`);
         }
       }
-    } else if (!deepEqual(objectGet(object, qKey), qValue)) {
+    // Regular
+    } else if (!deepEqual(objectGet(object, key), value)) {
       return false;
     }
   }
@@ -53,8 +66,11 @@ const isQueryMatch = (object, query) => {
   return true;
 };
 
-/** Validate if object has modifiers */
+/** Validate if object has modifier fields */
 const hasModifiers = object => objectHas(object, ({ key }) => key[0] === '$');
+
+/** Validate if object has dot fields */
+const hasDot = object => objectHas(object, ({ key }) => key.includes('.'));
 
 /** Validate if object has keys and modifiers */
 const hasMixedModifiers = object => (
@@ -67,5 +83,6 @@ module.exports = {
   isEmptyObject,
   isQueryMatch,
   hasModifiers,
+  hasDot,
   hasMixedModifiers
 };

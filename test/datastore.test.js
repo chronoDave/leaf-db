@@ -205,18 +205,19 @@ describe('Datastore', () => {
 
       const newDoc = await this.db.read();
 
-      assert.isNotArray(newDoc);
-      assert.hasAnyKeys(newDoc, data[0]);
+      assert.isArray(newDoc);
+      assert.hasAnyKeys(newDoc[0], data[0]);
     });
 
-    it('should return null if query does not match', async () => {
+    it('should return empty array if query does not match', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
 
       await this.db.create(data);
 
       const newDoc = await this.db.read({ d: 4 });
 
-      assert.isNull(newDoc);
+      assert.isArray(newDoc);
+      assert.strictEqual(newDoc.length, 0);
     });
 
     it('should return all documents if query is empty and multi is true', async () => {

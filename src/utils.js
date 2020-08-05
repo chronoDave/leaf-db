@@ -1,6 +1,7 @@
 const crypto = require('crypto');
-const objectGet = require('lodash.get');
-const objectSet = require('lodash.set');
+
+// Modifiers
+const modifiers = require('./modifiers');
 
 const toArray = any => (Array.isArray(any) ? any : [any]);
 
@@ -33,36 +34,25 @@ const objectHas = (object, validator) => {
   return false;
 };
 
-const objectModify = (object, modifiers) => {
-  const mEntries = Object.entries(modifiers);
-  const newObject = object;
+const objectModify = (object, update) => {
+  for (let i = 0, ue = Object.entries(update); i < ue.length; i += 1) {
+    const [modifier, fields] = ue[i];
 
-  for (let i = 0; i < mEntries.length; i += 1) {
-    const [modifier, fields] = mEntries[i];
-    const fEntries = Object.entries(fields);
-
-    for (let j = 0; j < fEntries.length; j += 1) {
-      const [key, value] = fEntries[j];
+    for (let j = 0, fe = Object.entries(fields); j < fe.length; j += 1) {
+      const [key, value] = fe[j];
 
       switch (modifier) {
-        case '$inc': {
-          const oldValue = objectGet(newObject, key);
-          if (typeof oldValue === 'number') {
-            objectSet(newObject, key, oldValue + value);
-          }
-          break;
-        }
-        case '$set': {
-          objectSet(newObject, key, value);
-          break;
-        }
+        case '$inc':
+          return modifiers.inc(object, key, value);
+        case '$set':
+          return modifiers.set(object, key, value);
         default:
           throw new Error(`Invalid modifier: ${modifier}`);
       }
     }
   }
 
-  return newObject;
+  return object;
 };
 
 module.exports = {

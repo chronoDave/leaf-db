@@ -28,6 +28,7 @@ describe('Validation', () => {
       assert.isTrue(isQueryMatch({ a: 1 }, { a: 1 }));
       assert.isTrue(isQueryMatch({ a: { b: 1 } }, { 'a.b': 1 }));
       assert.isTrue(isQueryMatch({ a: { b: 1 } }, { a: { b: 1 } }));
+      assert.isTrue(isQueryMatch({ a: { b: 1, c: 1 } }, { a: { c: 1, b: 1 } }));
       assert.isTrue(isQueryMatch({ a: { b: 1, c: 1 } }, { 'a.b': 1, 'a.c': 1 }));
       assert.isTrue(isQueryMatch({ a: { b: [{ c: 1 }] } }, { a: { b: [{ c: 1 }] } }));
       assert.isTrue(isQueryMatch({ a: { b: [{ c: 1 }, { d: 1 }] } }, { a: { b: [{ c: 1 }, { d: 1 }] } }));
@@ -52,6 +53,41 @@ describe('Validation', () => {
       it('$lte', () => {
         assert.isTrue(isQueryMatch({ a: 1 }, { $lte: { a: 1 } }));
         assert.isFalse(isQueryMatch({ a: 1 }, { $lte: { a: 0 } }));
+      });
+
+      it('$exists', () => {
+        assert.isTrue(isQueryMatch({ a: 1 }, { $exists: 'a' }));
+        assert.isFalse(isQueryMatch({ a: 1 }, { $exists: 'b' }));
+        assert.isTrue(isQueryMatch({ a: 1, b: 2 }, { $exists: ['a', 'b'] }));
+        assert.isTrue(isQueryMatch({ a: 1, b: { c: 1 } }, { $exists: ['a', 'b.c'] }));
+        assert.isTrue(isQueryMatch({ a: 1, b: [{ c: 1 }] }, { $exists: ['a', 'b.0.c'] }));
+      });
+
+      it('$has', () => {
+        assert.isTrue(isQueryMatch(
+          { a: [1, 2, 3] },
+          { $has: { a: 3 } }
+        ));
+        assert.isTrue(isQueryMatch(
+          { a: [{ b: 1 }, { c: 1 }] },
+          { $has: { a: { b: 1 } } }
+        ));
+        assert.isFalse(isQueryMatch(
+          { a: [{ b: 1, c: { d: 1 } }] },
+          { $has: { a: { b: 1 } } }
+        ));
+        assert.isFalse(isQueryMatch(
+          { a: [{ b: 1, c: { d: 1 } }] },
+          { $has: { a: { b: 1, 'c.d': 1 } } }
+        ));
+        assert.isTrue(isQueryMatch(
+          { a: [1, 2, 3], b: [4, 5, 6] },
+          { $has: { a: 1, b: 4 } }
+        ));
+        assert.isFalse(isQueryMatch(
+          { a: [1, 2, 3], b: [4, 5, 6] },
+          { $has: { a: 1, b: 1 } }
+        ));
       });
     });
   });
