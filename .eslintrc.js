@@ -13,6 +13,7 @@ module.exports = {
     'no-nested-ternary': 'off',
     'max-len': 'off',
     'no-underscore-dangle': 'off',
-    'no-await-in-loop': 'warn'
+    'no-await-in-loop': 'warn',
+    'object-curly-newline': 'off'
   }
 };

@@ -32,7 +32,7 @@ An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https
 
 Inserts doc(s) into the database. `_id` is automatically generated (~16 character string) if the field does not exist.
 
-Fields cannot start with `$` (modifier field) or contain `.` (used for dot-queries).
+Fields cannot start with `$` (modifier field) or contain `.` (used for dot-queries). Values cannot be `undefined`.
 
 `create()` will silently fail if doc(s) are invalid and insert those who are valid. If `strict` is enabled, `create()` will reject on the first invalid doc. Doc(s) are only inserted when the entire transaction is successful.
 

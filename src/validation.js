@@ -7,24 +7,47 @@ const {
   objectHas
 } = require('./utils');
 
-// Operators
-const operator = require('./operator');
-
-/** Test if object */
+// Basic
+const isNumber = any => typeof any === 'number';
 const isObject = any => any !== null && !Array.isArray(any) && typeof any === 'object';
-
-/** Test if empty object */
 const isEmptyObject = object => Object.keys(object).length === 0;
+
+// Operator
+const operator = {
+  gt: (a, b) => {
+    if (!isNumber(a) || !isNumber(b)) return false;
+    return a > b;
+  },
+  gte: (a, b) => {
+    if (!isNumber(a) || !isNumber(b)) return false;
+    return a >= b;
+  },
+  lt: (a, b) => {
+    if (!isNumber(a) || !isNumber(b)) return false;
+    return a < b;
+  },
+  lte: (a, b) => {
+    if (!isNumber(a) || !isNumber(b)) return false;
+    return a <= b;
+  },
+  exists: (object, keys) => keys
+    .filter(key => objectGet(object, key) !== undefined)
+    .length === keys.length,
+  has: (array, value) => array
+    .some(item => deepEqual(item, value)),
+  some: (a, b) => Object
+    .entries(b)
+    .some(([key, value]) => deepEqual(objectGet(a, key), value))
+};
 
 /**
  * Test if query matches
  * @param {object} query
  * @param {object} object
  */
-const isQueryMatch = (object, query) => {
-  for (let i = 0, qe = Object.entries(query); i < qe.length; i += 1) {
-    const [key, value] = qe[i];
-
+const isQueryMatch = (object, query) => Object
+  .entries(query)
+  .filter(([key, value]) => {
     // Operators
     if (key[0] === '$') {
       for (let j = 0, ofe = Object.entries(value); j < ofe.length; j += 1) {
@@ -33,44 +56,50 @@ const isQueryMatch = (object, query) => {
 
         switch (key) {
           case '$gt':
-            if (!operator.isGt(originalValue, testValue)) return false;
+            if (!operator.gt(originalValue, testValue)) return false;
             break;
           case '$gte':
-            if (!operator.isGte(originalValue, testValue)) return false;
+            if (!operator.gte(originalValue, testValue)) return false;
             break;
           case '$lt':
-            if (!operator.isLt(originalValue, testValue)) return false;
+            if (!operator.lt(originalValue, testValue)) return false;
             break;
           case '$lte':
-            if (!operator.isLte(originalValue, testValue)) return false;
+            if (!operator.lte(originalValue, testValue)) return false;
             break;
           case '$exists':
-            if (!operator.isKey(object, toArray(testValue))) return false;
+            if (!operator.exists(object, toArray(value))) return false;
             break;
           case '$has':
             if (!Array.isArray(originalValue)) {
-              throw new Error(`operator '$has' must point to array: ${JSON.stringify(objectValue)}`);
+              throw new Error(`operator '$has' must point to array: ${JSON.stringify(originalValue)}`);
             }
-            if (!operator.isInclude(originalValue, testValue)) return false;
+            if (!operator.has(originalValue, testValue)) return false;
             break;
+          case '$some':
+            return operator.some(object, value);
           default:
-            throw new Error(`Invalid operator: ${operator}`);
+            throw new Error(`Invalid operator: ${key}`);
         }
       }
     // Regular
     } else if (!deepEqual(objectGet(object, key), value)) {
       return false;
     }
-  }
+    // Does match
+    return true;
+  })
+  .length === Object.keys(query).length;
 
-  return true;
-};
+const isInvalidDoc = doc => objectHas(doc, ({ key, value }) => {
+  if (key[0] === '$') return true;
+  if (key.includes('.')) return true;
+  if (value === undefined) return true;
+  return false;
+});
 
 /** Validate if object has modifier fields */
 const hasModifiers = object => objectHas(object, ({ key }) => key[0] === '$');
-
-/** Validate if object has dot fields */
-const hasDot = object => objectHas(object, ({ key }) => key.includes('.'));
 
 /** Validate if object has keys and modifiers */
 const hasMixedModifiers = object => (
@@ -79,10 +108,11 @@ const hasMixedModifiers = object => (
 );
 
 module.exports = {
+  isNumber,
   isObject,
   isEmptyObject,
   isQueryMatch,
+  isInvalidDoc,
   hasModifiers,
-  hasDot,
   hasMixedModifiers
 };

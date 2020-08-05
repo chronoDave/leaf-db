@@ -14,7 +14,7 @@ const {
   isEmptyObject,
   isQueryMatch,
   hasModifiers,
-  hasDot,
+  isInvalidDoc,
   hasMixedModifiers
 } = require('./validation');
 
@@ -88,7 +88,7 @@ module.exports = class Datastore {
       for (let i = 0, a = toArray(newDocs); i < a.length; i += 1) {
         const newDoc = a[i];
 
-        if (isObject(newDoc) && !hasModifiers(newDoc) && !hasDot(newDoc)) {
+        if (isObject(newDoc) && !isInvalidDoc(newDoc)) {
           const payload = { _id: getUid(), ...newDoc };
 
           fse.appendFileSync(this.file, `${JSON.stringify(payload)}\n`);
@@ -152,7 +152,7 @@ module.exports = class Datastore {
       if (
         !isObject(update) ||
         hasMixedModifiers(update) ||
-        (!hasModifiers(update) && hasDot(update))
+        (!hasModifiers(update) && isInvalidDoc(update))
       ) {
         return Promise.reject(new Error(`Invalid update: ${JSON.stringify(update)}`));
       }
