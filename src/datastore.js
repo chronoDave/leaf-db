@@ -67,7 +67,10 @@ module.exports = class Datastore {
   persist(data = this.data) {
     fse.writeFileSync(
       this.file,
-      data.map(item => JSON.stringify(item)).join('\n'),
+      data
+        .filter(item => !item.$deleted)
+        .map(item => JSON.stringify(item))
+        .join('\n'),
       'utf-8'
     );
   }
@@ -89,7 +92,8 @@ module.exports = class Datastore {
         const newDoc = a[i];
 
         if (isObject(newDoc) && !isInvalidDoc(newDoc)) {
-          const payload = { _id: getUid(), ...newDoc };
+          const payload = newDoc;
+          if (!payload._id) payload._id = getUid();
 
           fse.appendFileSync(this.file, `${JSON.stringify(payload)}\n`);
           inserted.push(payload);
@@ -101,6 +105,8 @@ module.exports = class Datastore {
       for (let i = 0; i < inserted.length; i += 1) {
         this.data.push(inserted[i]);
       }
+
+      this.persist();
 
       return Promise.resolve(inserted);
     } catch (err) {
@@ -125,11 +131,11 @@ module.exports = class Datastore {
       }
 
       if (multi) {
-        const docs = this.data.filter(item => isQueryMatch(item, query));
+        const docs = this.data.filter(item => !item.$deleted && isQueryMatch(item, query));
         return Promise.resolve(docs);
       }
 
-      const doc = this.data.find(item => isQueryMatch(item, query));
+      const doc = this.data.find(item => !item.$deleted && isQueryMatch(item, query));
       return Promise.resolve(doc ? [doc] : []);
     } catch (err) {
       return Promise.reject(err);
@@ -161,14 +167,19 @@ module.exports = class Datastore {
       for (let i = 0; i < this.data.length; i += 1) {
         const doc = this.data[i];
 
-        if (isQueryMatch(doc, query)) {
+        if (this.strict && doc._id) {
+          return Promise.reject(new Error(`Cannot modify field '_id': ${doc._id}`));
+        }
+
+        if (!doc.$deleted && isQueryMatch(doc, query)) {
+          const { _id } = this.data[i];
           const newDoc = hasModifiers(update) ?
             objectModify(doc, update) :
             update;
-          this.data[i] = {
-            ...newDoc,
-            _id: doc._id
-          };
+
+          this.data[i] = newDoc;
+          this.data[i]._id = _id;
+
           nUpdated += 1;
         }
 
@@ -190,20 +201,19 @@ module.exports = class Datastore {
       }
 
       let nRemoved = 0;
-      const newDocs = this.data
-        .filter(item => {
-          const canRemove = multi || nRemoved < 1;
-          const matches = isEmptyObject(query) || isQueryMatch(item, query);
+      for (let i = 0; i < this.data.length; i += 1) {
+        const item = this.data[i];
 
-          if (canRemove && matches) {
-            nRemoved += 1;
-            return false;
-          }
-          return true;
-        });
+        const canRemove = multi || nRemoved < 1;
+        const matches = isEmptyObject(query) || isQueryMatch(item, query);
 
-      this.persist(newDocs);
-      this.data = newDocs;
+        if (canRemove && matches) {
+          nRemoved += 1;
+          item.$deleted = true;
+        }
+      }
+
+      this.persist();
 
       return Promise.resolve(nRemoved);
     } catch (err) {

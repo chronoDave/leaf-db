@@ -376,7 +376,7 @@ describe('Datastore', () => {
       const nRemoved = await this.db.delete();
 
       assert.strictEqual(nRemoved, 1);
-      assert.hasAnyKeys(this.db.data[0], data[1]);
+      assert.hasAnyKeys(this.db.data[0], '$deleted');
     });
 
     it('should remove the first matching element on query', async () => {
@@ -387,7 +387,7 @@ describe('Datastore', () => {
       const nRemoved = await this.db.delete({ a: 1 });
 
       assert.strictEqual(nRemoved, 1);
-      assert.hasAnyKeys(this.db.data[0], data[1]);
+      assert.hasAnyKeys(this.db.data[0], '$deleted');
     });
 
     it('should remove no item if query does not match', async () => {
@@ -409,7 +409,7 @@ describe('Datastore', () => {
       const nRemoved = await this.db.delete({}, { multi: true });
 
       assert.strictEqual(nRemoved, data.length);
-      assert.strictEqual(this.db.data.length, 0);
+      this.db.data.forEach(item => assert.hasAnyKeys(item, '$deleted'));
     });
 
     it('should remove matching elements if multi is true', async () => {
@@ -420,8 +420,7 @@ describe('Datastore', () => {
       const nRemoved = await this.db.delete({ a: 1 }, { multi: true });
 
       assert.strictEqual(nRemoved, 2);
-      assert.strictEqual(this.db.data.length, 1);
-      assert.hasAnyKeys(this.db.data[0], data[2]);
+      assert.hasAnyKeys(this.db.data[0], '$deleted');
     });
 
     it('should remove no items if query does not match and multi is true', async () => {
