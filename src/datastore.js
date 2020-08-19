@@ -38,6 +38,7 @@ module.exports = class Datastore {
 
     this.file = path.resolve(this.root, `${name}.txt`);
     this.data = [];
+    this.ids = [];
 
     if (autoload) this.load();
   }
@@ -91,12 +92,20 @@ module.exports = class Datastore {
       for (let i = 0, a = toArray(newDocs); i < a.length; i += 1) {
         const newDoc = a[i];
 
-        if (isObject(newDoc) && !isInvalidDoc(newDoc)) {
-          const payload = newDoc;
-          if (!payload._id) payload._id = getUid();
+        if (
+          isObject(newDoc) &&
+          !isInvalidDoc(newDoc)
+        ) {
+          if (!newDoc._id) newDoc._id = getUid();
 
-          fse.appendFileSync(this.file, `${JSON.stringify(payload)}\n`);
-          inserted.push(payload);
+          if (this.ids[newDoc._id]) {
+            return Promise.reject(new Error(`'_id' already exists: ${newDoc._id}`));
+          }
+
+          this.ids[newDoc._id] = true;
+
+          fse.appendFileSync(this.file, `${JSON.stringify(newDoc)}\n`);
+          inserted.push(newDoc);
         } else if (this.strict) {
           return Promise.reject(new Error(`Invalid newDoc: ${JSON.stringify(newDoc)}`));
         }

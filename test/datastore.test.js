@@ -77,7 +77,7 @@ describe('Datastore', () => {
       assert.strictEqual(newDocs.length, 0);
     });
 
-    it('should resolve if no data is provided', async () => {
+    it('should resolve if invalid data is provided', async () => {
       const newDocs = await this.db.create(null);
 
       assert.isArray(newDocs);
@@ -109,6 +109,17 @@ describe('Datastore', () => {
       assert.isArray(newDocs);
       assert.strictEqual(newDocs.length, payload.length);
       assert.hasAnyKeys(newDocs[0], payload[0]); // Order should be the same
+    });
+
+    it('should reject on duplicate _ids', async () => {
+      this.db.strict = true;
+
+      try {
+        await this.db.create([{ _id: 1 }, { _id: 1 }]);
+        assert.fail();
+      } catch (err) {
+        assert.isTrue(true);
+      }
     });
 
     it('should insert valid items and ignore invalid items', async () => {
