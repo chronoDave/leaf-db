@@ -2,7 +2,7 @@
 
 ---
 
-An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https://github.com/louischatriot/nedb).
+An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https://github.com/louischatriot/nedb). Simply writes to a file, append-only.
 
 ## API
 
@@ -136,10 +136,12 @@ Operators can be used to query beyond simple matches. The following operators ar
  - `$gte` - Is greater or equal than
  - `$lt` - Is less than
  - `$lte` - Is less or equal than
+ - `$ne` - Is not equal
 
 <b>Object operators</b>
 
  - `$exists` - Does key exist
+ - `$some` - Do any values match
 
 <b>Array operators</b>
 
@@ -166,11 +168,19 @@ await db.read({ $gt: { _id: 2 } }, { multi: true })
 // [4], all fields within '$lte' must match
 await db.read({ $lte: { _id: 4, 'properties.parent': 3 }})
 
+// $ne
+// [2, 3, 4, 5]
+await db.read({ $ne: { _id: 3 } }, { multi: true })
+
 // $exists
 // [1, 2, 3, 4]
 await db.read({ $exists: 'type' }, { multi: true })
 // [1, 2, 3]
 await db.read({ $exists: ['type', 'important'] }, { multi: true })
+
+// $some
+// [2, 5]
+await db.read({ $some: { _id: 5 important: true } }, { multi: true })
 
 // $has
 // [1, 2, 3, 4]
@@ -194,7 +204,7 @@ Find doc(s) matching query object. Update supports modifiers, but fields and mod
 
 If no modifiers are provided, `update()` will override the found doc(s) with `update`
 
-`_id` fields cannot be overwritten.
+`_id` fields cannot be overwritten. If `strict` is enabled, providing an `_id` to `update` will throw an error.
 
 <b>Example</b>
 

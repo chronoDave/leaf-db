@@ -1,7 +1,6 @@
 const crypto = require('crypto');
-
-// Modifiers
-const modifiers = require('./modifiers');
+const objectSet = require('lodash.set');
+const objectGet = require('lodash.get');
 
 const toArray = any => (Array.isArray(any) ? any : [any]);
 
@@ -32,6 +31,17 @@ const objectHas = (object, validator) => {
   }
 
   return false;
+};
+
+const modifiers = {
+  inc: (object, key, value) => {
+    if (
+      typeof value !== 'number' ||
+      !objectGet(object, key)
+    ) return object;
+    return objectSet(object, key, objectGet(object, key) + value);
+  },
+  set: (object, key, value) => objectSet(object, key, value)
 };
 
 const objectModify = (object, update) => {

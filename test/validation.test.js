@@ -210,6 +210,16 @@ describe('Validation', () => {
       });
     });
 
+    describe('$ne', () => {
+      assert.isTrue(isQueryMatch(objectSimple, { $ne: { a: 0 } }));
+      assert.isTrue(isQueryMatch(objectNested, { $ne: { 'b.c': undefined } }));
+      assert.isTrue(isQueryMatch(objectComplex, { $ne: { 'c.0.e.f': true } }));
+
+      assert.isFalse(isQueryMatch(objectSimple, { $ne: { a: 1 } }));
+      assert.isFalse(isQueryMatch(objectNested, { $ne: { 'b.c': 'string' } }));
+      assert.isFalse(isQueryMatch(objectComplex, { $ne: { 'c.0.e.f': null } }));
+    });
+
     describe('$exists', () => {
       it('should return true if field exists', () => {
         // Test all data types

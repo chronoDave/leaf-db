@@ -30,6 +30,7 @@ const operator = {
     if (!isNumber(a) || !isNumber(b)) return false;
     return a <= b;
   },
+  ne: (a, b) => a !== b,
   exists: (object, keys) => keys
     .filter(key => objectGet(object, key) !== undefined)
     .length === keys.length,
@@ -66,6 +67,9 @@ const isQueryMatch = (object, query) => Object
             break;
           case '$lte':
             if (!operator.lte(originalValue, testValue)) return false;
+            break;
+          case '$ne':
+            if (!operator.ne(originalValue, testValue)) return false;
             break;
           case '$exists':
             if (!operator.exists(object, toArray(value))) return false;
