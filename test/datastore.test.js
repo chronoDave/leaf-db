@@ -307,7 +307,7 @@ describe('Datastore', () => {
       }
     });
 
-    it('should replace the first entry with empty object if no query and newDoc are provided', async () => {
+    it('should add $deleted to first entry if no query and newDoc are provided', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
 
       await this.db.create(data);
@@ -315,10 +315,12 @@ describe('Datastore', () => {
       const nUpdated = await this.db.update();
 
       assert.strictEqual(nUpdated, 1);
-      assert.hasAllKeys(this.db.data[0], ['_id']);
+      assert.strictEqual(this.db.data.length, 4);
+      assert.hasAllKeys(this.db.data[0], ['_id', 'a', '$deleted']);
+      assert.hasAllKeys(this.db.data[3], ['_id']);
     });
 
-    it('should replace first entry matching query with empty object', async () => {
+    it('should add $deleted to first entry matching query with empty object', async () => {
       const data = [{ a: 1 }, { b: 2 }, { c: 3 }];
       const query = { b: 2 };
 
@@ -327,7 +329,9 @@ describe('Datastore', () => {
       const nUpdated = await this.db.update(query);
 
       assert.strictEqual(nUpdated, 1);
-      assert.hasAllKeys(this.db.data[1], ['_id']);
+      assert.strictEqual(this.db.data.length, 4);
+      assert.hasAllKeys(this.db.data[1], ['_id', 'b', '$deleted']);
+      assert.hasAllKeys(this.db.data[3], ['_id']);
     });
 
     it('should replace the first entry matching query with newDoc', async () => {

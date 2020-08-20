@@ -53,12 +53,12 @@ module.exports = class Datastore {
       fse
         .readFileSync(this.file, 'utf-8')
         .split('\n')
-        .forEach(line => {
-          if (line !== '') this.data.push(JSON.parse(line));
-        });
+        .forEach(line => (line !== '' && this.data.push(JSON.parse(line))));
     } else {
       fse.writeFileSync(this.file, '', 'utf-8');
     }
+
+    this.persist();
   }
 
   /**
@@ -66,12 +66,14 @@ module.exports = class Datastore {
    * @param {object[]} data - Array of objects (default `this.data`)
    * */
   persist(data = this.data) {
+    const payload = [];
+    for (let i = 0; i < data.length; i += 1) {
+      const doc = data[i];
+      if (!doc.$deleted) payload.push(JSON.stringify(doc));
+    }
     fse.writeFileSync(
       this.file,
-      data
-        .filter(item => !item.$deleted)
-        .map(item => JSON.stringify(item))
-        .join('\n'),
+      payload.join('\n'),
       'utf-8'
     );
   }
@@ -114,8 +116,6 @@ module.exports = class Datastore {
       for (let i = 0; i < inserted.length; i += 1) {
         this.data.push(inserted[i]);
       }
-
-      this.persist();
 
       return Promise.resolve(inserted);
     } catch (err) {
@@ -172,7 +172,7 @@ module.exports = class Datastore {
         return Promise.reject(new Error(`Invalid update: ${JSON.stringify(update)}`));
       }
 
-      let nUpdated = 0;
+      const inserted = [];
       for (let i = 0; i < this.data.length; i += 1) {
         const doc = this.data[i];
 
@@ -181,23 +181,24 @@ module.exports = class Datastore {
         }
 
         if (!doc.$deleted && isQueryMatch(doc, query)) {
-          const { _id } = this.data[i];
           const newDoc = hasModifiers(update) ?
             objectModify(doc, update) :
             update;
 
-          this.data[i] = newDoc;
-          this.data[i]._id = _id;
+          doc.$deleted = true;
+          newDoc._id = doc._id;
 
-          nUpdated += 1;
+          inserted.push(newDoc);
         }
 
-        if (!multi && nUpdated > 0) break;
+        if (!multi && inserted.length > 0) break;
       }
 
-      this.persist();
+      for (let i = 0; i < inserted.length; i += 1) {
+        this.data.push(inserted[i]);
+      }
 
-      return Promise.resolve(nUpdated);
+      return Promise.resolve(inserted.length);
     } catch (err) {
       return Promise.reject(err);
     }
@@ -221,8 +222,6 @@ module.exports = class Datastore {
           item.$deleted = true;
         }
       }
-
-      this.persist();
 
       return Promise.resolve(nRemoved);
     } catch (err) {

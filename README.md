@@ -7,6 +7,7 @@ An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https
 ## API
 
  - [Create / load database](#create-load-database)
+ - [Persistence](#persistence)
  - [CRUD](#CRUD)
    - [`create()`](#createdoc-docs)
    - [`read()`](#readquery-multi-docs)
@@ -23,6 +24,12 @@ An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https
  - `root` - Database rooth path (default `process.cwd()`)
  - `autoload` - Should database be loaded on creation (default `true`)
  - `strict` - Should database throw silent errors (default `false`)
+
+### Persistence
+
+`NeDB-R` uses an append-only format, meaning that all updates and deletes are pushed to the end of the database (and the updated / deleted files get tagged as deleted). The database gets cleaned every load.
+
+You can clean manually by calling `persist()`. Keep in mind that this function is sync, so calling this will block.
 
 ### CRUD
 
@@ -324,16 +331,16 @@ Stats from my machine:
 
 ```
 create()
-Total: 614413.380ms
-Avg: 6.144ms (100000 samples)
+Total: 539727.293ms
+Avg: 5.397ms (100000 samples)
 
 read()
-Total: 913577.564ms
-Avg: 9.136ms (100000 samples)
+Total: 1383893.598ms
+Avg: 13.839ms (100000 samples)
 
 update()
-Total: 125.113ms
+Total: 29.434ms
 
 delete()
-Total: 153.409ms
+Total: 20.281ms
 ```
