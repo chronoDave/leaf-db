@@ -14,6 +14,7 @@ module.exports = {
     'max-len': 'off',
     'no-underscore-dangle': 'off',
     'no-await-in-loop': 'warn',
-    'object-curly-newline': 'off'
+    'object-curly-newline': 'off',
+    'no-continue': 'warn'
   }
 };

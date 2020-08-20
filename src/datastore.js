@@ -33,14 +33,12 @@ module.exports = class Datastore {
     strict = false
   } = {}) {
     this.root = root;
-    this.name = name;
     this.strict = strict;
     this.file = null;
 
-    this.data = [];
-    this.ids = [];
+    this.data = {};
 
-    if (root && name) {
+    if (this.root && name) {
       this.file = path.resolve(this.root, `${name}.txt`);
     }
 
@@ -52,28 +50,32 @@ module.exports = class Datastore {
    * @returns {string[]} List of corrupt items
    * */
   load() {
-    if (this.root) fse.mkdirpSync(this.root);
-
     const corrupt = [];
 
-    if (this.file) {
-      if (fse.existsSync(this.file)) {
-        const lines = fse
-          .readFileSync(this.file, 'utf-8')
-          .split('\n');
+    if (!this.file) return corrupt;
 
-        for (let i = 0; i < lines.length; i += 1) {
-          const line = lines[i];
+    if (this.root) fse.mkdirpSync(this.root);
+    if (fse.existsSync(this.file)) {
+      const lines = fse.readFileSync(this.file, 'utf-8').split('\n');
+      for (let i = 0; i < lines.length; i += 1) {
+        const line = lines[i];
 
-          try {
-            if (line !== '') this.data.push(JSON.parse(line)); // Ignore empty lines
-          } catch (err) {
-            corrupt.push(line);
-          }
+        if (line === '') continue;
+
+        try {
+          const data = JSON.parse(line);
+
+          if (!data._id) throw new Error(`Missing field '_id': ${line}`);
+
+          this.data[data._id] = data;
+        } catch (err) {
+          if (this.strict) throw err;
+
+          corrupt.push(line);
         }
-      } else {
-        fse.writeFileSync(this.file, '', 'utf-8');
       }
+    } else {
+      fse.writeFileSync(this.file, '', 'utf-8');
     }
 
     return corrupt;
@@ -81,13 +83,18 @@ module.exports = class Datastore {
 
   /**
    * Persist database
-   * @param {object[]} data - Array of objects (default `this.data`)
+   * @param {object} data - Hash table (default `this.data`)
    * */
   persist(data = this.data) {
     const payload = [];
-    for (let i = 0; i < data.length; i += 1) {
-      const doc = data[i];
-      if (!doc.$deleted) payload.push(JSON.stringify(doc));
+    for (let i = 0, docs = Object.values(data); i < docs.length; i += 1) {
+      try {
+        const doc = docs[i];
+        if (!doc) throw new Error(`Invalid doc: ${doc}`);
+        if (!doc.$deleted) payload.push(JSON.stringify(doc));
+      } catch (err) {
+        if (this.strict) throw err;
+      }
     }
     fse.writeFileSync(
       this.file,
@@ -97,72 +104,69 @@ module.exports = class Datastore {
   }
 
   /**
-   * Inserts a new document
-   *  - If `strict` is enabled, will fail if any `newDocs` is invalid
-   *  - If `strict` is disabled, will only insert valid `newDocs`
+   * Insert new document(s)
    * @param {object|object[]} newDocs
+   * @param {object} options
+   * @param {boolean} options.writeToDisk - Should `create()` write to disk (default `false`)
+   * @returns {number} Docs inserted
    */
-  async create(newDocs) {
-    try {
-      if (!Array.isArray(newDocs) && !isObject(newDocs) && this.strict) {
-        return Promise.reject(new Error(`Invalid newDocs: ${JSON.stringify(newDocs)}`));
-      }
-
-      const inserted = [];
-      for (let i = 0, a = toArray(newDocs); i < a.length; i += 1) {
-        const newDoc = a[i];
-
-        if (
-          isObject(newDoc) &&
-          !isInvalidDoc(newDoc)
-        ) {
-          if (!newDoc._id) newDoc._id = getUid();
-
-          if (this.ids[newDoc._id]) {
-            return Promise.reject(new Error(`'_id' already exists: ${newDoc._id}`));
-          }
-
-          this.ids[newDoc._id] = true;
-
-          fse.appendFileSync(this.file, `${JSON.stringify(newDoc)}\n`);
-          inserted.push(newDoc);
-        } else if (this.strict) {
-          return Promise.reject(new Error(`Invalid newDoc: ${JSON.stringify(newDoc)}`));
-        }
-      }
-
-      for (let i = 0; i < inserted.length; i += 1) {
-        this.data.push(inserted[i]);
-      }
-
-      return Promise.resolve(inserted);
-    } catch (err) {
-      return Promise.reject(err);
+  async create(newDocs, { writeToDisk = false } = {}) {
+    if ((!Array.isArray(newDocs) && !isObject(newDocs)) && this.strict) {
+      return Promise.reject(new Error(`Invalid newDocs: ${JSON.stringify(newDocs)}`));
     }
+
+    let inserted = 0;
+    for (let i = 0, a = toArray(newDocs); i < a.length; i += 1) {
+      const newDoc = a[i];
+
+      if (!isObject(newDoc) || isInvalidDoc(newDoc)) {
+        if (this.strict) return Promise.reject(new Error(`Invalid newDoc: ${JSON.stringify(newDoc)}`));
+        continue;
+      }
+
+      if (!newDoc._id) newDoc._id = getUid();
+      // Not using else-if in case collision occurs
+      if (this.data[newDoc._id]) {
+        if (this.strict) return Promise.reject(new Error(`'_id' already exists: ${newDoc._id}, ${JSON.stringify(this.data[newDoc._id])}`));
+        continue;
+      }
+
+      this.data[newDoc._id] = newDoc;
+      if (writeToDisk) fse.appendFileSync(this.file, `${JSON.stringify(newDoc)}\n`);
+      inserted += 1;
+    }
+
+    return Promise.resolve(inserted);
   }
 
   /**
-   * Find all documents matching `query`
-   * @param {object} query - Query object (default `{}`)
+   * Find all document(s) matching `query`
+   * @param {string|object} query - _id or query object (default `{}`)
    * @param {object} options
    * @param {boolean} options.multi - Can find multiple documents (default `false`)
    */
   async read(query = {}, { multi = false } = {}) {
     try {
-      if (!isObject(query)) {
+      if (!isObject(query) && !typeof query === 'string') {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
       if (isEmptyObject(query)) {
-        return Promise.resolve(multi ? this.data : [this.data[0]]);
+        const data = Object.values(this.data);
+        return Promise.resolve(multi ? data : [data[0]]);
+      }
+
+      if (typeof query === 'string') {
+        const doc = this.data[query];
+        return Promise.resolve(doc ? [doc] : []);
       }
 
       if (multi) {
-        const docs = this.data.filter(item => !item.$deleted && isQueryMatch(item, query));
+        const docs = Object.values(this.data).filter(item => !item.$deleted && isQueryMatch(item, query));
         return Promise.resolve(docs);
       }
 
-      const doc = this.data.find(item => !item.$deleted && isQueryMatch(item, query));
+      const doc = Object.values(this.data).find(item => !item.$deleted && isQueryMatch(item, query));
       return Promise.resolve(doc ? [doc] : []);
     } catch (err) {
       return Promise.reject(err);
@@ -170,78 +174,105 @@ module.exports = class Datastore {
   }
 
   /**
-   * Update document matching `query`
-   * @param {object} query - Empty query updates all documents (default `{}`)
+   * Update document(s) matching `query`
+   * @param {string|object} query - _id or query object (default `{}`)
    * @param {object} update - New document (default `{}`) / Update query
    * @param {object} options
    * @param {boolean} options.multi - Can update multiple documents (default `false`)
    */
   async update(query = {}, update = {}, { multi = false } = {}) {
     try {
-      if (!isObject(query)) {
+      if (!isObject(query) && !typeof query === 'string') {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
       if (
         !isObject(update) ||
+        update._id ||
         hasMixedModifiers(update) ||
         (!hasModifiers(update) && isInvalidDoc(update))
       ) {
         return Promise.reject(new Error(`Invalid update: ${JSON.stringify(update)}`));
       }
 
-      const inserted = [];
-      for (let i = 0; i < this.data.length; i += 1) {
-        const doc = this.data[i];
+      const updated = [];
+      if (typeof query === 'string') {
+        const doc = this.data[query];
 
-        if (this.strict && doc._id) {
-          return Promise.reject(new Error(`Cannot modify field '_id': ${doc._id}`));
-        }
-
-        if (!doc.$deleted && isQueryMatch(doc, query)) {
+        if (doc) {
           const newDoc = hasModifiers(update) ?
             objectModify(doc, update) :
             update;
 
-          doc.$deleted = true;
           newDoc._id = doc._id;
+          this.data[query] = newDoc;
 
-          inserted.push(newDoc);
+          updated.push(newDoc);
         }
+      } else {
+        for (let i = 0, v = Object.values(this.data); i < v.length; i += 1) {
+          const doc = v[i];
 
-        if (!multi && inserted.length > 0) break;
+          if (doc.$deleted || !isQueryMatch(doc, query)) continue;
+
+          const newDoc = hasModifiers(update) ?
+            objectModify(doc, update) :
+            update;
+
+          newDoc._id = doc._id;
+          this.data[newDoc._id] = newDoc;
+
+          updated.push(newDoc);
+
+          if (!multi && updated.length > 0) break;
+        }
       }
 
-      for (let i = 0; i < inserted.length; i += 1) {
-        this.data.push(inserted[i]);
+      for (let i = 0; i < updated.length; i += 1) {
+        const doc = updated[i];
+        this.data[doc._id] = updated[i];
       }
 
-      return Promise.resolve(inserted.length);
+      return Promise.resolve(updated.length);
     } catch (err) {
       return Promise.reject(err);
     }
   }
 
+  /**
+   * Delete document(s) matching `query`
+   * @param {string|object} query - _id or query object (default `{}`)
+   * @param {object} options
+   * @param {boolean} options.multi - Can update multiple documents (default `false`)
+   */
   async delete(query = {}, { multi = false } = {}) {
     try {
-      if (!isObject(query)) {
+      if (!isObject(query) && !typeof query === 'string') {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
-      let nRemoved = 0;
-      for (let i = 0; i < this.data.length; i += 1) {
-        const item = this.data[i];
+      let removed = 0;
+      if (typeof query === 'string') {
+        const doc = this.data[query];
+        if (doc) {
+          doc.$deleted = true;
+          removed += 1;
+        }
+      } else {
+        for (let i = 0, v = Object.values(this.data); i < v.length; i += 1) {
+          const doc = v[i];
 
-        const canRemove = multi || nRemoved < 1;
-        const matches = isEmptyObject(query) || isQueryMatch(item, query);
+          const canRemove = multi || removed < 1;
+          const matches = isEmptyObject(query) || isQueryMatch(doc, query);
 
-        if (canRemove && matches) {
-          nRemoved += 1;
-          item.$deleted = true;
+          if (canRemove && matches) {
+            doc.$deleted = true;
+            removed += 1;
+          }
         }
       }
 
-      return Promise.resolve(nRemoved);
+      return Promise.resolve(removed);
     } catch (err) {
       return Promise.reject(err);
     }

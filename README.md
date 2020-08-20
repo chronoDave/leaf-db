@@ -2,7 +2,7 @@
 
 ---
 
-An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https://github.com/louischatriot/nedb). Simply writes to a file, append-only.
+An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https://github.com/louischatriot/nedb).
 
 ## API
 
@@ -10,7 +10,7 @@ An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https
    - [Persistence](#persistence)
    - [Corruption](#corruption)
  - [CRUD](#CRUD)
-   - [`create()`](#createdoc-docs)
+   - [`create()`](#createdoc-writetodisk-docs)
    - [`read()`](#readquery-multi-docs)
      - [Basic query](#basic-query)
      - [Dot notation](#dot-notation)
@@ -47,19 +47,20 @@ const db = new Datastore({ root: process.cwd(), name: 'example' })
 
 #### Persistence
 
-`NeDB-R` uses an append-only format, meaning that all updates and deletes are pushed to the end of the database (and the updated / deleted files get tagged as deleted). The database gets cleaned every load.
+By default, `NeDR-R` does not write directly to file. To make sure the data is persistence, call `persist()`. This will both clean the database of deleted / corrupted entries and write to disk. Keep in mind that this function is sync, so calling this will block.
 
-You can clean manually by calling `persist()`. Keep in mind that this function is sync, so calling this will block.
+If `strict` is enabled, `persist()` will throw an error if corrupted data is found.
 
 #### Corruption
 
-Calling `load()` will return an array of corrupt items (strings). When `persist()` is called, all corrupt items will be removed, so if data integrity is important make sure to re-insert (via `create()`) those items before calling `persist()`.
+Calling `load()` will return an array of corrupt items (strings). When `persist()` is called, all corrupt items will be removed from file, so if data integrity is important make sure to re-insert (via `create()` or `update()`) those items before calling `persist()`.
 
 ### CRUD
 
-#### `create(doc) => [doc(s)]`
+#### `create(doc, { writeToDisk }) => [doc(s)]`
 
  - `doc` - Object to insert
+ - `writeToDisk` - Should `create()` write to disk
 
 Inserts doc(s) into the database. `_id` is automatically generated (~16 character string) if the field does not exist.
 
@@ -78,7 +79,7 @@ const doc = {
 }
 
 try {
-  const data = await db.create(doc) // Data is always an array
+  const inserted = await db.create(doc) // 1
 } catch (err) {
   console.error(err)
 }
