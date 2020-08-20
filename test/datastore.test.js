@@ -19,12 +19,19 @@ describe('Datastore', () => {
   });
 
   describe('load()', () => {
+    it('should create the databsae in memory if root is not provided', () => {
+      fse.removeSync(this.file); // Remove file created in `beforeEach()`
+
+      this.db = new Datastore();
+
+      assert.isEmpty(this.db.data);
+      assert.isFalse(fse.existsSync(this.file));
+    });
+
     it('should create the database file if file does not exist', () => {
       this.db.load();
 
-      const exists = fse.existsSync(this.file);
-
-      assert.isTrue(exists);
+      assert.isTrue(fse.existsSync(this.file));
     });
 
     it('should parse the database file if file exists', () => {
@@ -33,18 +40,30 @@ describe('Datastore', () => {
 
       fse.writeFileSync(this.file, raw);
 
-      this.db.load();
+      const corrupt = this.db.load();
 
       assert.isArray(this.db.data);
       assert.deepStrictEqual(this.db.data[0], data);
+      assert.isEmpty(corrupt);
     });
 
     it('should parse the database file if it is empty', () => {
       fse.writeFileSync(this.file, '');
 
-      this.db.load();
+      const corrupt = this.db.load();
 
       assert.isArray(this.db.data);
+      assert.isEmpty(this.db.data);
+      assert.isEmpty(corrupt);
+    });
+
+    it('should not load invalid data', () => {
+      fse.writeFileSync(this.file, 'invalid data');
+
+      const corrupt = this.db.load();
+
+      assert.strictEqual(corrupt.length, 1);
+      assert.strictEqual(corrupt[0], 'invalid data');
       assert.isEmpty(this.db.data);
     });
   });

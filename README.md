@@ -7,7 +7,8 @@ An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https
 ## API
 
  - [Create / load database](#create-load-database)
- - [Persistence](#persistence)
+   - [Persistence](#persistence)
+   - [Corruption](#corruption)
  - [CRUD](#CRUD)
    - [`create()`](#createdoc-docs)
    - [`read()`](#readquery-multi-docs)
@@ -21,15 +22,38 @@ An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https
 ### Create / load database
 
  - `name` - Database file name (default `db`)
- - `root` - Database rooth path (default `process.cwd()`)
+ - `root` - Database rooth path (default `null`)
  - `autoload` - Should database be loaded on creation (default `true`)
  - `strict` - Should database throw silent errors (default `false`)
 
-### Persistence
+```JS
+// Memory-only database
+const db = new Datastore();
+
+// Persistent database with manual load (default name for file is `db`)
+const db = new Datastore({ root: process.cwd(), autoload: false });
+// Loading is not neccesary, but recommended
+// No loading means the data from file isn't read, which
+// can cause data loss when `persist()` is called (as it overwrites the file)
+db.load();
+
+// Persistent database with autoload
+const db = new Datastore({ root: process.cwd() });
+
+// Persistent database with custom file name
+const db = new Datastore({ root: process.cwd(), name: 'example' })
+// Db file is now called `example.txt`
+```
+
+#### Persistence
 
 `NeDB-R` uses an append-only format, meaning that all updates and deletes are pushed to the end of the database (and the updated / deleted files get tagged as deleted). The database gets cleaned every load.
 
 You can clean manually by calling `persist()`. Keep in mind that this function is sync, so calling this will block.
+
+#### Corruption
+
+Calling `load()` will return an array of corrupt items (strings). When `persist()` is called, all corrupt items will be removed, so if data integrity is important make sure to re-insert (via `create()`) those items before calling `persist()`.
 
 ### CRUD
 

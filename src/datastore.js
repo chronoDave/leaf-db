@@ -22,43 +22,61 @@ module.exports = class Datastore {
   /**
    * @param {object} options
    * @param {string} options.name - Database filename (default `db`)
-   * @param {string} options.root - Database root path (default `process.cwd()`)
+   * @param {string} options.root - Database root path (default `null`)
    * @param {boolean} options.autoload - Should database be loaded on creation (default `true`)
    * @param {boolean} options.strict - Should silent errors be thrown (default `false`)
    */
   constructor({
     name = 'db',
-    root = process.cwd(),
+    root = null,
     autoload = true,
     strict = false
   } = {}) {
     this.root = root;
     this.name = name;
     this.strict = strict;
+    this.file = null;
 
-    this.file = path.resolve(this.root, `${name}.txt`);
     this.data = [];
     this.ids = [];
+
+    if (root && name) {
+      this.file = path.resolve(this.root, `${name}.txt`);
+    }
 
     if (autoload) this.load();
   }
 
-  /** Initialize database */
+  /**
+   * Initialize database
+   * @returns {string[]} List of corrupt items
+   * */
   load() {
-    fse.mkdirpSync(this.root);
+    if (this.root) fse.mkdirpSync(this.root);
 
-    const exists = fse.existsSync(this.file);
+    const corrupt = [];
 
-    if (exists) {
-      fse
-        .readFileSync(this.file, 'utf-8')
-        .split('\n')
-        .forEach(line => (line !== '' && this.data.push(JSON.parse(line))));
-    } else {
-      fse.writeFileSync(this.file, '', 'utf-8');
+    if (this.file) {
+      if (fse.existsSync(this.file)) {
+        const lines = fse
+          .readFileSync(this.file, 'utf-8')
+          .split('\n');
+
+        for (let i = 0; i < lines.length; i += 1) {
+          const line = lines[i];
+
+          try {
+            if (line !== '') this.data.push(JSON.parse(line)); // Ignore empty lines
+          } catch (err) {
+            corrupt.push(line);
+          }
+        }
+      } else {
+        fse.writeFileSync(this.file, '', 'utf-8');
+      }
     }
 
-    this.persist();
+    return corrupt;
   }
 
   /**
