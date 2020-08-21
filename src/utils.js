@@ -29,7 +29,7 @@ const objectHas = (object, validator) => {
     const [key, value] = stack.pop();
 
     if (validator({ key, value })) return true;
-    if (typeof value === 'object') stack.push(...Object.entries(value));
+    if (value && typeof value === 'object') stack.push(...Object.entries(value));
   }
 
   return false;

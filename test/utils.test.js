@@ -38,6 +38,8 @@ describe('Utils', () => {
       assert.isFalse(objectHas([], ({ key }) => key === 'a'));
       assert.isFalse(objectHas(null, ({ key }) => key === 'a'));
       assert.isFalse(objectHas(undefined, ({ key }) => key === 'a'));
+      assert.isFalse(objectHas({ id: undefined }, ({ key }) => key === 'a'));
+      assert.isFalse(objectHas({ id: [null] }, ({ key }) => key === 'a'));
     });
   });
 
