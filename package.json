@@ -1,17 +1,16 @@
 {
-  "name": "nedbr",
-  "version": "1.0.0",
-  "description": "File-based embedded data store for node.js",
+  "name": "nem-db",
+  "version": "0.0.1",
+  "description": "File-based embedded data storage for node.js",
   "main": "index.js",
   "keywords": [
     "database",
     "datastore",
     "embedded",
-    "nedb",
     "javascript",
     "node"
   ],
-  "repository": "https://github.com/chronoDave/nodb.git",
+  "repository": "https://github.com/chronoDave/nem-db.git",
   "author": "Chronocide",
   "contributors": [
     {
@@ -23,7 +22,10 @@
   "license": "GPLv3",
   "scripts": {
     "test": "mocha 'test/**/*.test.js'",
-    "bench": "node test/benchmark.js"
+    "bench": "node test/benchmark.js",
+    "bump:patch": "yarn version --patch && git push -u origin master --tags && yarn publish",
+    "bump:minor": "yarn version --minor && git push -u origin master --tags && yarn publish",
+    "bump:major": "yarn version --major && git push -u origin master --tags && yarn publish"
   },
   "devDependencies": {
     "chai": "^4.2.0",

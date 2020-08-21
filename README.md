@@ -1,8 +1,8 @@
-# NeDB-R (Node Embedded DataBase - Redux)
+# Nem-DB (Node Embeddable Micro DataBase)
 
 ---
 
-An embedded Node database for JavaScript, based on [Louis Chatriot's NeDB](https://github.com/louischatriot/nedb).
+An tiny, embeddable Node database, based on [Louis Chatriot's NeDB](https://github.com/louischatriot/nedb).
 
 ## API
 
@@ -47,7 +47,7 @@ const db = new Datastore({ root: process.cwd(), name: 'example' })
 
 #### Persistence
 
-By default, `NeDR-R` does not write directly to file. To make sure the data is persistence, call `persist()`. This will both clean the database of deleted / corrupted entries and write to disk. Keep in mind that this function is sync, so calling this will block.
+By default, `Nem-DB` does not write directly to file. To make sure the data is persistence, call `persist()`. This will both clean the database of deleted / corrupted entries and write to disk. Keep in mind that this function is sync, so calling this will block.
 
 If `strict` is enabled, `persist()` will throw an error if corrupted data is found.
 
@@ -355,17 +355,14 @@ yarn bench
 Stats from my machine:
 
 ```
+Sample size: 100000
 create()
-Total: 539727.293ms
-Avg: 5.397ms (100000 samples)
-
+Total: 676.995ms
 read()
-Total: 1383893.598ms
-Avg: 13.839ms (100000 samples)
-
+Total: 101.891ms
 update()
-Total: 29.434ms
-
+Total: 91.286ms
 delete()
-Total: 20.281ms
+Total: 85.412ms
+Done in 1.25s.
 ```

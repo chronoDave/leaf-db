@@ -47,13 +47,11 @@ const bench = async (n = 1) => {
     console.log('\nStarting benchmark: read()\n');
 
     /**
-     * Benching random reads
+     * Only benching the time it takes to find and update `n` fields,
+     * otherwise this would take forever
      */
     const ts2 = performance.now();
-    for (let i = 0; i < n; i += 1) {
-      await db.read({ r: Math.random().toFixed(3) }, { multi: true });
-      if (i % 1000 === 0) console.log(`Read ${i} elements`);
-    }
+    await db.read({ r: Math.random().toFixed(3) }, { multi: true });
     const te2 = performance.now();
 
     console.log('\nStarting benchmark: update()\n');
@@ -83,9 +81,10 @@ const bench = async (n = 1) => {
     );
     const te4 = performance.now();
 
-    logBench('create()', ts1, te1, n);
-    logBench('read()', ts2, te2, n);
-    console.log(`update()\nTotal: ${(te3 - ts3).toFixed(3)}ms\n`);
+    console.log(`Sample size: ${n}`);
+    console.log(`create()\nTotal: ${(te1 - ts1).toFixed(3)}ms`);
+    console.log(`read()\nTotal: ${(te2 - ts2).toFixed(3)}ms`);
+    console.log(`update()\nTotal: ${(te3 - ts3).toFixed(3)}ms`);
     console.log(`delete()\nTotal: ${(te4 - ts4).toFixed(3)}ms`);
   } catch (err) {
     console.log(err);
