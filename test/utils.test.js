@@ -33,6 +33,12 @@ describe('Utils', () => {
       assert.isTrue(objectHas({ a: { b: [{ c: 1 }] } }, ({ key }) => key === 'c'));
       assert.isTrue(objectHas({ a: { b: [{ c: 1 }] } }, ({ value }) => value === 1));
     });
+
+    it('should only validate objects', () => {
+      assert.isFalse(objectHas([], ({ key }) => key === 'a'));
+      assert.isFalse(objectHas(null, ({ key }) => key === 'a'));
+      assert.isFalse(objectHas(undefined, ({ key }) => key === 'a'));
+    });
   });
 
   describe('objectModify()', () => {

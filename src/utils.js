@@ -21,6 +21,8 @@ const getUid = (length = 16) => crypto
  * @param {function} validator - `validator({ key, value }) => Boolean`
  */
 const objectHas = (object, validator) => {
+  if (!object || typeof object !== 'object') return false;
+
   const stack = Object.entries(object);
 
   while (stack.length > 0) {
