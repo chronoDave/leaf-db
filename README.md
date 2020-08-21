@@ -1,7 +1,7 @@
 # Nem-DB (Node Embeddable Micro DataBase)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![NPM](https://img.shields.io/npm/v/nem-db?label=npm)](https://www.npmjs.com/package/tic-bundle)
+[![NPM](https://img.shields.io/npm/v/nem-db?label=npm)](https://www.npmjs.com/package/nem-db)
 
 An tiny, embeddable Node database, based on [Louis Chatriot's NeDB](https://github.com/louischatriot/nedb).
 
