@@ -1,9 +1,9 @@
-# Nem-DB (Node Embeddable Micro DataBase)
+# Leaf-DB
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![NPM](https://img.shields.io/npm/v/nem-db?label=npm)](https://www.npmjs.com/package/nem-db)
+[![NPM](https://img.shields.io/npm/v/leaf-db?label=npm)](https://www.npmjs.com/package/nem-db)
 
-An tiny, embeddable Node database, based on [Louis Chatriot's NeDB](https://github.com/louischatriot/nedb).
+An small, embeddable Node database.
 
 ## API
 
@@ -48,7 +48,7 @@ const db = new Datastore({ root: process.cwd(), name: 'example' })
 
 #### Persistence
 
-By default, `Nem-DB` does not write directly to file. To make sure the data is persistence, call `persist()`. This will both clean the database of deleted / corrupted entries and write to disk. Keep in mind that this function is sync, so calling this will block.
+By default, `Leaf-DB` does not write directly to file. To make sure the data is persistence, call `persist()`. This will both clean the database of deleted / corrupted entries and write to disk. Keep in mind that this function is sync, so calling this will block.
 
 If `strict` is enabled, `persist()` will throw an error if corrupted data is found.
 

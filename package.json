@@ -1,7 +1,7 @@
 {
-  "name": "nem-db",
+  "name": "leaf-db",
   "version": "1.0.7",
-  "description": "File-based embedded data storage for node.js",
+  "description": "Small file-based database for node.js",
   "main": "index.js",
   "keywords": [
     "database",
@@ -10,7 +10,7 @@
     "javascript",
     "node"
   ],
-  "repository": "https://github.com/chronoDave/nem-db.git",
+  "repository": "https://github.com/chronoDave/leaf-db.git",
   "author": "Chronocide",
   "contributors": [
     {
@@ -19,7 +19,7 @@
       "url": "https://github.com/louischatriot/nedb"
     }
   ],
-  "license": "GPLv3",
+  "license": "GPL-3.0",
   "scripts": {
     "test": "mocha 'test/**/*.test.js'",
     "bench": "node test/benchmark.js",
