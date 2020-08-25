@@ -43,15 +43,17 @@ describe('Datastore', () => {
     afterEach(() => { fse.removeSync(this.file); });
 
     it('should parse valid persistent data', () => {
+      this.db.strict = true;
       const data = { _id: 1 };
 
-      fse.writeFileSync(this.file, JSON.stringify(data));
+      fse.writeFileSync(path.resolve(__dirname, 'library.txt'), JSON.stringify(data));
 
       const corrupt = this.db.load();
 
       assert.isObject(this.db.data);
-      assert.deepStrictEqual(this.db.data[data._id], data);
       assert.isEmpty(corrupt);
+
+      fse.removeSync(path.resolve(__dirname, 'library.txt'));
     });
 
     it('should parse empty file', () => {

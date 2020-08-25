@@ -119,8 +119,13 @@ module.exports = class Datastore {
     for (let i = 0, a = toArray(newDocs); i < a.length; i += 1) {
       const newDoc = a[i];
 
-      if (!isObject(newDoc) || isInvalidDoc(newDoc)) {
-        if (this.strict) return Promise.reject(new Error(`Invalid newDoc: ${JSON.stringify(newDoc)}`));
+      if (!isObject(newDoc)) {
+        if (this.strict) return Promise.reject(new Error(`newDoc is not an object (${typeof newDoc}): ${JSON.stringify(newDoc)}`));
+        continue;
+      }
+
+      if (isInvalidDoc(newDoc)) {
+        if (this.strict) return Promise.reject(new Error(`newDoc is not a valid document: ${JSON.stringify(newDoc)}`));
         continue;
       }
 

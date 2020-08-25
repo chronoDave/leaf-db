@@ -79,6 +79,35 @@ describe('Validation', () => {
       assert.isTrue(isInvalidDoc({ a: [{ $field: 2 }] }));
       assert.isTrue(isInvalidDoc({ a: [{ 'test.field': 2 }] }));
       assert.isTrue(isInvalidDoc({ _id: 1, a: { b: [{ c: [undefined] }] } }));
+
+      assert.isFalse(isInvalidDoc({}));
+      assert.isFalse(isInvalidDoc({ a: null }));
+      assert.isFalse(isInvalidDoc({ a: [null] }));
+      assert.isFalse(isInvalidDoc({ date: '2010.09.31' }));
+      assert.isFalse(isInvalidDoc({ date: {} }));
+      assert.isFalse(isInvalidDoc({ a: '反復回転時計' }));
+      assert.isFalse(isInvalidDoc({ a: 'a\\null\\undefined' }));
+      assert.isFalse(isInvalidDoc({
+        file: 'D:/debug/[bracket]/123/da-sh/under_score.mp3',
+        format: {
+          tagTypes: [],
+          lossless: false,
+          container: 'MPEG',
+          codec: 'MPEG 1 Layer 3',
+          sampleRate: 44100,
+          tool: 'LAME3.98r',
+          duration: 171.04979591836735
+        },
+        metadata: {
+          titlelocalized: null,
+          cdid: [null],
+          date: '2012-08-31T16:09:24',
+          copyright: 'Creative Commons Attribution: http://creativecommons.org/licenses/by/3.0/',
+          comment: [
+            'URL: http://freemusicarchive.org/music/Tours/Enthusiast/Tours_-_Enthusiast\r\nComments: http://freemusicarchive.org/\r\nCurator: \r\nCopyright: Creative Commons Attribution: http://creativecommons.org/licenses/by/3.0/'
+          ],
+        }
+      }));
     });
   });
 
