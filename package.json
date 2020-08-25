@@ -1,6 +1,6 @@
 {
   "name": "nem-db",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "File-based embedded data storage for node.js",
   "main": "index.js",
   "keywords": [
