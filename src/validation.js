@@ -96,9 +96,9 @@ const isQueryMatch = (object, query) => Object
   .length === Object.keys(query).length;
 
 const isInvalidDoc = doc => objectHas(doc, ({ key, value }) => {
-  if (key[0] === '$') return true;
-  if (key.includes('.')) return true;
-  if (value === undefined) return true;
+  if (key[0] === '$') return key;
+  if (key.includes('.')) return key;
+  if (value === undefined) return key;
   return false;
 });
 

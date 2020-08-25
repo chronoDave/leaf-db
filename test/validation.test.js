@@ -69,16 +69,16 @@ describe('Validation', () => {
 
   describe('isInvalidDoc', () => {
     it('should return true if doc is invalid', () => {
-      assert.isTrue(isInvalidDoc({ _id: undefined }));
-      assert.isTrue(isInvalidDoc({ $field: 2 }));
-      assert.isTrue(isInvalidDoc({ 'test.field': 2 }));
-      assert.isTrue(isInvalidDoc({ _id: { a: undefined } }));
-      assert.isTrue(isInvalidDoc({ a: { $field: 2 } }));
-      assert.isTrue(isInvalidDoc({ a: { 'test.field': 2 } }));
-      assert.isTrue(isInvalidDoc({ _id: [{ a: undefined }] }));
-      assert.isTrue(isInvalidDoc({ a: [{ $field: 2 }] }));
-      assert.isTrue(isInvalidDoc({ a: [{ 'test.field': 2 }] }));
-      assert.isTrue(isInvalidDoc({ _id: 1, a: { b: [{ c: [undefined] }] } }));
+      assert.isOk(isInvalidDoc({ _id: undefined }));
+      assert.isOk(isInvalidDoc({ $field: 2 }));
+      assert.isOk(isInvalidDoc({ 'test.field': 2 }));
+      assert.isOk(isInvalidDoc({ _id: { a: undefined } }));
+      assert.isOk(isInvalidDoc({ a: { $field: 2 } }));
+      assert.isOk(isInvalidDoc({ a: { 'test.field': 2 } }));
+      assert.isOk(isInvalidDoc({ _id: [{ a: undefined }] }));
+      assert.isOk(isInvalidDoc({ a: [{ $field: 2 }] }));
+      assert.isOk(isInvalidDoc({ a: [{ 'test.field': 2 }] }));
+      assert.isOk(isInvalidDoc({ _id: 1, a: { b: [{ c: [undefined] }] } }));
 
       assert.isFalse(isInvalidDoc({}));
       assert.isFalse(isInvalidDoc({ a: null }));
