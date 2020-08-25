@@ -124,9 +124,8 @@ module.exports = class Datastore {
         continue;
       }
 
-      const invalidDoc = isInvalidDoc(newDoc);
-      if (invalidDoc) {
-        if (this.strict) return Promise.reject(new Error(`newDoc is not a valid document: '${invalidDoc}', ${JSON.stringify(newDoc)}`));
+      if (isInvalidDoc(newDoc)) {
+        if (this.strict) return Promise.reject(new Error(`newDoc is not a valid document: ${JSON.stringify(newDoc)}`));
         continue;
       }
 
