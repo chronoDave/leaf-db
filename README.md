@@ -1,7 +1,7 @@
 # Leaf-DB
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![NPM](https://img.shields.io/npm/v/leaf-db?label=npm)](https://www.npmjs.com/package/nem-db)
+[![NPM](https://img.shields.io/npm/v/leaf-db?label=npm)](https://www.npmjs.com/package/leaf-db)
 
 An small, embeddable Node database.
 
