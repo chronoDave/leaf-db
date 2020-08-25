@@ -63,7 +63,7 @@ module.exports = class Datastore {
         if (line === '') continue;
 
         try {
-          const data = JSON.parse(line);
+          const data = JSON.parse(line.replace('\\', '\\\\'));
 
           if (!data._id) throw new Error(`Missing field '_id': ${line}`);
 
