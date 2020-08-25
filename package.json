@@ -1,6 +1,6 @@
 {
   "name": "leaf-db",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Small file-based database for node.js",
   "main": "index.js",
   "keywords": [
