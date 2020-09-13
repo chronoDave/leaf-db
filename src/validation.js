@@ -30,15 +30,12 @@ const operator = {
     if (!isNumber(a) || !isNumber(b)) return false;
     return a <= b;
   },
-  ne: (a, b) => a !== b,
+  not: (a, b) => a !== b,
   exists: (object, keys) => keys
     .filter(key => objectGet(object, key) !== undefined)
     .length === keys.length,
   has: (array, value) => array
-    .some(item => deepEqual(item, value)),
-  some: (a, b) => Object
-    .entries(b)
-    .some(([key, value]) => deepEqual(objectGet(a, key), value))
+    .some(item => deepEqual(item, value))
 };
 
 /**
@@ -68,20 +65,16 @@ const isQueryMatch = (object, query) => Object
           case '$lte':
             if (!operator.lte(originalValue, testValue)) return false;
             break;
-          case '$ne':
-            if (!operator.ne(originalValue, testValue)) return false;
+          case '$not':
+            if (!operator.not(originalValue, testValue)) return false;
             break;
           case '$exists':
             if (!operator.exists(object, toArray(value))) return false;
             break;
           case '$has':
-            if (!Array.isArray(originalValue)) {
-              throw new Error(`operator '$has' must point to array: ${JSON.stringify(originalValue)}`);
-            }
+            if (!Array.isArray(originalValue)) return false;
             if (!operator.has(originalValue, testValue)) return false;
             break;
-          case '$some':
-            return operator.some(object, value);
           default:
             throw new Error(`Invalid operator: ${key}`);
         }

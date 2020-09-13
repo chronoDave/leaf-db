@@ -36,8 +36,9 @@ const objectHas = (object, validator) => {
 };
 
 const modifiers = {
-  inc: (object, key, value) => {
+  add: (object, key, value) => {
     if (
+      typeof objectGet(object, key) !== 'number' ||
       typeof value !== 'number' ||
       !objectGet(object, key)
     ) return object;
@@ -54,8 +55,8 @@ const objectModify = (object, update) => {
       const [key, value] = fe[j];
 
       switch (modifier) {
-        case '$inc':
-          return modifiers.inc(object, key, value);
+        case '$add':
+          return modifiers.add(object, key, value);
         case '$set':
           return modifiers.set(object, key, value);
         default:
