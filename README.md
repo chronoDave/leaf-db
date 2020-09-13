@@ -444,7 +444,7 @@ Done in 240.74s.
 
 ## License
 
-MIT, see [LICENSE](./LICENSE) file.
+GNU General Public License v3, see [LICENSE](./LICENSE).
 
 ## Donating
 
