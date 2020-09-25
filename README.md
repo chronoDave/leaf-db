@@ -382,7 +382,7 @@ ok 3 should be falsy
 
 ...
 
-# [isQueryMatch] oeprator $has should return false if object does not contain value
+# [isQueryMatch] operator $has should return false if object does not contain value
 ok 305 should be falsy
 ok 306 should be falsy
 ok 307 should be falsy

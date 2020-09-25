@@ -195,7 +195,7 @@ test('[isQueryMatch] operator $has should return true if object contains value',
   t.end();
 });
 
-test('[isQueryMatch] oeprator $has should return false if object does not contain value', t => {
+test('[isQueryMatch] operator $has should return false if object does not contain value', t => {
   t.notOk(isQueryMatch(mockObjectComplex, { $has: { b: 4 } }));
   t.notOk(isQueryMatch(mockObjectComplex, { $has: { b: [] } }));
   t.notOk(isQueryMatch(mockObjectComplex, { $has: { c: { d: 'string' } } }));
