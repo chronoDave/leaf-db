@@ -3,7 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![NPM](https://img.shields.io/npm/v/leaf-db?label=npm)](https://www.npmjs.com/package/leaf-db)
 [![Build Status](https://travis-ci.com/chronoDave/leaf-db.svg?branch=master)](https://travis-ci.com/chronoDave/leaf-db)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/leaf-db.svg)](https://bundlephobia.com/result?p=leaf-db@latest)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/leaf-db@latest.svg)](https://bundlephobia.com/result?p=leaf-db@latest)
 
 An small, embeddable database for [node.js](https://nodejs.org/en/).
 
