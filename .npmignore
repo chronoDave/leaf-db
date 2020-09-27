@@ -1,4 +1,6 @@
 test
 .eslintrc.js
 .editorconfig
+.travis.yml
+.discord.sh
 yarn.lock
