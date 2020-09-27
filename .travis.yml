@@ -8,11 +8,11 @@ script:
   - yarn test
 
 after_success:
-  - wget https://raw.githubusercontent.com/chronoDave/leaf-db/master/.discord.sh
-  - chmod +x .discord.sh
-  - ./.discord.sh success $WEBHOOK_URL
+  - wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/shell/discord.sh
+  - chmod +x discord.sh
+  - ./discord.sh success $WEBHOOK_URL
 
 after_failure:
-  - wget https://raw.githubusercontent.com/chronoDave/leaf-db/master/.discord.sh
-  - chmod +x .discord.sh
-  - ./.discord.sh failure $WEBHOOK_URL
+  - wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/shell/discord.sh
+  - chmod +x discord.sh
+  - ./discord.sh failure $WEBHOOK_URL
