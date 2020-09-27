@@ -1,5 +1,5 @@
 const test = require('tape');
-const fse = require('fs-extra');
+const fs = require('fs');
 
 const {
   setup,
@@ -21,7 +21,7 @@ test('[load] should parse valid persistent data', t => {
     t.deepEqual(Object.values(db.data)[i], data[i]);
   }
 
-  fse.removeSync(file);
+  fs.unlinkSync(file);
 
   t.end();
 });
@@ -37,7 +37,7 @@ test('[load] should parse empty file', t => {
   t.equal(corrupted.length, 0);
   t.equal(Object.keys(db.data).length, 0);
 
-  fse.removeSync(file);
+  fs.unlinkSync(file);
 
   t.end();
 });
@@ -54,7 +54,7 @@ test('[load] should ignore corrupted data', t => {
   t.equal(corrupted.length, invalidPersistent.length);
   t.equal(Object.keys(db.data).length, 1);
 
-  fse.removeSync(file);
+  fs.unlinkSync(file);
 
   t.end();
 });
@@ -72,7 +72,7 @@ test('[load] should throw on corrupt data if strict is enabled', t => {
     t.pass();
   }
 
-  fse.removeSync(file);
+  fs.unlinkSync(file);
 
   t.end();
 });

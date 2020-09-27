@@ -1,5 +1,5 @@
-const fse = require('fs-extra');
 const path = require('path');
+const fs = require('fs');
 
 // Utils
 const {
@@ -34,7 +34,7 @@ module.exports = class LeafDB {
     this.root = root;
     this.strict = strict;
 
-    if (this.root) fse.mkdirpSync(this.root);
+    if (this.root) fs.mkdirSync(this.root, { recursive: true });
 
     this.data = {};
     this.file = (this.root && name) ?
@@ -54,8 +54,8 @@ module.exports = class LeafDB {
     }
 
     const corrupted = [];
-    if (fse.existsSync(this.file)) {
-      const data = fse.readFileSync(this.file, 'utf-8')
+    if (fs.existsSync(this.file)) {
+      const data = fs.readFileSync(this.file, 'utf-8')
         .split('\n');
 
       for (let i = 0; i < data.length; i += 1) {
@@ -76,7 +76,7 @@ module.exports = class LeafDB {
         }
       }
     } else {
-      fse.writeFileSync(this.file, '');
+      fs.writeFileSync(this.file, '');
     }
 
     return corrupted;
@@ -103,7 +103,7 @@ module.exports = class LeafDB {
       }
     }
 
-    fse.writeFileSync(this.file, payload.join('\n'));
+    fs.writeFileSync(this.file, payload.join('\n'));
   }
 
   /**

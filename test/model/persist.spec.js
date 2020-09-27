@@ -1,5 +1,5 @@
 const test = require('tape');
-const fse = require('fs-extra');
+const fs = require('fs');
 
 const { setup } = require('../_utils');
 
@@ -26,11 +26,11 @@ test('[persist] should persist data', t => {
   };
   db.persist();
 
-  const data = fse.readFileSync(file, 'utf-8');
+  const data = fs.readFileSync(file, 'utf-8');
 
   t.strictEqual(Object.keys(db.data).length, data.split('\n').length);
 
-  fse.removeSync(file);
+  fs.unlinkSync(file);
 
   t.end();
 });
@@ -51,7 +51,7 @@ test('[persist] should throw if data contains corrupt data', t => {
     t.pass();
   }
 
-  fse.removeSync(file);
+  fs.unlinkSync(file);
 
   t.end();
 });

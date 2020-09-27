@@ -2,4 +2,3 @@ test
 .eslintrc.js
 .editorconfig
 yarn.lock
-_utils.js

@@ -1,5 +1,5 @@
 const path = require('path');
-const fse = require('fs-extra');
+const fs = require('fs');
 
 const LeafDB = require('../src/model');
 
@@ -146,7 +146,7 @@ const setup = ({
   let file = null;
 
   if (root) file = path.resolve(root, `${name}.txt`);
-  if (data && file) fse.writeFileSync(file, data.map(JSON.stringify).join('\n'));
+  if (data && file) fs.writeFileSync(file, data.map(JSON.stringify).join('\n'));
   if (memory) db.data = { ...memory };
 
   return ({ name, file, db });

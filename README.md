@@ -442,9 +442,13 @@ Avg: 0.001ms
 Done in 240.74s.
 ```
 
+## Attribution
+
+This project is heavily inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb).
+
 ## License
 
-GNU General Public License v3, see [LICENSE](./LICENSE).
+[GNU General Public License v3](./LICENSE).
 
 ## Donating
 

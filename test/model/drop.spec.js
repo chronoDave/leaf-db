@@ -1,5 +1,5 @@
 const test = require('tape');
-const fse = require('fs-extra');
+const fs = require('fs');
 
 const { setup, mockMemory } = require('../_utils');
 
@@ -20,7 +20,7 @@ test('[drop] should drop data and persist if not in memory mode', async t => {
 
   t.equal(Object.keys(db.data).length, 0);
 
-  const fileData = fse.readFileSync(file, 'utf-8').split('\n');
+  const fileData = fs.readFileSync(file, 'utf-8').split('\n');
 
   t.equal(fileData.length, 1);
   t.equal(fileData[0], '');
