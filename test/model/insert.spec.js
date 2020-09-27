@@ -1,4 +1,5 @@
 const test = require('tape');
+const fs = require('fs');
 
 const { setup, invalidData } = require('../_utils');
 
@@ -38,6 +39,28 @@ test('[insert] should insert multiple docs', async t => {
   } catch (err) {
     t.fail(err);
   }
+
+  t.end();
+});
+
+test('[insert] should persist if option.persist is true', async t => {
+  const payload = [
+    { _id: 1 },
+    { data: 'test' },
+    { name: 'debug', valid: true }
+  ];
+
+  const { db, file } = setup({ root: __dirname });
+
+  try {
+    await db.insert(payload, { persist: true });
+  } catch (err) {
+    t.fail(err);
+  }
+
+  t.ok(fs.existsSync(file));
+
+  fs.unlinkSync(file);
 
   t.end();
 });

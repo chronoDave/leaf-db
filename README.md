@@ -88,9 +88,10 @@ The database can be dropped with `drop()`. This will clear the database file on 
 
 ## Inserting docs
 
-`db.insert(newDocs) => Promise`
+`db.insert(newDocs, { persist }) => Promise`
 
  - `newDocs` - Single doc or array of docs to insert
+ - `options.persist` - Should insert call persist (default `false`)
 
 Inserts doc(s) into the database. `_id` is automatically generated (~16 character string) if the field does not exist.
 

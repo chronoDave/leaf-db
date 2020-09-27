@@ -109,9 +109,11 @@ module.exports = class LeafDB {
   /**
    * Insert new document(s)
    * @param {object|object[]} newDocs
+   * @param {object} options
+   * @param {boolean} options.persist - Should persist be called (default `false`)
    * @returns {object[]} Docs inserted
    */
-  insert(newDocs) {
+  insert(newDocs, { persist = false } = {}) {
     if (!Array.isArray(newDocs) && !isObject(newDocs)) {
       return Promise.reject(new Error(`Invalid newDocs: ${JSON.stringify(newDocs)}`));
     }
@@ -141,6 +143,8 @@ module.exports = class LeafDB {
       const newDoc = inserted[i];
       this.data[newDoc._id] = newDoc;
     }
+
+    if (persist) this.persist();
 
     return Promise.resolve();
   }
