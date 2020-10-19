@@ -2,11 +2,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Utils
-const {
-  getUid,
-  toArray,
-  objectModify
-} = require('./utils');
+const { getUid, toArray } = require('./utils');
 
 // Validation
 const {
@@ -17,6 +13,9 @@ const {
   isInvalidDoc,
   hasMixedModifiers
 } = require('./validation');
+
+// Modifiers
+const { objectModify, objectProject } = require('./modifiers');
 
 module.exports = class LeafDB {
   /**
@@ -152,8 +151,9 @@ module.exports = class LeafDB {
   /**
    * Find single doc matching `_id`
    * @param {string|string[]} _id
+   * @param {string[]} projection - Projection array (default `null`)
    * */
-  findById(_id) {
+  findById(_id, projection = null) {
     try {
       const payload = [];
       for (let i = 0, keys = toArray(_id); i < keys.length; i += 1) {
@@ -163,7 +163,7 @@ module.exports = class LeafDB {
           return Promise.reject(new Error(`Invalid _id: ${key}`));
         }
 
-        const doc = this.data[key];
+        const doc = objectProject(this.data[key], projection);
 
         if (doc && !doc.$deleted) payload.push(doc);
       }
@@ -177,22 +177,30 @@ module.exports = class LeafDB {
   /**
    * Find all documents matching `query`
    * @param {string|object} query - Query object (default `{}`)
+   * @param {string[]} projection - Projection array (default `null`)
    */
-  find(query = {}) {
+  find(query = {}, projection = null) {
     try {
       if (!query || !isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
       if (isEmptyObject(query)) {
-        return Promise.resolve(Object.values(this.data));
+        return Promise.resolve(Object
+          .values(this.data)
+          .map(doc => objectProject(doc, projection)));
       }
 
-      const docs = Object
-        .values(this.data)
-        .filter(item => !item.$deleted && isQueryMatch(item, query));
+      const payload = [];
+      for (let i = 0, data = Object.values(this.data); i < data.length; i += 1) {
+        const doc = data[i];
 
-      return Promise.resolve(docs);
+        if (!doc.$deleted && isQueryMatch(doc, query)) {
+          payload.push(objectProject(doc, projection));
+        }
+      }
+
+      return Promise.resolve(payload);
     } catch (err) {
       return Promise.reject(err);
     }
@@ -202,8 +210,9 @@ module.exports = class LeafDB {
    * Update single doc matching `_id`
    * @param {string} _id
    * @param {object} update - New document (default `{}`) / Update query
+   * @param {string[]} projection - Projection array (default `null`)
   */
-  updateById(_id, update = {}) {
+  updateById(_id, update = {}, projection = null) {
     try {
       if (
         !isObject(update) ||
@@ -230,7 +239,7 @@ module.exports = class LeafDB {
             update;
 
           this.data[key] = { ...newDoc, _id: key };
-          payload.push({ ...newDoc, _id: key });
+          payload.push(objectProject({ ...newDoc, _id: key }, projection));
         }
       }
 
@@ -244,8 +253,9 @@ module.exports = class LeafDB {
    * Update documents matching `query`
    * @param {string|object} query - Query object (default `{}`)
    * @param {object} update - New document (default `{}`) / Update query
+   * @param {string[]} projection - Projection array (default `null`)
    */
-  update(query = {}, update = {}) {
+  update(query = {}, update = {}, projection = null) {
     try {
       if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
@@ -260,7 +270,7 @@ module.exports = class LeafDB {
         return Promise.reject(new Error(`Invalid update: ${JSON.stringify(update)}`));
       }
 
-      const updated = [];
+      const payload = [];
       for (let i = 0, k = Object.keys(this.data); i < k.length; i += 1) {
         const _id = k[i];
         const doc = this.data[_id];
@@ -271,11 +281,11 @@ module.exports = class LeafDB {
             update;
 
           this.data[_id] = { ...newDoc, _id };
-          updated.push({ ...newDoc, _id });
+          payload.push(objectProject({ ...newDoc, _id }, projection));
         }
       }
 
-      return Promise.resolve(updated);
+      return Promise.resolve(payload);
     } catch (err) {
       return Promise.reject(err);
     }

@@ -41,6 +41,7 @@ db.insert({ species: 'cat', name: 'whiskers' })
    - [Basic query](#basic-query)
    - [Dot notation](#dot-notation)
    - [Operators](#operators)
+   - [Projection](#projection)
    - [Indexing](#indexing)
  - [Updating docs](#updating-docs)
    - [Modifiers](#modifiers)
@@ -122,13 +123,15 @@ try {
 
 ### Basic query
 
-`await db.find(query) => Promise([docs])`
+`await db.find(query, projection) => Promise([docs])`
 
  - `query` - Query object (default `{}`)
+ - `projection` - Projection (default `null`)
 
- `await findById([_id]) => Promise([docs])`
+`await findById([_id]m projection) => Promise([docs])`
 
  - `_id` - Doc `_id`
+ - `projection` - Projection (default `null`)
 
 Find doc(s) matching query. Operators and dot notation are supported and can be mixed together.
 
@@ -248,6 +251,27 @@ await db.find({ $has: { type: 'weak' } })
 await db.find({ $has: { properties: { 'variants.0': 'weak' } } })
 ```
 
+### Projection
+
+`Leaf-DB` supports projection. When using projection, only the specified fields will be returned. Empty objects can be returned if `projection` is `[]`, or when none of the fields provided exist on the found objects.
+
+<b>Example</b>
+
+```JS
+// Data
+// { _id: 1, type: 'normal', important: false, variants: ['weak', 'strong'] }
+// { _id: 2, type: 'normal', important: true, variants: ['weak', 'strong'] }
+// { _id: 3, type: 'strong', important: false, variants: ['weak', 'strong'] }
+// { _id: 4, type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
+// { _id: 5, properties: [{ variants: ['weak', 'normal' ] }, { type: 'strong' }] }
+
+// [{ _id: 1 }, { _id: 2 }]
+await db.find({ type: 'normal' }, ['_id'])
+
+// [{ type: 'normal' }, { type: 'normal' }, { type: 'strong' }, { type: 'weak' }, {}]
+await db.find({}, ['type'])
+```
+
 ### Indexing
 
 `Leaf-DB` uses a hash table under the hood to store docs. All docs are indexed by `_id`, meaning using any `byId` query is considerably faster than its regular counterpart.
@@ -260,11 +284,13 @@ The `byId` queries accept a single `_id` string, or an array of `_id` strings.
 
  - `query` - Query object (default `{}`)
  - `update` - Update object (default `{}`)
+ - `projection` - Projection (default `null`)
 
 `await updateById([_id], update) => Promise([docs])`
 
  - `_id` - Doc `_id`
  - `update` - Update object (default `{}`)
+ - `projection` - Projection (default `null`)
 
 
 Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`.

@@ -1,6 +1,4 @@
 const crypto = require('crypto');
-const objectSet = require('lodash.set');
-const objectGet = require('lodash.get');
 
 const toArray = any => (Array.isArray(any) ? any : [any]);
 
@@ -35,42 +33,8 @@ const objectHas = (object, validator) => {
   return false;
 };
 
-const modifiers = {
-  add: (object, key, value) => {
-    if (
-      typeof objectGet(object, key) !== 'number' ||
-      typeof value !== 'number' ||
-      !objectGet(object, key)
-    ) return object;
-    return objectSet(object, key, objectGet(object, key) + value);
-  },
-  set: (object, key, value) => objectSet(object, key, value)
-};
-
-const objectModify = (object, update) => {
-  for (let i = 0, ue = Object.entries(update); i < ue.length; i += 1) {
-    const [modifier, fields] = ue[i];
-
-    for (let j = 0, fe = Object.entries(fields); j < fe.length; j += 1) {
-      const [key, value] = fe[j];
-
-      switch (modifier) {
-        case '$add':
-          return modifiers.add(object, key, value);
-        case '$set':
-          return modifiers.set(object, key, value);
-        default:
-          throw new Error(`Invalid modifier: ${modifier}`);
-      }
-    }
-  }
-
-  return object;
-};
-
 module.exports = {
   getUid,
   toArray,
-  objectHas,
-  objectModify
+  objectHas
 };

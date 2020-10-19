@@ -13,7 +13,7 @@ test('[deleteById] should throw on emtpy query', async t => {
     await db.deleteById();
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   t.end();
@@ -27,7 +27,7 @@ test('[deleteById] should throw on invalid query', async t => {
       await db.deleteById(invalidQuery[i]);
       t.fail(`expected to throw: ${i}, ${invalidQuery[i]}`);
     } catch (err) {
-      t.pass();
+      t.pass(`throws: ${i}`);
     }
   }
 
@@ -55,7 +55,7 @@ test('[deleteById] should throw if array contains invalid values', async t => {
     await db.deleteById(invalidQuery);
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   t.end();

@@ -10,7 +10,7 @@ test('[persist] should throw error if called memory mode', t => {
     db.persist();
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   t.end();
@@ -48,7 +48,7 @@ test('[persist] should throw if data contains corrupt data', t => {
     db.persist();
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   fs.unlinkSync(file);

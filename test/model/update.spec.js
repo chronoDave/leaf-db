@@ -14,7 +14,7 @@ test('[update] should throw on invalid query', async t => {
       await db.update(invalidQueryLoose[i]);
       t.fail(`expected to throw: ${i}, ${invalidQueryLoose[i]}`);
     } catch (err) {
-      t.pass();
+      t.pass(`throws: ${i}`);
     }
   }
 
@@ -116,6 +116,22 @@ test('[update] should update doc if match is found', async t => {
     t.ok(Array.isArray(docs));
     t.equal(docs.length, 1);
     t.deepEqual(docs[0], { ...mockMemory.key_1, testValue: 1 });
+  } catch (err) {
+    t.fail(err);
+  }
+
+  t.end();
+});
+
+test('[update] should accept projection', async t => {
+  const { db } = setup({ memory: mockMemory });
+
+  try {
+    const docs = await db.update({ data: 'test' }, { test: 'test' }, []);
+
+    for (let i = 0; i < docs.length; i += 1) {
+      t.deepEqual(docs[i], {});
+    }
   } catch (err) {
     t.fail(err);
   }

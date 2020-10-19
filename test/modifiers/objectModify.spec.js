@@ -3,7 +3,7 @@ const test = require('tape');
 // Utils
 const { invalidNumberOperator } = require('../_utils');
 
-const { objectModify } = require('../../src/utils');
+const { objectModify } = require('../../src/modifiers');
 
 test('[objectModify] operator $add should increase field with value', t => {
   t.strictEqual(objectModify(
@@ -40,7 +40,7 @@ test('[objectModify] operator $add should return unmodifier value if value is no
   for (let i = 0; i < invalidNumberOperator; i += 1) {
     try {
       objectModify({ a: 1 }, { $add: { a: invalidNumberOperator[i] } });
-      t.pass();
+      t.pass(`throws: ${i}`);
     } catch (err) {
       t.fail(err);
     }

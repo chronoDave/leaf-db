@@ -14,7 +14,7 @@ test('[delete] should throw error on invalid query', async t => {
       await db.delete(invalidQueryLoose[i]);
       t.fail(`expected to throw: ${i}, ${invalidQueryLoose[i]}`);
     } catch (err) {
-      t.pass();
+      t.pass(`throws: ${i}`);
     }
   }
 

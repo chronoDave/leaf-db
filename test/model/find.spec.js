@@ -14,7 +14,7 @@ test('[find] should throw on invalid query', async t => {
       await db.find(invalidQueryLoose[i]);
       t.fail(`expected to throw: ${i}, ${invalidQueryLoose[i]}`);
     } catch (err) {
-      t.pass();
+      t.pass(`throws: ${i}`);
     }
   }
 
@@ -78,6 +78,22 @@ test('[find] should return docs on query match (complex)', async t => {
     t.ok(Array.isArray(docs));
     t.equal(docs.length, 1);
     t.deepEqual(docs[0], mockMemory.key_4);
+  } catch (err) {
+    t.fail(err);
+  }
+
+  t.end();
+});
+
+test('[find] should accept projection', async t => {
+  const { db } = setup({ memory: mockMemory });
+
+  try {
+    const docs = await db.find({}, []);
+
+    for (let i = 0; i < docs.length; i += 1) {
+      t.deepEqual(docs[i], {});
+    }
   } catch (err) {
     t.fail(err);
   }

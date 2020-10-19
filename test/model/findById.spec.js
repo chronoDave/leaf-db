@@ -13,7 +13,7 @@ test('[findById] should throw on empty query', async t => {
     await db.findById();
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   t.end();
@@ -27,7 +27,7 @@ test('[findById] should throw on invalid query', async t => {
       await db.findById(invalidQuery[i]);
       t.fail(`expected to throw: ${i}, ${invalidQuery[i]}`);
     } catch (err) {
-      t.pass();
+      t.pass(`throws: ${i}`);
     }
   }
 
@@ -56,7 +56,7 @@ test('[findById] should throw if array contains invalid values', async t => {
     await db.findById(invalidQuery);
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   t.end();
@@ -112,6 +112,20 @@ test('[findById] should return docs if multiple matches are found', async t => {
     for (let i = 0; i < docs.length; i += 1) {
       t.deepEqual(docs[i], mockMemory[ids[i]]);
     }
+  } catch (err) {
+    t.fail(err);
+  }
+
+  t.end();
+});
+
+test('[findById] should accept projection', async t => {
+  const { db } = setup({ memory: mockMemory });
+
+  try {
+    const docs = await db.findById('3', []);
+
+    t.deepEqual(docs[0], {});
   } catch (err) {
     t.fail(err);
   }

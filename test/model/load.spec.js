@@ -69,7 +69,7 @@ test('[load] should throw on corrupt data if strict is enabled', t => {
     db.load();
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   fs.unlinkSync(file);

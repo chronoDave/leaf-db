@@ -73,7 +73,7 @@ test('[insert] should throw on invalid data', async t => {
       await db.insert(invalidData[i]);
       t.fail(`expected to throw: ${i}, ${invalidData[i]}`);
     } catch (err) {
-      t.pass();
+      t.pass(`throws: ${i}`);
     }
   }
 

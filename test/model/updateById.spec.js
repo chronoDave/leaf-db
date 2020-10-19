@@ -13,7 +13,7 @@ test('[updateById] should throw on empty query', async t => {
     await db.updateById();
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   t.end();
@@ -27,7 +27,7 @@ test('[updateById] should throw on invalid query', async t => {
       await db.updateById(invalidQuery[i]);
       t.fail(`expected to throw: ${i}, ${invalidQuery[i]}`);
     } catch (err) {
-      t.pass();
+      t.pass(`throws: ${i}`);
     }
   }
 
@@ -56,7 +56,7 @@ test('[updateById] should throw if array contains invalid values', async t => {
     await db.updateById(invalidQuery);
     t.fail('expected to throw');
   } catch (err) {
-    t.pass();
+    t.pass('throws');
   }
 
   t.end();
@@ -112,6 +112,22 @@ test('[updateById] should update doc if match is found', async t => {
     t.ok(Array.isArray(docs));
     t.equal(docs.length, 1);
     t.deepEqual(docs[0], { ...mockMemory[id], testValue: 1 });
+  } catch (err) {
+    t.fail(err);
+  }
+
+  t.end();
+});
+
+test('[updateById] should accept projection', async t => {
+  const id = 'key_1';
+
+  const { db } = setup({ memory: mockMemory });
+
+  try {
+    const docs = await db.updateById(id, { test: 'test' }, []);
+
+    t.deepEqual(docs[0], {});
   } catch (err) {
     t.fail(err);
   }
