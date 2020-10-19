@@ -1,6 +1,7 @@
 language: node_js
 cache: yarn
 node_js: lts/*
+if: NOT tag = present
 git:
   depth: 2
 
