@@ -1,7 +1,7 @@
 language: node_js
 cache: yarn
 node_js: lts/*
-if: NOT tag = present
+if: tag IS blank
 git:
   depth: 2
 
