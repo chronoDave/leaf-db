@@ -54,15 +54,20 @@ module.exports = class LeafDB {
 
     const corrupted = [];
     if (fs.existsSync(this.file)) {
-      const data = fs.readFileSync(this.file, 'utf-8')
+      const data = fs
+        .readFileSync(this.file, 'utf-8')
         .split('\n');
 
       for (let i = 0; i < data.length; i += 1) {
         const raw = data[i];
 
+        if (raw.includes('\\')) {
+          throw new Error(`Doc cannot contain '\u005c': ${raw}`);
+        }
+
         if (raw && raw.length > 0) {
           try {
-            const doc = JSON.parse(raw.replace('\\', '\\\\'));
+            const doc = JSON.parse(raw);
 
             if (!doc._id) throw new Error(`Missing field '_id': ${doc}`);
 

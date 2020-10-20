@@ -3,8 +3,25 @@ const fs = require('fs');
 
 const {
   setup,
+  invalidJson,
   invalidPersistent
 } = require('../_utils');
+
+test('[load] should throw if data contains backslash', t => {
+  const { db, file } = setup({ data: [invalidJson], root: __dirname });
+
+  try {
+    db.load();
+
+    t.fail('expected to throw');
+  } catch (err) {
+    t.pass('throws');
+  }
+
+  fs.unlinkSync(file);
+
+  t.end();
+});
 
 test('[load] should parse valid persistent data', t => {
   const data = [{ _id: 1 }, { _id: 2 }];

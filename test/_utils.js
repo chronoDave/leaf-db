@@ -44,6 +44,12 @@ const invalidData = [
   'valid'
 ];
 
+const invalidJson = {
+  file: 'some\\path',
+  emoji: '🐶',
+  unicode: '\u2714'
+};
+
 const invalidNumberOperator = [
   '1',
   NaN,
@@ -158,6 +164,7 @@ module.exports = {
   invalidQueryLoose,
   invalidPersistent,
   invalidData,
+  invalidJson,
   invalidNumberOperator,
   mockMemory,
   mockObjectSimple,
