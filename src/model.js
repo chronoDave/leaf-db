@@ -61,13 +61,13 @@ module.exports = class LeafDB {
       for (let i = 0; i < data.length; i += 1) {
         const raw = data[i];
 
-        if (raw.includes('\\')) {
-          throw new Error(`Doc cannot contain '\u005c': ${raw}`);
-        }
-
         if (raw && raw.length > 0) {
           try {
-            const doc = JSON.parse(raw);
+            const doc = JSON.parse(raw, (key, value) => (typeof value !== 'string' ?
+              value :
+              value
+                .replace(/\\/g, '\u005c')
+                .replace(/"/g, '\u0022')));
 
             if (!doc._id) throw new Error(`Missing field '_id': ${doc}`);
 

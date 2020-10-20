@@ -1,22 +1,22 @@
 const test = require('tape');
 const fs = require('fs');
 
-const {
-  setup,
-  invalidJson,
-  invalidPersistent
-} = require('../_utils');
+const { setup, invalidPersistent } = require('../_utils');
 
-test('[load] should throw if data contains backslash', t => {
-  const { db, file } = setup({ data: [invalidJson], root: __dirname });
+test('[load] should not throw if data contains backslash', t => {
+  const { db, file } = setup({ data: [{ invalid: '\\' }], root: __dirname });
 
-  try {
-    db.load();
+  db.load();
 
-    t.fail('expected to throw');
-  } catch (err) {
-    t.pass('throws');
-  }
+  fs.unlinkSync(file);
+
+  t.end();
+});
+
+test('[load] show not throw if data contains quotation mark', t => {
+  const { db, file } = setup({ data: [{ invalid: '"' }], root: __dirname });
+
+  db.load();
 
   fs.unlinkSync(file);
 

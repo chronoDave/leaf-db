@@ -44,12 +44,6 @@ const invalidData = [
   'valid'
 ];
 
-const invalidJson = {
-  file: 'some\\path',
-  emoji: '🐶',
-  unicode: '\u2714'
-};
-
 const invalidNumberOperator = [
   '1',
   NaN,
@@ -118,7 +112,7 @@ const mockObjectComplex = {
 };
 
 const mockObjectProduction = {
-  file: 'D:/debug/[bracket]/123/da-sh/under_score.mp3',
+  file: 'D:\\debug\\[bracket]\\123\\da-sh\\under_score.mp3',
   format: {
     tagTypes: [],
     lossless: false,
@@ -132,6 +126,7 @@ const mockObjectProduction = {
     titlelocalized: null,
     cdid: [null],
     date: '2012-08-31T16:09:24',
+    title: '"Yours Truly" Setting Type Seven-Star Goku Uniform',
     copyright: 'Creative Commons Attribution: http://creativecommons.org/licenses/by/3.0/',
     comment: [
       'URL: http://freemusicarchive.org/music/Tours/Enthusiast/Tours_-_Enthusiast\r\nComments: http://freemusicarchive.org/\r\nCurator: \r\nCopyright: Creative Commons Attribution: http://creativecommons.org/licenses/by/3.0/'
@@ -164,7 +159,6 @@ module.exports = {
   invalidQueryLoose,
   invalidPersistent,
   invalidData,
-  invalidJson,
   invalidNumberOperator,
   mockMemory,
   mockObjectSimple,
