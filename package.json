@@ -2,8 +2,8 @@
   "name": "leaf-db",
   "version": "3.0.2",
   "description": "Small file-based database for node.js",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/model.js",
+  "types": "dist/model.d.ts",
   "keywords": [
     "database",
     "embedded",
