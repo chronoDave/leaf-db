@@ -24,9 +24,7 @@
     "lint": "eslint . --ignore-pattern dist",
     "test": "yarn build && tape test/**/*.spec.js",
     "bench": "node test/benchmark.js",
-    "build": "tsc",
-    "prepare": "yarn build",
-    "prepublishOnly": "yarn lint && yarn test"
+    "build": "tsc"
   },
   "dependencies": {
     "fast-deep-equal": "^3.1.3",
