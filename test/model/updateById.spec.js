@@ -1,10 +1,6 @@
 const test = require('tape');
 
-const {
-  setup,
-  invalidQuery,
-  mockMemory
-} = require('../_utils');
+const { setup, invalidQuery, mockMemory } = require('../_utils');
 
 test('[updateById] should throw on empty query', async t => {
   const { db } = setup({ memory: mockMemory });
@@ -40,7 +36,7 @@ test('[updateById] should return empty array if no match is found', async t => {
   try {
     const docs = await db.updateById('3');
 
-    t.ok(Array.isArray(docs));
+    t.true(Array.isArray(docs));
     t.equal(docs.length, 0);
   } catch (err) {
     t.fail(err);
@@ -70,7 +66,7 @@ test('[updateById] should replace doc if match is found', async t => {
   try {
     const docs = await db.updateById(id);
 
-    t.ok(Array.isArray(docs));
+    t.true(Array.isArray(docs));
     t.equal(docs.length, 1);
     t.deepEqual(docs[0], { _id: id });
   } catch (err) {
@@ -88,11 +84,11 @@ test('[updateById] should replace docs if matches are found', async t => {
   try {
     const docs = await db.updateById(ids);
 
-    t.ok(Array.isArray(docs));
+    t.true(Array.isArray(docs));
     t.equal(docs.length, ids.length);
 
     for (let i = 0; i < docs.length; i += 1) {
-      t.ok(ids.includes(docs[i]._id));
+      t.true(ids.includes(docs[i]._id));
     }
   } catch (err) {
     t.fail(err);
@@ -109,7 +105,7 @@ test('[updateById] should update doc if match is found', async t => {
   try {
     const docs = await db.updateById(id, { $set: { testValue: 1 } });
 
-    t.ok(Array.isArray(docs));
+    t.true(Array.isArray(docs));
     t.equal(docs.length, 1);
     t.deepEqual(docs[0], { ...mockMemory[id], testValue: 1 });
   } catch (err) {

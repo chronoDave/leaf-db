@@ -1,5 +1,6 @@
-const test = require('tape');
 const fs = require('fs');
+
+const test = require('tape');
 
 const { setup, invalidPersistent } = require('../_utils');
 
@@ -30,7 +31,7 @@ test('[load] should parse valid persistent data', t => {
 
   const corrupted = db.load();
 
-  t.ok(typeof db.data === 'object');
+  t.true(typeof db.data === 'object');
   t.equal(Object.keys(db.data).length, data.length);
   t.equal(corrupted.length, 0);
 
@@ -50,7 +51,7 @@ test('[load] should parse empty file', t => {
 
   const corrupted = db.load();
 
-  t.ok(typeof db.data === 'object');
+  t.true(typeof db.data === 'object');
   t.equal(corrupted.length, 0);
   t.equal(Object.keys(db.data).length, 0);
 
@@ -67,7 +68,7 @@ test('[load] should ignore corrupted data', t => {
 
   const corrupted = db.load();
 
-  t.ok(typeof db.data === 'object');
+  t.true(typeof db.data === 'object');
   t.equal(corrupted.length, invalidPersistent.length);
   t.equal(Object.keys(db.data).length, 1);
 

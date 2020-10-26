@@ -1,10 +1,6 @@
 const test = require('tape');
 
-const {
-  setup,
-  invalidQuery,
-  mockMemory
-} = require('../_utils');
+const { setup, invalidQuery, mockMemory } = require('../_utils');
 
 test('[findById] should throw on empty query', async t => {
   const { db } = setup({ memory: mockMemory });
@@ -40,7 +36,7 @@ test('[findById] should return empty array if no match is found', async t => {
   try {
     const docs = await db.findById('3');
 
-    t.ok(Array.isArray(docs));
+    t.true(Array.isArray(docs));
     t.equal(docs.length, 0);
   } catch (err) {
     t.fail(err);
@@ -70,7 +66,7 @@ test('[findById] should return doc if match is found', async t => {
   try {
     const docs = await db.findById(id);
 
-    t.ok(Array.isArray(docs));
+    t.true(Array.isArray(docs));
     t.equal(docs.length, 1);
     t.deepEqual(docs[0], mockMemory[id]);
   } catch (err) {
@@ -88,7 +84,7 @@ test('[findById] should return doc if match is found', async t => {
   try {
     const docs = await db.findById(id);
 
-    t.ok(Array.isArray(docs));
+    t.true(Array.isArray(docs));
     t.equal(docs.length, 1);
     t.deepEqual(docs[0], mockMemory[id]);
   } catch (err) {
@@ -106,7 +102,7 @@ test('[findById] should return docs if multiple matches are found', async t => {
   try {
     const docs = await db.findById(ids);
 
-    t.ok(Array.isArray(docs));
+    t.true(Array.isArray(docs));
     t.equal(docs.length, 2);
 
     for (let i = 0; i < docs.length; i += 1) {
@@ -123,7 +119,7 @@ test('[findById] should accept projection', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.findById('3', []);
+    const docs = await db.findById('key_3', []);
 
     t.deepEqual(docs[0], {});
   } catch (err) {

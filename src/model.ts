@@ -1,46 +1,59 @@
-const path = require('path');
-const fs = require('fs');
+import fs, { PathLike } from 'fs';
+import path from 'path';
+
+// Modifiers
+import { objectModify, objectProject } from './modifiers';
+
+// Types
+import {
+  Doc,
+  NewDoc,
+  Query,
+  Projection,
+  Update
+} from './types';
 
 // Utils
-const { getUid, toArray } = require('./utils');
+import { getUid, toArray } from './utils';
 
 // Validation
-const {
+import {
   isObject,
   isEmptyObject,
   isQueryMatch,
   hasModifiers,
   isInvalidDoc,
   hasMixedModifiers
-} = require('./validation');
-
-// Modifiers
-const { objectModify, objectProject } = require('./modifiers');
+} from './validation';
 
 module.exports = class LeafDB {
-  /**
-   * @param {string} name - Database name
-   * @param {object} options
-   * @param {string} options.root - Database root path, will create in-memory if not provided (default `null`)
-   * @param {boolean} options.autoload - Should database be loaded on creation (default `true`)
-   * @param {boolean} options.strict - Should silent errors be thrown (default `false`)
-   */
-  constructor(name, {
-    root = null,
-    autoload = true,
-    strict = false
-  } = {}) {
-    this.root = root;
-    this.strict = strict;
+  root?: string;
+  strict: boolean;
+  file?: PathLike;
+  data: Record<string, Doc>;
+
+  constructor(
+    name: string,
+    options: {
+      root?: string,
+      autoload?: boolean,
+      strict?: boolean
+    } = {}
+  ) {
+    this.root = options.root;
+    this.strict = !!options.strict;
 
     if (this.root) fs.mkdirSync(this.root, { recursive: true });
 
     this.data = {};
-    this.file = (this.root && name) ?
-      path.resolve(this.root, `${name}.txt`) :
-      null;
+    this.file = (this.root && name) && path.resolve(this.root, `${name}.txt`);
 
-    if (this.root && autoload) this.load();
+    if (
+      this.root &&
+      typeof options.autoload === 'undefined' ?
+        true :
+        options.autoload
+    ) this.load();
   }
 
   /**
@@ -48,11 +61,14 @@ module.exports = class LeafDB {
    * @returns {string[]} List of corrupt items
    * */
   load() {
+    const corrupted: Array<string> = [];
+
+    if (!this.file) return corrupted;
+
     if (!this.root) {
       throw new Error('Cannot load file data with an in-memory database');
     }
 
-    const corrupted = [];
     if (fs.existsSync(this.file)) {
       const data = fs
         .readFileSync(this.file, 'utf-8')
@@ -63,7 +79,7 @@ module.exports = class LeafDB {
 
         if (raw && raw.length > 0) {
           try {
-            const doc = JSON.parse(raw, (key, value) => (typeof value !== 'string' ?
+            const doc = JSON.parse(raw, (_, value) => (typeof value !== 'string' ?
               value :
               value
                 .replace(/\\/g, '\u005c')
@@ -110,14 +126,8 @@ module.exports = class LeafDB {
     fs.writeFileSync(this.file, payload.join('\n'));
   }
 
-  /**
-   * Insert new document(s)
-   * @param {object|object[]} newDocs
-   * @param {object} options
-   * @param {boolean} options.persist - Should persist be called (default `false`)
-   * @returns {object[]} Docs inserted
-   */
-  insert(newDocs, { persist = false } = {}) {
+  /** Insert new document(s) */
+  insert(newDocs: NewDoc | Array<NewDoc>, { persist = false } = {}) {
     if (!Array.isArray(newDocs) && !isObject(newDocs)) {
       return Promise.reject(new Error(`Invalid newDocs: ${JSON.stringify(newDocs)}`));
     }
@@ -150,15 +160,11 @@ module.exports = class LeafDB {
 
     if (persist) this.persist();
 
-    return Promise.resolve();
+    return Promise.resolve(inserted as Array<Doc>);
   }
 
-  /**
-   * Find single doc matching `_id`
-   * @param {string|string[]} _id
-   * @param {string[]} projection - Projection array (default `null`)
-   * */
-  findById(_id, projection = null) {
+  /** Find doc(s) matching `_id` */
+  findById(_id: string | Array<string>, projection: Projection = null) {
     try {
       const payload = [];
       for (let i = 0, keys = toArray(_id); i < keys.length; i += 1) {
@@ -168,12 +174,12 @@ module.exports = class LeafDB {
           return Promise.reject(new Error(`Invalid _id: ${key}`));
         }
 
-        const doc = objectProject(this.data[key], projection);
+        const doc = this.data[key];
 
-        if (doc && !doc.$deleted) payload.push(doc);
+        if (doc && !doc.$deleted) payload.push(objectProject(doc, projection));
       }
 
-      return Promise.resolve(payload);
+      return Promise.resolve(payload as Array<Doc>);
     } catch (err) {
       return Promise.reject(err);
     }
@@ -184,7 +190,7 @@ module.exports = class LeafDB {
    * @param {string|object} query - Query object (default `{}`)
    * @param {string[]} projection - Projection array (default `null`)
    */
-  find(query = {}, projection = null) {
+  find(query: Query = {}, projection: Projection = null) {
     try {
       if (!query || !isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
@@ -217,7 +223,11 @@ module.exports = class LeafDB {
    * @param {object} update - New document (default `{}`) / Update query
    * @param {string[]} projection - Projection array (default `null`)
   */
-  updateById(_id, update = {}, projection = null) {
+  updateById(
+    _id: string | Array<string>,
+    update: NewDoc | Update = {},
+    projection: Projection = null
+  ) {
     try {
       if (
         !isObject(update) ||
@@ -260,7 +270,11 @@ module.exports = class LeafDB {
    * @param {object} update - New document (default `{}`) / Update query
    * @param {string[]} projection - Projection array (default `null`)
    */
-  update(query = {}, update = {}, projection = null) {
+  update(
+    query: Query = {},
+    update: NewDoc | Update = {},
+    projection: Projection = null
+  ) {
     try {
       if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
@@ -300,7 +314,7 @@ module.exports = class LeafDB {
    * Delete doc matching `_id`
    * @param {string} _id
   */
-  deleteById(_id) {
+  deleteById(_id: string | Array<string>) {
     try {
       let deleted = 0;
       for (let i = 0, keys = toArray(_id); i < keys.length; i += 1) {
@@ -328,7 +342,7 @@ module.exports = class LeafDB {
    * Delete documents matching `query`
    * @param {*} query - Query object (default `{}`)
    */
-  delete(query = {}) {
+  delete(query: Query = {}) {
     try {
       if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));

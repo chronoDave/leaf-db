@@ -1,10 +1,6 @@
 const test = require('tape');
 
-const {
-  setup,
-  invalidQuery,
-  mockMemory
-} = require('../_utils');
+const { setup, invalidQuery, mockMemory } = require('../_utils');
 
 test('[deleteById] should throw on emtpy query', async t => {
   const { db } = setup({ memory: mockMemory });
@@ -70,7 +66,7 @@ test('[deleteById] should delete doc if match is found', async t => {
     const deleted = await db.deleteById(id);
 
     t.equal(deleted, 1);
-    t.ok(db.data[id].$deleted);
+    t.true(db.data[id].$deleted);
   } catch (err) {
     t.fail(err);
   }
@@ -88,7 +84,7 @@ test('[deleteById] should delete docs if multiple matches are found', async t =>
 
     t.equal(deleted, ids.length);
     for (let i = 0; i < ids.length; i += 1) {
-      t.ok(db.data[ids[i]].$deleted);
+      t.true(db.data[ids[i]].$deleted);
     }
   } catch (err) {
     t.fail(err);

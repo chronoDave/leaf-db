@@ -1,16 +1,17 @@
-const test = require('tape');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
-const LeafDB = require('../../src/model');
+const test = require('tape');
+
+const LeafDB = require('../../dist/model');
 
 test('[constructor] should create in-memory database', t => {
   const name = 'test';
   const db = new LeafDB(name);
 
-  t.ok(typeof db.data === 'object');
+  t.true(typeof db.data === 'object');
   t.equal(Object.keys(db.data).length, 0);
-  t.notOk(fs.existsSync(path.resolve(__dirname, `${name}.txt`)));
+  t.false(fs.existsSync(path.resolve(__dirname, `${name}.txt`)));
 
   t.end();
 });
@@ -23,7 +24,7 @@ test('[constructor] should create persistent database', t => {
   // eslint-disable-next-line no-new
   new LeafDB(name, { root });
 
-  t.ok(fs.existsSync(file));
+  t.true(fs.existsSync(file));
 
   fs.rmdirSync(root, { recursive: true });
 

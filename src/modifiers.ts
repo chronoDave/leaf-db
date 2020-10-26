@@ -1,8 +1,11 @@
-const objectSet = require('lodash.set');
-const objectGet = require('lodash.get');
+import objectGet from 'lodash.get';
+import objectSet from 'lodash.set';
+
+// Types
+import { Projection, NewDoc, Update } from './types';
 
 const modifiers = {
-  add: (object, key, value) => {
+  add: (object: object, key: string, value: unknown) => {
     if (
       typeof objectGet(object, key) !== 'number' ||
       typeof value !== 'number' ||
@@ -10,14 +13,14 @@ const modifiers = {
     ) return object;
     return objectSet(object, key, objectGet(object, key) + value);
   },
-  set: (object, key, value) => objectSet(object, key, value)
+  set: (object: object, key: string, value: unknown) => objectSet(object, key, value)
 };
 
-const objectModify = (object, update) => {
+export const objectModify = (object: object, update: NewDoc | Update) => {
   for (let i = 0, ue = Object.entries(update); i < ue.length; i += 1) {
     const [modifier, fields] = ue[i];
 
-    for (let j = 0, fe = Object.entries(fields); j < fe.length; j += 1) {
+    for (let j = 0, fe = Object.entries(fields || {}); j < fe.length; j += 1) {
       const [key, value] = fe[j];
 
       switch (modifier) {
@@ -34,7 +37,8 @@ const objectModify = (object, update) => {
   return object;
 };
 
-const objectProject = (object, projection) => {
+export const objectProject = (object: NewDoc, projection: Projection) => {
+  if (!object) return null;
   if (!projection) return object;
 
   if (!Array.isArray(projection)) {
@@ -47,10 +51,6 @@ const objectProject = (object, projection) => {
     throw new Error(`Invalid projection, contains invalid key: ${projection}`);
   }
 
-  return projection.reduce((acc, key) => objectSet(acc, key, objectGet(object, key)), {});
-};
-
-module.exports = {
-  objectModify,
-  objectProject
+  return projection
+    .reduce((acc, key) => objectSet(acc, key, objectGet(object, key)), {});
 };

@@ -1,5 +1,6 @@
-const test = require('tape');
 const fs = require('fs');
+
+const test = require('tape');
 
 const { setup, invalidData } = require('../_utils');
 
@@ -34,7 +35,7 @@ test('[insert] should insert multiple docs', async t => {
 
     t.equal(Object.keys(db.data).length, payload.length);
     for (let i = 0, v = Object.values(db.data); i < v.length; i += 1) {
-      t.ok(payload.includes(v[i]));
+      t.true(payload.includes(v[i]));
     }
   } catch (err) {
     t.fail(err);
@@ -58,7 +59,7 @@ test('[insert] should persist if option.persist is true', async t => {
     t.fail(err);
   }
 
-  t.ok(fs.existsSync(file));
+  t.true(fs.existsSync(file));
 
   fs.unlinkSync(file);
 

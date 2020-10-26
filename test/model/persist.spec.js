@@ -1,5 +1,6 @@
-const test = require('tape');
 const fs = require('fs');
+
+const test = require('tape');
 
 const { setup } = require('../_utils');
 

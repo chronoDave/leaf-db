@@ -1,10 +1,6 @@
 const test = require('tape');
 
-const {
-  setup,
-  invalidQueryLoose,
-  mockMemory
-} = require('../_utils');
+const { setup, invalidQueryLoose, mockMemory } = require('../_utils');
 
 test('[delete] should throw error on invalid query', async t => {
   const { db } = setup({ memory: mockMemory });
@@ -30,7 +26,7 @@ test('[delete] should delete all data on empty query', async t => {
     t.equal(docs, 5);
 
     for (let i = 0, v = Object.values(db.data); i < v.length; i += 1) {
-      t.ok(v[i].$deleted);
+      t.true(v[i].$deleted);
     }
   } catch (err) {
     t.fail(err);
@@ -60,7 +56,7 @@ test('[delete] should delete docs if matches are found (simple)', async t => {
     const docs = await db.delete({ data: 'test' });
 
     t.equal(docs, 1);
-    t.ok(db.data.key_1.$deleted);
+    t.true(db.data.key_1.$deleted);
   } catch (err) {
     t.fail(err);
   }
@@ -75,7 +71,7 @@ test('[delete] should replace docs if matches are found (nested)', async t => {
     const docs = await db.delete({ 'data.label': 'test' });
 
     t.equal(docs, 1);
-    t.ok(db.data.key_5.$deleted);
+    t.true(db.data.key_5.$deleted);
   } catch (err) {
     t.fail(err);
   }
@@ -90,7 +86,7 @@ test('[delete] should replace docs if matches are found (complex)', async t => {
     const docs = await db.delete({ $has: { 'data.values': 1 } });
 
     t.equal(docs, 1);
-    t.ok(db.data.key_4.$deleted);
+    t.true(db.data.key_4.$deleted);
   } catch (err) {
     t.fail(err);
   }

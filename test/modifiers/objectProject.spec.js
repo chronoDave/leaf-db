@@ -1,9 +1,9 @@
 const test = require('tape');
 
+const { objectProject } = require('../../dist/modifiers');
+
 // Utils
 const { mockObjectProduction } = require('../_utils');
-
-const { objectProject } = require('../../src/modifiers');
 
 test('[objectProject] should throw error if projection is not an array if defined', t => {
   const invalidTypes = [1, true, () => null, 'invalid', {}];

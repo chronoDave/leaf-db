@@ -1,40 +1,44 @@
-const deepEqual = require('fast-deep-equal');
-const objectGet = require('lodash.get');
+import deepEqual from 'fast-deep-equal';
+import objectGet from 'lodash.get';
+
+// Types
+import { Doc, Query, Value } from './types';
 
 // Utils
-const {
-  toArray,
-  objectHas
-} = require('./utils');
+import { toArray, objectHas } from './utils';
 
 // Basic
-const isNumber = any => typeof any === 'number';
-const isObject = any => any !== null && !Array.isArray(any) && typeof any === 'object';
-const isEmptyObject = object => Object.keys(object).length === 0;
+export const isNumber = (any: unknown) => typeof any === 'number';
+export const isObject = (any: unknown) => any !== null && !Array.isArray(any) && typeof any === 'object';
+export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
 
 // Operator
 const operator = {
-  gt: (a, b) => {
+  gt: (a: number, b: number) => {
     if (!isNumber(a) || !isNumber(b)) return false;
     return a > b;
   },
-  gte: (a, b) => {
+  gte: (a: number, b: number) => {
     if (!isNumber(a) || !isNumber(b)) return false;
     return a >= b;
   },
-  lt: (a, b) => {
+  lt: (a: number, b: number) => {
     if (!isNumber(a) || !isNumber(b)) return false;
     return a < b;
   },
-  lte: (a, b) => {
+  lte: (a: number, b: number) => {
     if (!isNumber(a) || !isNumber(b)) return false;
     return a <= b;
   },
-  not: (a, b) => a !== b,
-  exists: (object, keys) => keys
-    .filter(key => objectGet(object, key) !== undefined)
+  not: (a: unknown, b: unknown) => a !== b,
+  exists: (object: object, keys: Array<Value>) => keys
+    .filter(key => {
+      if (typeof key === 'boolean') return false;
+      if (typeof key === 'object') return false;
+      return objectGet(object, key) !== undefined;
+    })
     .length === keys.length,
-  has: (array, value) => array
+  has: (array: Array<unknown>, value: unknown) => array
     .some(item => deepEqual(item, value))
 };
 
@@ -43,7 +47,7 @@ const operator = {
  * @param {object} query
  * @param {object} object
  */
-const isQueryMatch = (object, query) => Object
+export const isQueryMatch = (object: Doc, query: Query) => Object
   .entries(query)
   .filter(([key, value]) => {
     // Operators
@@ -54,15 +58,19 @@ const isQueryMatch = (object, query) => Object
 
         switch (key) {
           case '$gt':
+            if (typeof originalValue !== 'number') return false;
             if (!operator.gt(originalValue, testValue)) return false;
             break;
           case '$gte':
+            if (typeof originalValue !== 'number') return false;
             if (!operator.gte(originalValue, testValue)) return false;
             break;
           case '$lt':
+            if (typeof originalValue !== 'number') return false;
             if (!operator.lt(originalValue, testValue)) return false;
             break;
           case '$lte':
+            if (typeof originalValue !== 'number') return false;
             if (!operator.lte(originalValue, testValue)) return false;
             break;
           case '$not':
@@ -88,7 +96,7 @@ const isQueryMatch = (object, query) => Object
   })
   .length === Object.keys(query).length;
 
-const isInvalidDoc = doc => objectHas(doc, ({ key, value }) => {
+export const isInvalidDoc = (doc: object) => objectHas(doc, ({ key, value }) => {
   if (key[0] === '$') return true;
   if (key.includes('.')) return true;
   if (value === undefined) return true;
@@ -96,20 +104,10 @@ const isInvalidDoc = doc => objectHas(doc, ({ key, value }) => {
 });
 
 /** Validate if object has modifier fields */
-const hasModifiers = object => objectHas(object, ({ key }) => key[0] === '$');
+export const hasModifiers = (object: object) => objectHas(object, ({ key }) => key[0] === '$');
 
 /** Validate if object has keys and modifiers */
-const hasMixedModifiers = object => (
+export const hasMixedModifiers = (object: object) => (
   hasModifiers(object) &&
   Object.keys(object).filter(key => key[0] === '$').length !== Object.keys(object).length
 );
-
-module.exports = {
-  isNumber,
-  isObject,
-  isEmptyObject,
-  isQueryMatch,
-  isInvalidDoc,
-  hasModifiers,
-  hasMixedModifiers
-};

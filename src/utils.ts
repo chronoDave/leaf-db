@@ -1,12 +1,12 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
 
-const toArray = any => (Array.isArray(any) ? any : [any]);
+export const toArray = <T>(any: T | Array<T>) => (Array.isArray(any) ? any : [any]);
 
 /**
  * Generate unique ID
  * @param {number} length - ID length (can be shorter if ID contains invalid characters)
  * */
-const getUid = (length = 16) => crypto
+export const getUid = (length = 16) => crypto
   .randomBytes(Math.ceil((length * 5) / 4))
   .toString('base64')
   .replace(/[+/]/g, '')
@@ -18,7 +18,10 @@ const getUid = (length = 16) => crypto
  * @param {object} options
  * @param {function} validator - `validator({ key, value }) => Boolean`
  */
-const objectHas = (object, validator) => {
+export const objectHas = (
+  object: object,
+  validator: ({ key, value }: { key: string, value: unknown }) => boolean
+) => {
   if (!object || typeof object !== 'object') return false;
 
   const stack = Object.entries(object);
@@ -31,10 +34,4 @@ const objectHas = (object, validator) => {
   }
 
   return false;
-};
-
-module.exports = {
-  getUid,
-  toArray,
-  objectHas
 };

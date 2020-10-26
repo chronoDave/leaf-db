@@ -1,9 +1,9 @@
 const test = require('tape');
 
+const { objectModify } = require('../../dist/modifiers');
+
 // Utils
 const { invalidNumberOperator } = require('../_utils');
-
-const { objectModify } = require('../../src/modifiers');
 
 test('[objectModify] operator $add should increase field with value', t => {
   t.strictEqual(objectModify(
@@ -14,7 +14,7 @@ test('[objectModify] operator $add should increase field with value', t => {
     { a: 1 },
     { $add: { a: -2 } }
   ).a, -1);
-  t.notOk(objectModify(
+  t.false(objectModify(
     { a: 1 },
     { $add: { b: 2 } }
   ).b);

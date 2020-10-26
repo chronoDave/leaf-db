@@ -1,9 +1,9 @@
 const test = require('tape');
 
-const { getUid } = require('../../src/utils');
+const { getUid } = require('../../dist/utils');
 
 test('[getUid] should return unique ids', t => {
-  t.ok(typeof getUid() === 'string');
+  t.true(typeof getUid() === 'string');
 
   const size = 100000;
   const actual = [];
