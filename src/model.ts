@@ -26,7 +26,7 @@ import {
   hasMixedModifiers
 } from './validation';
 
-module.exports = class LeafDB {
+export default class LeafDB {
   root?: string;
   strict: boolean;
   file?: PathLike;
@@ -371,4 +371,4 @@ module.exports = class LeafDB {
     if (this.file) this.persist();
     return Promise.resolve();
   }
-};
+}

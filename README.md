@@ -20,7 +20,10 @@ yarn i leaf-db
 ## Getting started
 
 ```JS
-const LeafDB = require('leaf-db');
+// ES5
+const LeafDB = require('leaf-db').default;
+// ES6
+import LeafDB from 'leaf-db';
 
 const db = new LeafDB('example');
 
@@ -28,7 +31,6 @@ db.insert({ species: 'cat', name: 'whiskers' })
   .then(() => console.log('added whiskers to the database!'))
   .catch(console.error)
 ```
-
 ## API
 
  - [Database](#database)

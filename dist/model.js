@@ -22,7 +22,7 @@ var modifiers_1 = require("./modifiers");
 var utils_1 = require("./utils");
 // Validation
 var validation_1 = require("./validation");
-module.exports = /** @class */ (function () {
+var LeafDB = /** @class */ (function () {
     function LeafDB(name, options) {
         if (options === void 0) { options = {}; }
         this.root = options.root;
@@ -314,3 +314,4 @@ module.exports = /** @class */ (function () {
     };
     return LeafDB;
 }());
+exports.default = LeafDB;

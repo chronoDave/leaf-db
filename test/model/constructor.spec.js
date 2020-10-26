@@ -3,7 +3,7 @@ const path = require('path');
 
 const test = require('tape');
 
-const LeafDB = require('../../dist/model');
+const LeafDB = require('../../dist/model').default;
 
 test('[constructor] should create in-memory database', t => {
   const name = 'test';
