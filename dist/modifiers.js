@@ -15,6 +15,10 @@ var __read = (this && this.__read) || function (o, n) {
     }
     return ar;
 };
+var __spread = (this && this.__spread) || function () {
+    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+    return ar;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -30,7 +34,12 @@ var modifiers = {
             return object;
         return lodash_set_1.default(object, key, lodash_get_1.default(object, key) + value);
     },
-    set: function (object, key, value) { return lodash_set_1.default(object, key, value); }
+    set: function (object, key, value) { return lodash_set_1.default(object, key, value); },
+    push: function (object, key, value) {
+        if (!Array.isArray(lodash_get_1.default(object, key)))
+            return object;
+        return lodash_set_1.default(object, key, __spread(lodash_get_1.default(object, key), [value]));
+    }
 };
 exports.objectModify = function (object, update) {
     for (var i = 0, ue = Object.entries(update); i < ue.length; i += 1) {
@@ -42,6 +51,8 @@ exports.objectModify = function (object, update) {
                     return modifiers.add(object, key, value);
                 case '$set':
                     return modifiers.set(object, key, value);
+                case '$push':
+                    return modifiers.push(object, key, value);
                 default:
                     throw new Error("Invalid modifier: " + modifier);
             }

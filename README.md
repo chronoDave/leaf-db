@@ -335,7 +335,8 @@ await db.update({ type: 'normal' }, { 'properties.type': 'strong', _id: 1 })
 
 Modifiers can be used to set specific values
 
- - `$add` - Add value
+ - `$add` - Add value (number)
+ - `$push` - Add value (array)
  - `$set` - Set value
 
 <b>Example</b>
@@ -351,6 +352,11 @@ Modifiers can be used to set specific values
 await db.update({} }, { $add: { count: 3 } })
 // { _id: 3, count: 3 }
 await db.update({}, { $add: { count: -3 } })
+
+// $push
+// { _id: 3, fruits: ['banana'] }
+await db.update({} }, { $push: { count: 'orange' } })
+// { _id: 3 , fuits: ['banana', 'orange'] }
 
 // $set
 // { _id: 3, count: 'count' }

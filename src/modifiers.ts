@@ -13,7 +13,11 @@ const modifiers = {
     ) return object;
     return objectSet(object, key, objectGet(object, key) + value);
   },
-  set: (object: object, key: string, value: unknown) => objectSet(object, key, value)
+  set: (object: object, key: string, value: unknown) => objectSet(object, key, value),
+  push: (object: object, key: string, value: unknown) => {
+    if (!Array.isArray(objectGet(object, key))) return object;
+    return objectSet(object, key, [...objectGet(object, key), value]);
+  }
 };
 
 export const objectModify = (object: object, update: NewDoc | Update) => {
@@ -28,6 +32,8 @@ export const objectModify = (object: object, update: NewDoc | Update) => {
           return modifiers.add(object, key, value);
         case '$set':
           return modifiers.set(object, key, value);
+        case '$push':
+          return modifiers.push(object, key, value);
         default:
           throw new Error(`Invalid modifier: ${modifier}`);
       }

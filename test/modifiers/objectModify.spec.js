@@ -12,6 +12,10 @@ test('[objectModify] operator $add should increase field with value', t => {
   ).a, 3);
   t.strictEqual(objectModify(
     { a: 1 },
+    { $add: { a: '2' } }
+  ).a, 1);
+  t.strictEqual(objectModify(
+    { a: 1 },
     { $add: { a: -2 } }
   ).a, -1);
   t.false(objectModify(
@@ -66,6 +70,27 @@ test('[objectModify] operator $set should set field with value', t => {
     { a: { b: [{ c: 1 }] } },
     { $set: { 'a.b.0.c': { d: 1 } } }
   ), { a: { b: [{ c: { d: 1 } }] } });
+
+  t.end();
+});
+
+test('[objectModify] operator $push should add value to field', t => {
+  t.deepEqual(objectModify(
+    { a: 1 },
+    { $push: { a: { b: 1 } } }
+  ), { a: 1 });
+  t.deepEqual(objectModify(
+    { a: [] },
+    { $push: { a: 1 } }
+  ), { a: [1] });
+  t.deepEqual(objectModify(
+    { a: [1, 2] },
+    { $push: { a: 1 } }
+  ), { a: [1, 2, 1] });
+  t.deepEqual(objectModify(
+    { a: [1, 2] },
+    { $push: { a: { d: 4 } } }
+  ), { a: [1, 2, { d: 4 }] });
 
   t.end();
 });
