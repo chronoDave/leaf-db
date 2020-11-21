@@ -5,7 +5,11 @@ const test = require('tape');
 const { setup, invalidPersistent } = require('../_utils');
 
 test('[load] should not throw if data contains backslash', t => {
-  const { db, file } = setup({ data: [{ invalid: '\\' }], root: __dirname });
+  const { db, file } = setup({
+    data: [{ invalid: '\\' }],
+    autoload: false,
+    root: __dirname
+  });
 
   db.load();
 
@@ -15,7 +19,11 @@ test('[load] should not throw if data contains backslash', t => {
 });
 
 test('[load] show not throw if data contains quotation mark', t => {
-  const { db, file } = setup({ data: [{ invalid: '"' }], root: __dirname });
+  const { db, file } = setup({
+    data: [{ invalid: '"' }],
+    autoload: false,
+    root: __dirname
+  });
 
   db.load();
 
@@ -27,7 +35,11 @@ test('[load] show not throw if data contains quotation mark', t => {
 test('[load] should parse valid persistent data', t => {
   const data = [{ _id: 1 }, { _id: 2 }];
 
-  const { db, file } = setup({ data, root: __dirname });
+  const { db, file } = setup({
+    data,
+    autoload: false,
+    root: __dirname
+  });
 
   const corrupted = db.load();
 
@@ -47,7 +59,7 @@ test('[load] should parse valid persistent data', t => {
 test('[load] should parse empty file', t => {
   const data = [];
 
-  const { db, file } = setup({ data, root: __dirname });
+  const { db, file } = setup({ data, autoload: false, root: __dirname });
 
   const corrupted = db.load();
 
@@ -64,7 +76,7 @@ test('[load] should ignore corrupted data', t => {
   const valid = { _id: 2, valid: true };
   const data = [valid, ...invalidPersistent];
 
-  const { db, file } = setup({ data, strict: false, root: __dirname });
+  const { db, file } = setup({ data, autoload: false, root: __dirname });
 
   const corrupted = db.load();
 
@@ -81,7 +93,12 @@ test('[load] should throw on corrupt data if strict is enabled', t => {
   const valid = { _id: 2, valid: true };
   const data = [valid, ...invalidPersistent];
 
-  const { file, db } = setup({ data, strict: true, root: __dirname });
+  const { file, db } = setup({
+    data,
+    strict: true,
+    autoload: false,
+    root: __dirname
+  });
 
   try {
     db.load();

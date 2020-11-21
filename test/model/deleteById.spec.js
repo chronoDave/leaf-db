@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const test = require('tape');
 
 const { setup, invalidQuery, mockMemory } = require('../_utils');
@@ -89,6 +91,24 @@ test('[deleteById] should delete docs if multiple matches are found', async t =>
   } catch (err) {
     t.fail(err);
   }
+
+  t.end();
+});
+
+test('[deleteById] should persist if `persist` is true', async t => {
+  const { db, file } = setup({ data: Object.values(mockMemory), root: __dirname });
+
+  try {
+    await db.deleteById('key_4', { persist: true });
+    db.load();
+
+    t.false(db.data.key_4);
+    t.false(db.data.key_6);
+  } catch (err) {
+    t.fail(err);
+  }
+
+  fs.unlinkSync(file);
 
   t.end();
 });

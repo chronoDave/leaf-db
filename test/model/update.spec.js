@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const test = require('tape');
 
 const { setup, invalidQueryLoose, mockMemory } = require('../_utils');
@@ -123,7 +125,7 @@ test('[update] should accept projection', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.update({ data: 'test' }, { test: 'test' }, []);
+    const docs = await db.update({ data: 'test' }, { test: 'test' }, { projection: [] });
 
     for (let i = 0; i < docs.length; i += 1) {
       t.deepEqual(docs[i], {});
@@ -131,6 +133,23 @@ test('[update] should accept projection', async t => {
   } catch (err) {
     t.fail(err);
   }
+
+  t.end();
+});
+
+test('[update] should persist if `persist` is true', async t => {
+  const { db, file } = setup({ data: Object.values(mockMemory), root: __dirname });
+
+  try {
+    await db.update({ _id: 'key_4' }, { $set: { testValue: 1 } }, { persist: true });
+    db.load();
+
+    t.equal(db.data.key_4.testValue, 1);
+  } catch (err) {
+    t.fail(err);
+  }
+
+  fs.unlinkSync(file);
 
   t.end();
 });

@@ -32,9 +32,7 @@ var LeafDB = /** @class */ (function () {
         this.data = {};
         this.file = (this.root && name) && path_1.default.resolve(this.root, name + ".txt");
         if (this.root &&
-            typeof options.autoload === 'undefined' ?
-            true :
-            options.autoload)
+            (typeof options.autoload === 'undefined' ? true : options.autoload))
             this.load();
     }
     /**
@@ -49,6 +47,7 @@ var LeafDB = /** @class */ (function () {
             throw new Error('Cannot load file data with an in-memory database');
         }
         if (fs_1.default.existsSync(this.file)) {
+            this.data = {};
             var data = fs_1.default
                 .readFileSync(this.file, 'utf-8')
                 .split('\n');
@@ -101,7 +100,12 @@ var LeafDB = /** @class */ (function () {
         }
         fs_1.default.writeFileSync(this.file, payload.join('\n'));
     };
-    /** Insert new document(s) */
+    /**
+     * Insert new document(s)
+     * @param {object|object[]} newDocs
+     * @param {object} options
+     * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
+     * */
     LeafDB.prototype.insert = function (newDocs, _a) {
         var _b = (_a === void 0 ? {} : _a).persist, persist = _b === void 0 ? false : _b;
         if (!Array.isArray(newDocs) && !validation_1.isObject(newDocs)) {
@@ -131,7 +135,11 @@ var LeafDB = /** @class */ (function () {
             this.persist();
         return Promise.resolve(inserted);
     };
-    /** Find doc(s) matching `_id` */
+    /**
+     * Find doc(s) matching `_id`
+     * @param {string|string[]} _id - Doc _id
+     * @param {string[]} projection - Projection array (default `null`)
+     * */
     LeafDB.prototype.findById = function (_id, projection) {
         if (projection === void 0) { projection = null; }
         try {
@@ -185,11 +193,16 @@ var LeafDB = /** @class */ (function () {
      * Update single doc matching `_id`
      * @param {string} _id
      * @param {object} update - New document (default `{}`) / Update query
-     * @param {string[]} projection - Projection array (default `null`)
+     * @param {object} options
+     * @param {string[]} options.projection - Projection array (default `null`)
+     * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
     */
-    LeafDB.prototype.updateById = function (_id, update, projection) {
+    LeafDB.prototype.updateById = function (_id, update, options) {
         if (update === void 0) { update = {}; }
-        if (projection === void 0) { projection = null; }
+        if (options === void 0) { options = {
+            projection: null,
+            persist: false
+        }; }
         try {
             if (!validation_1.isObject(update) ||
                 update._id ||
@@ -209,9 +222,11 @@ var LeafDB = /** @class */ (function () {
                         modifiers_1.objectModify(doc, update) :
                         update;
                     this.data[key] = __assign(__assign({}, newDoc), { _id: key });
-                    payload.push(modifiers_1.objectProject(__assign(__assign({}, newDoc), { _id: key }), projection));
+                    payload.push(modifiers_1.objectProject(__assign(__assign({}, newDoc), { _id: key }), options.projection));
                 }
             }
+            if (options.persist)
+                this.persist();
             return Promise.resolve(payload);
         }
         catch (err) {
@@ -222,12 +237,17 @@ var LeafDB = /** @class */ (function () {
      * Update documents matching `query`
      * @param {string|object} query - Query object (default `{}`)
      * @param {object} update - New document (default `{}`) / Update query
-     * @param {string[]} projection - Projection array (default `null`)
+     * @param {object} options
+     * @param {string[]} options.projection - Projection array (default `null`)
+     * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
      */
-    LeafDB.prototype.update = function (query, update, projection) {
+    LeafDB.prototype.update = function (query, update, options) {
         if (query === void 0) { query = {}; }
         if (update === void 0) { update = {}; }
-        if (projection === void 0) { projection = null; }
+        if (options === void 0) { options = {
+            projection: null,
+            persist: false
+        }; }
         try {
             if (!validation_1.isObject(query)) {
                 return Promise.reject(new Error("Invalid query: " + JSON.stringify(query)));
@@ -247,9 +267,11 @@ var LeafDB = /** @class */ (function () {
                         modifiers_1.objectModify(doc, update) :
                         update;
                     this.data[_id] = __assign(__assign({}, newDoc), { _id: _id });
-                    payload.push(modifiers_1.objectProject(__assign(__assign({}, newDoc), { _id: _id }), projection));
+                    payload.push(modifiers_1.objectProject(__assign(__assign({}, newDoc), { _id: _id }), options.projection));
                 }
             }
+            if (options.persist)
+                this.persist();
             return Promise.resolve(payload);
         }
         catch (err) {
@@ -259,8 +281,11 @@ var LeafDB = /** @class */ (function () {
     /**
      * Delete doc matching `_id`
      * @param {string} _id
+     * @param {object} options
+     * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
     */
-    LeafDB.prototype.deleteById = function (_id) {
+    LeafDB.prototype.deleteById = function (_id, _a) {
+        var _b = (_a === void 0 ? {} : _a).persist, persist = _b === void 0 ? false : _b;
         try {
             var deleted = 0;
             for (var i = 0, keys = utils_1.toArray(_id); i < keys.length; i += 1) {
@@ -274,7 +299,9 @@ var LeafDB = /** @class */ (function () {
                     deleted += 1;
                 }
             }
-            return deleted;
+            if (persist)
+                this.persist();
+            return Promise.resolve(deleted);
         }
         catch (err) {
             return Promise.reject(err);
@@ -283,9 +310,12 @@ var LeafDB = /** @class */ (function () {
     /**
      * Delete documents matching `query`
      * @param {*} query - Query object (default `{}`)
+     * @param {object} options
+     * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
      */
-    LeafDB.prototype.delete = function (query) {
+    LeafDB.prototype.delete = function (query, _a) {
         if (query === void 0) { query = {}; }
+        var _b = (_a === void 0 ? {} : _a).persist, persist = _b === void 0 ? false : _b;
         try {
             if (!validation_1.isObject(query)) {
                 return Promise.reject(new Error("Invalid query: " + JSON.stringify(query)));
@@ -299,6 +329,8 @@ var LeafDB = /** @class */ (function () {
                     removed += 1;
                 }
             }
+            if (persist)
+                this.persist();
             return Promise.resolve(removed);
         }
         catch (err) {

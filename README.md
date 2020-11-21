@@ -37,7 +37,6 @@ db.insert({ species: 'cat', name: 'whiskers' })
    - [Create / load](#create-load)
    - [Persistence](#persistence)
    - [Corruption](#corruption)
-   - [Drop](#drop)
  - [Inserting docs](#inserting-docs)
  - [Finding docs](#finding-docs)
    - [Basic query](#basic-query)
@@ -48,6 +47,7 @@ db.insert({ species: 'cat', name: 'whiskers' })
  - [Updating docs](#updating-docs)
    - [Modifiers](#modifiers)
  - [Deleting docs](#deleting-docs)
+ - [Dropping database](#drop)
 
 ## Database
 
@@ -85,13 +85,9 @@ If `strict` is enabled, `persist()` will throw an error if corrupted data is fou
 
 Calling `load()` will return an array of corrupted raw data (string). When `persist()` is called, all corrupt items will be removed from file, so if data integrity is important make sure to re-insert (via `insert()` or `update()`) those items before calling `persist()`.
 
-### Drop
-
-The database can be dropped with `drop()`. This will clear the database file on disk and flush memory.
-
 ## Inserting docs
 
-`db.insert(newDocs, { persist }) => Promise`
+`db.insert(newDocs, options) => Promise`
 
  - `newDocs` - Single doc or array of docs to insert
  - `options.persist` - Should insert call persist (default `false`)
@@ -282,17 +278,19 @@ The `byId` queries accept a single `_id` string, or an array of `_id` strings.
 
 ## Updating docs
 
-`await update(query, update) => Promise([docs])`
+`await update(query, update, options) => Promise([docs])`
 
  - `query` - Query object (default `{}`)
  - `update` - Update object (default `{}`)
- - `projection` - Projection (default `null`)
+ - `options.projection` - Projection (default `null`)
+ - `options.persist` - Should updated docs be persisted (default `false`)
 
-`await updateById([_id], update) => Promise([docs])`
+`await updateById([_id], update, options) => Promise([docs])`
 
  - `_id` - Doc `_id`
  - `update` - Update object (default `{}`)
- - `projection` - Projection (default `null`)
+ - `options.projection` - Projection (default `null`)
+ - `options.persist` - Should updated docs be persisted (default `false`)
 
 
 Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`.
@@ -370,13 +368,15 @@ await db.update({}, { $set: { value: 3 } })
 
 ## Deleting docs
 
-`await delete(query) => Promise(n)`
+`await delete(query, options) => Promise(n)`
 
  - `query` - Query object (default `{}`)
+ - `options.persist` - Should deleted docs be persisted (default `false`)
 
-`await deleteById([_id]) => Promise(n)`
+`await deleteById([_id], options) => Promise(n)`
 
  - `_id` - Doc `_id`
+ - `options.persist` - Should deleted docs be persisted (default `false`)
 
 Delete doc(s) matching query object.
 
@@ -401,6 +401,12 @@ await db.delete({ _id: 2 })
 // [3, 4]
 await db.delete({ type: 'normal' }, { multi: true })
 ```
+
+### Drop
+
+`await drop() => Promise(n)`
+
+Clears both memory and database file.
 
 ## Testing
 

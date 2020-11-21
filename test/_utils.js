@@ -141,13 +141,14 @@ const setup = ({
   memory = null,
   autoload = true
 } = {}) => {
-  const name = 'test';
-  const db = new LeafDB(name, { root, strict, autoload });
-
   let file = null;
+  const name = 'test';
 
   if (root) file = path.resolve(root, `${name}.txt`);
   if (data && file) fs.writeFileSync(file, data.map(JSON.stringify).join('\n'));
+
+  const db = new LeafDB(name, { root, strict, autoload });
+
   if (memory) db.data = { ...memory };
 
   return ({ name, file, db });

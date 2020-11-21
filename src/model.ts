@@ -50,9 +50,7 @@ export default class LeafDB {
 
     if (
       this.root &&
-      typeof options.autoload === 'undefined' ?
-        true :
-        options.autoload
+      (typeof options.autoload === 'undefined' ? true : options.autoload)
     ) this.load();
   }
 
@@ -70,6 +68,8 @@ export default class LeafDB {
     }
 
     if (fs.existsSync(this.file)) {
+      this.data = {};
+
       const data = fs
         .readFileSync(this.file, 'utf-8')
         .split('\n');
@@ -126,7 +126,12 @@ export default class LeafDB {
     fs.writeFileSync(this.file, payload.join('\n'));
   }
 
-  /** Insert new document(s) */
+  /**
+   * Insert new document(s)
+   * @param {object|object[]} newDocs
+   * @param {object} options
+   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
+   * */
   insert(newDocs: NewDoc | Array<NewDoc>, { persist = false } = {}) {
     if (!Array.isArray(newDocs) && !isObject(newDocs)) {
       return Promise.reject(new Error(`Invalid newDocs: ${JSON.stringify(newDocs)}`));
@@ -163,7 +168,11 @@ export default class LeafDB {
     return Promise.resolve(inserted as Array<Doc>);
   }
 
-  /** Find doc(s) matching `_id` */
+  /**
+   * Find doc(s) matching `_id`
+   * @param {string|string[]} _id - Doc _id
+   * @param {string[]} projection - Projection array (default `null`)
+   * */
   findById(_id: string | Array<string>, projection: Projection = null) {
     try {
       const payload = [];
@@ -221,12 +230,20 @@ export default class LeafDB {
    * Update single doc matching `_id`
    * @param {string} _id
    * @param {object} update - New document (default `{}`) / Update query
-   * @param {string[]} projection - Projection array (default `null`)
+   * @param {object} options
+   * @param {string[]} options.projection - Projection array (default `null`)
+   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
   */
   updateById(
     _id: string | Array<string>,
     update: NewDoc | Update = {},
-    projection: Projection = null
+    options: {
+      projection: Projection,
+      persist: boolean
+    } = {
+      projection: null,
+      persist: false
+    }
   ) {
     try {
       if (
@@ -254,9 +271,11 @@ export default class LeafDB {
             update;
 
           this.data[key] = { ...newDoc, _id: key };
-          payload.push(objectProject({ ...newDoc, _id: key }, projection));
+          payload.push(objectProject({ ...newDoc, _id: key }, options.projection));
         }
       }
+
+      if (options.persist) this.persist();
 
       return Promise.resolve(payload);
     } catch (err) {
@@ -268,12 +287,20 @@ export default class LeafDB {
    * Update documents matching `query`
    * @param {string|object} query - Query object (default `{}`)
    * @param {object} update - New document (default `{}`) / Update query
-   * @param {string[]} projection - Projection array (default `null`)
+   * @param {object} options
+   * @param {string[]} options.projection - Projection array (default `null`)
+   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
    */
   update(
     query: Query = {},
     update: NewDoc | Update = {},
-    projection: Projection = null
+    options: {
+      projection: Projection,
+      persist: boolean
+    } = {
+      projection: null,
+      persist: false
+    }
   ) {
     try {
       if (!isObject(query)) {
@@ -300,9 +327,11 @@ export default class LeafDB {
             update;
 
           this.data[_id] = { ...newDoc, _id };
-          payload.push(objectProject({ ...newDoc, _id }, projection));
+          payload.push(objectProject({ ...newDoc, _id }, options.projection));
         }
       }
+
+      if (options.persist) this.persist();
 
       return Promise.resolve(payload);
     } catch (err) {
@@ -313,8 +342,10 @@ export default class LeafDB {
   /**
    * Delete doc matching `_id`
    * @param {string} _id
+   * @param {object} options
+   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
   */
-  deleteById(_id: string | Array<string>) {
+  deleteById(_id: string | Array<string>, { persist = false } = {}) {
     try {
       let deleted = 0;
       for (let i = 0, keys = toArray(_id); i < keys.length; i += 1) {
@@ -332,7 +363,9 @@ export default class LeafDB {
         }
       }
 
-      return deleted;
+      if (persist) this.persist();
+
+      return Promise.resolve(deleted);
     } catch (err) {
       return Promise.reject(err);
     }
@@ -341,8 +374,10 @@ export default class LeafDB {
   /**
    * Delete documents matching `query`
    * @param {*} query - Query object (default `{}`)
+   * @param {object} options
+   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
    */
-  delete(query: Query = {}) {
+  delete(query: Query = {}, { persist = false } = {}) {
     try {
       if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
@@ -358,6 +393,8 @@ export default class LeafDB {
           removed += 1;
         }
       }
+
+      if (persist) this.persist();
 
       return Promise.resolve(removed);
     } catch (err) {
