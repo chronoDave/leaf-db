@@ -47,44 +47,52 @@ const operator = {
  * @param {object} query
  * @param {object} object
  */
-export const isQueryMatch = (object: Doc, query: Query) => Object
+export const isQueryMatch = (object: Doc, query: Query): boolean => Object
   .entries(query)
   .filter(([key, value]) => {
     // Operators
     if (key[0] === '$') {
-      for (let j = 0, ofe = Object.entries(value); j < ofe.length; j += 1) {
-        const [field, testValue] = ofe[j];
-        const originalValue = objectGet(object, field); // Object value
+      switch (key) {
+        case '$some':
+          if (!Array.isArray(value)) return false;
+          if (!value.some(testQuery => isObject(testQuery) && isQueryMatch(object, testQuery as Query))) return false;
+          break;
+        default: {
+          for (let j = 0, ofe = Object.entries(value); j < ofe.length; j += 1) {
+            const [field, testValue] = ofe[j];
+            const originalValue = objectGet(object, field); // Object value
 
-        switch (key) {
-          case '$gt':
-            if (typeof originalValue !== 'number') return false;
-            if (!operator.gt(originalValue, testValue)) return false;
-            break;
-          case '$gte':
-            if (typeof originalValue !== 'number') return false;
-            if (!operator.gte(originalValue, testValue)) return false;
-            break;
-          case '$lt':
-            if (typeof originalValue !== 'number') return false;
-            if (!operator.lt(originalValue, testValue)) return false;
-            break;
-          case '$lte':
-            if (typeof originalValue !== 'number') return false;
-            if (!operator.lte(originalValue, testValue)) return false;
-            break;
-          case '$not':
-            if (!operator.not(originalValue, testValue)) return false;
-            break;
-          case '$exists':
-            if (!operator.exists(object, toArray(value))) return false;
-            break;
-          case '$has':
-            if (!Array.isArray(originalValue)) return false;
-            if (!operator.has(originalValue, testValue)) return false;
-            break;
-          default:
-            throw new Error(`Invalid operator: ${key}`);
+            switch (key) {
+              case '$gt':
+                if (typeof originalValue !== 'number') return false;
+                if (!operator.gt(originalValue, testValue)) return false;
+                break;
+              case '$gte':
+                if (typeof originalValue !== 'number') return false;
+                if (!operator.gte(originalValue, testValue)) return false;
+                break;
+              case '$lt':
+                if (typeof originalValue !== 'number') return false;
+                if (!operator.lt(originalValue, testValue)) return false;
+                break;
+              case '$lte':
+                if (typeof originalValue !== 'number') return false;
+                if (!operator.lte(originalValue, testValue)) return false;
+                break;
+              case '$not':
+                if (!operator.not(originalValue, testValue)) return false;
+                break;
+              case '$exists':
+                if (!operator.exists(object, toArray(value))) return false;
+                break;
+              case '$has':
+                if (!Array.isArray(originalValue)) return false;
+                if (!operator.has(originalValue, testValue)) return false;
+                break;
+              default:
+                throw new Error(`Invalid operator: ${key}`);
+            }
+          }
         }
       }
     // Regular

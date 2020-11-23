@@ -198,3 +198,45 @@ test('[isQueryMatch] operator $has should return false if object does not contai
 
   t.end();
 });
+
+test('[isQueryMatch] operator $some should return true if any query matches', t => {
+  t.true(isQueryMatch(mockObjectComplex, {
+    $some: [
+      { b: 4 },
+      { a: 2 },
+      { c: 3 },
+      { _id: 1 }
+    ]
+  }));
+  t.true(isQueryMatch(mockObjectComplex, {
+    $some: [
+      { b: 4 },
+      { a: 2 },
+      { c: 3 },
+      { $has: { b: 2 } }
+    ]
+  }));
+  t.true(isQueryMatch(mockObjectComplex, {
+    $some: [
+      { b: 4 },
+      { a: 1 },
+      { c: 3 },
+      { $has: { b: 2 } }
+    ]
+  }));
+
+  t.end();
+});
+
+test('[isQueryMatch] operator $some should return false if no query matches', t => {
+  t.false(isQueryMatch(mockObjectComplex, {
+    $some: [
+      { b: 4 },
+      { a: 2 },
+      { c: 3 },
+      { _id: 5 }
+    ]
+  }));
+
+  t.end();
+});

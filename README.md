@@ -210,7 +210,7 @@ Operators can be used to create advanced queries. The following operators are su
 These operators will return false if the queries field is not an array
 
  - `$has` - Does array contain value
-
+ - `$some` - Does any query match
 
 <b>Example</b>
 
@@ -247,6 +247,12 @@ await db.find({ $has: { 'properties.variants': 'strong' } })
 await db.find({ $has: { type: 'weak' } })
 // Error, dot notation isn't a valid object field
 await db.find({ $has: { properties: { 'variants.0': 'weak' } } })
+
+// $some
+// [1, 2, 4]
+await db.find({ $some: [{ type: 'weak' }, { type: 'normal' }] })
+// [1, 2, 3, 4, 5]
+await db.find({ $some: [{ $has: { variants: 'weak' } }, { _id: 5 }] })
 ```
 
 ### Projection
