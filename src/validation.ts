@@ -12,35 +12,13 @@ export const isNumber = (any: unknown) => typeof any === 'number';
 export const isObject = (any: unknown) => any !== null && !Array.isArray(any) && typeof any === 'object';
 export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
 
-// Operator
-const operator = {
-  gt: (a: number, b: number) => {
-    if (!isNumber(a) || !isNumber(b)) return false;
-    return a > b;
-  },
-  gte: (a: number, b: number) => {
-    if (!isNumber(a) || !isNumber(b)) return false;
-    return a >= b;
-  },
-  lt: (a: number, b: number) => {
-    if (!isNumber(a) || !isNumber(b)) return false;
-    return a < b;
-  },
-  lte: (a: number, b: number) => {
-    if (!isNumber(a) || !isNumber(b)) return false;
-    return a <= b;
-  },
-  not: (a: unknown, b: unknown) => a !== b,
-  exists: (object: object, keys: Array<Value>) => keys
-    .filter(key => {
-      if (typeof key === 'boolean') return false;
-      if (typeof key === 'object') return false;
-      return objectGet(object, key) !== undefined;
-    })
-    .length === keys.length,
-  has: (array: Array<unknown>, value: unknown) => array
-    .some(item => deepEqual(item, value))
-};
+const exists = (object: object, keys: Array<Value>) => keys
+  .filter(key => {
+    if (typeof key === 'boolean') return false;
+    if (typeof key === 'object') return false;
+    return objectGet(object, key) !== undefined;
+  })
+  .length === keys.length;
 
 /**
  * Test if query matches
@@ -64,30 +42,34 @@ export const isQueryMatch = (object: Doc, query: Query): boolean => Object
 
             switch (key) {
               case '$gt':
-                if (typeof originalValue !== 'number') return false;
-                if (!operator.gt(originalValue, testValue)) return false;
+                if (!isNumber(originalValue) || !isNumber(testValue)) return false;
+                if (!(originalValue > testValue)) return false;
                 break;
               case '$gte':
-                if (typeof originalValue !== 'number') return false;
-                if (!operator.gte(originalValue, testValue)) return false;
+                if (!isNumber(originalValue) || !isNumber(testValue)) return false;
+                if (!(originalValue >= testValue)) return false;
                 break;
               case '$lt':
-                if (typeof originalValue !== 'number') return false;
-                if (!operator.lt(originalValue, testValue)) return false;
+                if (!isNumber(originalValue) || !isNumber(testValue)) return false;
+                if (!(originalValue < testValue)) return false;
                 break;
               case '$lte':
-                if (typeof originalValue !== 'number') return false;
-                if (!operator.lte(originalValue, testValue)) return false;
+                if (!isNumber(originalValue) || !isNumber(testValue)) return false;
+                if (!(originalValue <= testValue)) return false;
                 break;
               case '$not':
-                if (!operator.not(originalValue, testValue)) return false;
+                if (originalValue === testValue) return false;
                 break;
               case '$exists':
-                if (!operator.exists(object, toArray(value))) return false;
+                if (!exists(object, toArray(value))) return false;
                 break;
               case '$has':
                 if (!Array.isArray(originalValue)) return false;
-                if (!operator.has(originalValue, testValue)) return false;
+                if (!originalValue.some(item => deepEqual(item, testValue))) return false;
+                break;
+              case '$includes':
+                if (typeof originalValue !== 'string' || typeof testValue !== 'string') return false;
+                if (!originalValue.includes(testValue)) return false;
                 break;
               default:
                 throw new Error(`Invalid operator: ${key}`);

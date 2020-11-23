@@ -201,6 +201,10 @@ Operators can be used to create advanced queries. The following operators are su
  - `$lte` - Is less or equal than
  - `$not` - Is not equal
 
+<b>String operators</b>
+
+ - `$includes` - Does string include string
+
 <b>Object operators</b>
 
  - `$exists` - Does object key exist
@@ -231,6 +235,10 @@ await db.find({ $lte: { _id: 4, 'properties.parent': 3 }})
 // $not
 // [2, 3, 4, 5]
 await db.find({ $not: { _id: 3 } })
+
+// $includes
+// [1, 2]
+await db.find({ $includes: { type: 'mal' } })
 
 // $exists
 // [1, 2, 3, 4]

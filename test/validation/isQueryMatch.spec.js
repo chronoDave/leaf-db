@@ -240,3 +240,19 @@ test('[isQueryMatch] operator $some should return false if no query matches', t 
 
   t.end();
 });
+
+test('[isQueryMatch] operator $includes should return true if query partially matches', t => {
+  t.true(isQueryMatch(mockObjectComplex, {
+    $includes: { 'c.0.d': 'str' }
+  }));
+
+  t.end();
+});
+
+test('[isQueryMatch] operator $includes should return true if query partially matches', t => {
+  t.false(isQueryMatch(mockObjectComplex, {
+    $includes: { 'c.0.d': 'sng' }
+  }));
+
+  t.end();
+});
