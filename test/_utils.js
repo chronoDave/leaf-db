@@ -96,7 +96,7 @@ const mockObjectComplex = {
   b: [2, null, 3],
   c: [
     {
-      d: 'string',
+      d: 'String',
       e: {
         f: null
       }

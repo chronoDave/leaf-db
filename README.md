@@ -203,7 +203,8 @@ Operators can be used to create advanced queries. The following operators are su
 
 <b>String operators</b>
 
- - `$includes` - Does string include string
+ - `$string` - Does string include string
+ - `$stringLoose` - Does string include string, case insensitive
 
 <b>Object operators</b>
 
@@ -236,9 +237,13 @@ await db.find({ $lte: { _id: 4, 'properties.parent': 3 }})
 // [2, 3, 4, 5]
 await db.find({ $not: { _id: 3 } })
 
-// $includes
+// $string
 // [1, 2]
-await db.find({ $includes: { type: 'mal' } })
+await db.find({ $string: { type: 'mal' } })
+// []
+await db.find({ $string: { type: 'MAL' } })
+// [1, 2]
+await db.find({ $stringLoose: { type: 'MAL' } })
 
 // $exists
 // [1, 2, 3, 4]

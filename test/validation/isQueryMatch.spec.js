@@ -25,7 +25,7 @@ test('[isQueryMatch] should return true if query matches', t => {
   // Test dot
   t.true(isQueryMatch(mockObjectComplex, { 'b.0': 2 }));
   t.true(isQueryMatch(mockObjectComplex, { 'b[1]': null }));
-  t.true(isQueryMatch(mockObjectComplex, { 'c.0.d': 'string' }));
+  t.true(isQueryMatch(mockObjectComplex, { 'c.0.d': 'String' }));
   // Test multi match
   t.true(isQueryMatch(mockObjectSimple, { _id: 1, c: null }));
   t.true(isQueryMatch(mockObjectNested, { _id: 1, 'b.c': 'string' }));
@@ -185,7 +185,7 @@ test('[isQueryMatch] operator $exists should return false if field does not exis
 test('[isQueryMatch] operator $has should return true if object contains value', t => {
   t.true(isQueryMatch(mockObjectComplex, { $has: { b: 2 } }));
   t.true(isQueryMatch(mockObjectComplex, { $has: { b: null } }));
-  t.true(isQueryMatch(mockObjectComplex, { $has: { c: { d: 'string', e: { f: null } } } }));
+  t.true(isQueryMatch(mockObjectComplex, { $has: { c: { d: 'String', e: { f: null } } } }));
   t.true(isQueryMatch(mockObjectComplex, { $has: { 'c.1.i.j': 4 } }));
 
   t.end();
@@ -241,17 +241,39 @@ test('[isQueryMatch] operator $some should return false if no query matches', t 
   t.end();
 });
 
-test('[isQueryMatch] operator $includes should return true if query partially matches', t => {
+test('[isQueryMatch] operator $string should return true if query partially matches', t => {
   t.true(isQueryMatch(mockObjectComplex, {
-    $includes: { 'c.0.d': 'str' }
+    $string: { 'c.0.d': 'Str' }
   }));
 
   t.end();
 });
 
-test('[isQueryMatch] operator $includes should return true if query partially matches', t => {
+test('[isQueryMatch] operator $string should return false if query partially matches', t => {
   t.false(isQueryMatch(mockObjectComplex, {
-    $includes: { 'c.0.d': 'sng' }
+    $string: { 'c.0.d': 'sng' }
+  }));
+  t.false(isQueryMatch(mockObjectComplex, {
+    $string: { 'c.0.d': 'str' }
+  }));
+
+  t.end();
+});
+
+test('[isQueryMatch] operator $stringLoose should return true if query partially matches, case insensitive', t => {
+  t.true(isQueryMatch(mockObjectComplex, {
+    $stringLoose: { 'c.0.d': 'str' }
+  }));
+  t.true(isQueryMatch(mockObjectComplex, {
+    $stringLoose: { 'c.0.d': 'Str' }
+  }));
+
+  t.end();
+});
+
+test('[isQueryMatch] operator $stringLoose should return false if query partially matches, case insensitive', t => {
+  t.false(isQueryMatch(mockObjectComplex, {
+    $stringLoose: { 'c.0.d': 'sng' }
   }));
 
   t.end();
