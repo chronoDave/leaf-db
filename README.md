@@ -14,7 +14,7 @@ An small, embeddable database for [node.js](https://nodejs.org/en/).
 yarn add leaf-db
 
 // Npm
-yarn i leaf-db
+npm i leaf-db
 ```
 
 ## Getting started
