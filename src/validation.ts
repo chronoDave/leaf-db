@@ -67,11 +67,11 @@ export const isQueryMatch = (object: Doc, query: Query): boolean => Object
                 if (!Array.isArray(originalValue)) return false;
                 if (!originalValue.some(item => deepEqual(item, testValue))) return false;
                 break;
-              case '$string':
+              case '$stringStrict':
                 if (typeof originalValue !== 'string' || typeof testValue !== 'string') return false;
                 if (!originalValue.includes(testValue)) return false;
                 break;
-              case '$stringLoose':
+              case '$string':
                 if (typeof originalValue !== 'string' || typeof testValue !== 'string') return false;
                 if (!originalValue.toLowerCase().includes(testValue.toLowerCase())) return false;
                 break;

@@ -203,8 +203,8 @@ Operators can be used to create advanced queries. The following operators are su
 
 <b>String operators</b>
 
- - `$string` - Does string include string
- - `$stringLoose` - Does string include string, case insensitive
+ - `$stringStrict` - Does string include string
+ - `$string` - Does string include string, case insensitive
 
 <b>Object operators</b>
 

@@ -241,7 +241,29 @@ test('[isQueryMatch] operator $some should return false if no query matches', t 
   t.end();
 });
 
-test('[isQueryMatch] operator $string should return true if query partially matches', t => {
+test('[isQueryMatch] operator $stringStrict should return true if query partially matches', t => {
+  t.true(isQueryMatch(mockObjectComplex, {
+    $stringStrict: { 'c.0.d': 'Str' }
+  }));
+
+  t.end();
+});
+
+test('[isQueryMatch] operator $stringStrict should return false if query partially matches', t => {
+  t.false(isQueryMatch(mockObjectComplex, {
+    $stringStrict: { 'c.0.d': 'sng' }
+  }));
+  t.false(isQueryMatch(mockObjectComplex, {
+    $stringStrict: { 'c.0.d': 'str' }
+  }));
+
+  t.end();
+});
+
+test('[isQueryMatch] operator $string should return true if query partially matches, case insensitive', t => {
+  t.true(isQueryMatch(mockObjectComplex, {
+    $string: { 'c.0.d': 'str' }
+  }));
   t.true(isQueryMatch(mockObjectComplex, {
     $string: { 'c.0.d': 'Str' }
   }));
@@ -249,31 +271,9 @@ test('[isQueryMatch] operator $string should return true if query partially matc
   t.end();
 });
 
-test('[isQueryMatch] operator $string should return false if query partially matches', t => {
+test('[isQueryMatch] operator $string should return false if query partially matches, case insensitive', t => {
   t.false(isQueryMatch(mockObjectComplex, {
     $string: { 'c.0.d': 'sng' }
-  }));
-  t.false(isQueryMatch(mockObjectComplex, {
-    $string: { 'c.0.d': 'str' }
-  }));
-
-  t.end();
-});
-
-test('[isQueryMatch] operator $stringLoose should return true if query partially matches, case insensitive', t => {
-  t.true(isQueryMatch(mockObjectComplex, {
-    $stringLoose: { 'c.0.d': 'str' }
-  }));
-  t.true(isQueryMatch(mockObjectComplex, {
-    $stringLoose: { 'c.0.d': 'Str' }
-  }));
-
-  t.end();
-});
-
-test('[isQueryMatch] operator $stringLoose should return false if query partially matches, case insensitive', t => {
-  t.false(isQueryMatch(mockObjectComplex, {
-    $stringLoose: { 'c.0.d': 'sng' }
   }));
 
   t.end();
