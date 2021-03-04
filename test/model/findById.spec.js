@@ -45,6 +45,21 @@ test('[findById] should return empty array if no match is found', async t => {
   t.end();
 });
 
+test('[findById] should return empty array if match is deleted', async t => {
+  const { db } = setup({ memory: mockMemory });
+
+  try {
+    const docs = await db.findById('key_6');
+
+    t.true(Array.isArray(docs));
+    t.equal(docs.length, 0);
+  } catch (err) {
+    t.fail(err);
+  }
+
+  t.end();
+});
+
 test('[findById] should throw if array contains invalid values', async t => {
   const { db } = setup({ memory: mockMemory });
 
@@ -53,24 +68,6 @@ test('[findById] should throw if array contains invalid values', async t => {
     t.fail('expected to throw');
   } catch (err) {
     t.pass('throws');
-  }
-
-  t.end();
-});
-
-test('[findById] should return doc if match is found', async t => {
-  const id = 'key_1';
-
-  const { db } = setup({ memory: mockMemory });
-
-  try {
-    const docs = await db.findById(id);
-
-    t.true(Array.isArray(docs));
-    t.equal(docs.length, 1);
-    t.deepEqual(docs[0], mockMemory[id]);
-  } catch (err) {
-    t.fail(err);
   }
 
   t.end();

@@ -311,8 +311,7 @@ The `byId` queries accept a single `_id` string, or an array of `_id` strings.
  - `options.projection` - Projection (default `null`)
  - `options.persist` - Should updated docs be persisted (default `false`)
 
-
-Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`.
+Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`. Returns the updated docs.
 
 If no modifiers are provided, `update()` will override the found doc(s) with `update`
 

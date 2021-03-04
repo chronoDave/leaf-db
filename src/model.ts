@@ -205,18 +205,14 @@ export default class LeafDB {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
       }
 
-      if (isEmptyObject(query)) {
-        return Promise.resolve(Object
-          .values(this.data)
-          .map(doc => objectProject(doc, projection)));
-      }
-
       const payload = [];
       for (let i = 0, data = Object.values(this.data); i < data.length; i += 1) {
         const doc = data[i];
 
-        if (!doc.$deleted && isQueryMatch(doc, query)) {
-          payload.push(objectProject(doc, projection));
+        if (!doc.$deleted) {
+          if (isEmptyObject(query) || isQueryMatch(doc, query)) {
+            payload.push(objectProject(doc, projection));
+          }
         }
       }
 
