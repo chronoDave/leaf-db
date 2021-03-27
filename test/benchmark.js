@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 const { performance } = require('perf_hooks');
 
-const LeafDB = require('../dist/model').default;
+const LeafDB = require('../dist/model');
 
 /**
  * Basic benchmarking

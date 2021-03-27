@@ -21,7 +21,7 @@ npm i leaf-db
 
 ```JS
 // ES5
-const LeafDB = require('leaf-db').default;
+const LeafDB = require('leaf-db');
 // ES6
 import LeafDB from 'leaf-db';
 
