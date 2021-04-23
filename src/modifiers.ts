@@ -1,9 +1,6 @@
 import objectGet from 'lodash.get';
 import objectSet from 'lodash.set';
 
-// Types
-import { Projection, NewDoc, Update } from './types';
-
 const modifiers = {
   add: (object: object, key: string, value: unknown) => {
     if (
@@ -20,7 +17,7 @@ const modifiers = {
   }
 };
 
-export const objectModify = (object: object, update: NewDoc | Update) => {
+export const objectModify = (object: object, update: LeafDB.NewDoc | LeafDB.Update) => {
   for (let i = 0, ue = Object.entries(update); i < ue.length; i += 1) {
     const [modifier, fields] = ue[i];
 
@@ -43,7 +40,7 @@ export const objectModify = (object: object, update: NewDoc | Update) => {
   return object;
 };
 
-export const objectProject = (object: NewDoc, projection: Projection) => {
+export const objectProject = (object: LeafDB.NewDoc, projection: LeafDB.Projection) => {
   if (!object) return null;
   if (!projection) return object;
 

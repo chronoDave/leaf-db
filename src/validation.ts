@@ -1,9 +1,6 @@
 import deepEqual from 'fast-deep-equal';
 import objectGet from 'lodash.get';
 
-// Types
-import { Doc, Query, Value } from './types';
-
 // Utils
 import { toArray, objectHas } from './utils';
 
@@ -12,7 +9,7 @@ export const isNumber = (any: unknown) => typeof any === 'number';
 export const isObject = (any: unknown) => any !== null && !Array.isArray(any) && typeof any === 'object';
 export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
 
-const exists = (object: object, keys: Array<Value>) => keys
+const exists = (object: object, keys: Array<LeafDB.Value>) => keys
   .filter(key => {
     if (typeof key === 'boolean') return false;
     if (typeof key === 'object') return false;
@@ -25,7 +22,7 @@ const exists = (object: object, keys: Array<Value>) => keys
  * @param {object} query
  * @param {object} object
  */
-export const isQueryMatch = (object: Doc, query: Query): boolean => Object
+export const isQueryMatch = (object: LeafDB.Doc, query: LeafDB.Query): boolean => Object
   .entries(query)
   .filter(([key, value]) => {
     // Operators
@@ -33,7 +30,7 @@ export const isQueryMatch = (object: Doc, query: Query): boolean => Object
       switch (key) {
         case '$some':
           if (!Array.isArray(value)) return false;
-          if (!value.some(testQuery => isObject(testQuery) && isQueryMatch(object, testQuery as Query))) return false;
+          if (!value.some(testQuery => isObject(testQuery) && isQueryMatch(object, testQuery as LeafDB.Query))) return false;
           break;
         default: {
           for (let j = 0, ofe = Object.entries(value); j < ofe.length; j += 1) {

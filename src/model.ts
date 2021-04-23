@@ -4,15 +4,6 @@ import path from 'path';
 // Modifiers
 import { objectModify, objectProject } from './modifiers';
 
-// Types
-import {
-  Doc,
-  NewDoc,
-  Query,
-  Projection,
-  Update
-} from './types';
-
 // Utils
 import { getUid, toArray } from './utils';
 
@@ -26,11 +17,48 @@ import {
   hasMixedModifiers
 } from './validation';
 
+declare global {
+  namespace LeafDB {
+    export type Value = number | string | boolean | object;
+
+    export type Doc = {
+      _id: string,
+      $deleted?: boolean
+    } & {
+      [key: string]: Value | Array<Value>
+    };
+
+    export type NewDoc = Doc & {
+      _id?: string
+    };
+
+    export type Query = {
+      [key: string]: Value | Array<Value>
+    } & {
+      $gt?: { [key: string]: Value | Array<Value> },
+      $gte?: { [key: string]: Value | Array<Value> },
+      $lt?: { [key: string]: Value | Array<Value> },
+      $lte?: { [key: string]: Value | Array<Value> },
+      $not?: { [key: string]: Value | Array<Value> },
+      $exists?: string | Array<string>,
+      $has?: { [key: string]: Value | Array<Value> }
+    };
+
+    export type Projection = string | Array<string> | null;
+
+    export type Update = {
+      _id?: never,
+      $add?: { [key: string]: number },
+      $set?: { [key: string]: Value | Array<Value> }
+    };
+  }
+}
+
 class LeafDB {
   root?: string;
   strict: boolean;
   file?: PathLike;
-  data: Record<string, Doc>;
+  data: Record<string, LeafDB.Doc>;
 
   constructor(
     name: string,
@@ -132,7 +160,7 @@ class LeafDB {
    * @param {object} options
    * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
    * */
-  insert(newDocs: NewDoc | Array<NewDoc>, { persist = false } = {}) {
+  insert(newDocs: LeafDB.NewDoc | Array<LeafDB.NewDoc>, { persist = false } = {}) {
     if (!Array.isArray(newDocs) && !isObject(newDocs)) {
       return Promise.reject(new Error(`Invalid newDocs: ${JSON.stringify(newDocs)}`));
     }
@@ -165,7 +193,7 @@ class LeafDB {
 
     if (persist) this.persist();
 
-    return Promise.resolve(inserted as Array<Doc>);
+    return Promise.resolve(inserted as Array<LeafDB.Doc>);
   }
 
   /**
@@ -173,7 +201,7 @@ class LeafDB {
    * @param {string|string[]} _id - Doc _id
    * @param {string[]} projection - Projection array (default `null`)
    * */
-  findById(_id: string | Array<string>, projection: Projection = null) {
+  findById(_id: string | Array<string>, projection: LeafDB.Projection = null) {
     try {
       const payload = [];
       for (let i = 0, keys = toArray(_id); i < keys.length; i += 1) {
@@ -188,7 +216,7 @@ class LeafDB {
         if (doc && !doc.$deleted) payload.push(objectProject(doc, projection));
       }
 
-      return Promise.resolve(payload as Array<Doc>);
+      return Promise.resolve(payload as Array<LeafDB.Doc>);
     } catch (err) {
       return Promise.reject(err);
     }
@@ -199,7 +227,7 @@ class LeafDB {
    * @param {string|object} query - Query object (default `{}`)
    * @param {string[]} projection - Projection array (default `null`)
    */
-  find(query: Query = {}, projection: Projection = null) {
+  find(query: LeafDB.Query = {}, projection: LeafDB.Projection = null) {
     try {
       if (!query || !isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
@@ -232,9 +260,9 @@ class LeafDB {
   */
   updateById(
     _id: string | Array<string>,
-    update: NewDoc | Update = {},
+    update: LeafDB.NewDoc | LeafDB.Update = {},
     options: {
-      projection: Projection,
+      projection: LeafDB.Projection,
       persist: boolean
     } = {
       projection: null,
@@ -288,10 +316,10 @@ class LeafDB {
    * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
    */
   update(
-    query: Query = {},
-    update: NewDoc | Update = {},
+    query: LeafDB.Query = {},
+    update: LeafDB.NewDoc | LeafDB.Update = {},
     options: {
-      projection: Projection,
+      projection: LeafDB.Projection,
       persist: boolean
     } = {
       projection: null,
@@ -373,7 +401,7 @@ class LeafDB {
    * @param {object} options
    * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
    */
-  delete(query: Query = {}, { persist = false } = {}) {
+  delete(query: LeafDB.Query = {}, { persist = false } = {}) {
     try {
       if (!isObject(query)) {
         return Promise.reject(new Error(`Invalid query: ${JSON.stringify(query)}`));
