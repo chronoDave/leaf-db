@@ -1,34 +1,34 @@
-# Leaf-DB
+<div align="center">
+  <img src="/assets/icon.svg" width="128" alt="leaf-db">
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![NPM](https://img.shields.io/npm/v/leaf-db?label=npm)](https://www.npmjs.com/package/leaf-db)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/leaf-db@latest.svg)](https://bundlephobia.com/result?p=leaf-db@latest)
-![leaf-db](https://github.com/chronoDave/leaf-db/workflows/leaf-db/badge.svg?branch=master)
+  <h1>leaf-db</h1>
+  <p><b>leaf-db</b> is a small, promise-based, embeddable database for <a href="https://nodejs.org/en/">node.js</a>.</p>
+</div>
 
-An small, embeddable database for [node.js](https://nodejs.org/en/).
+<div align="center">
+  <a href="/LICENSE">
+    <img alt="License GPLv3" src="https://img.shields.io/badge/License-GPLv3-blue.svg" />
+  </a>
+  <a href="https://www.npmjs.com/package/leaf-db">
+    <img alt="NPM" src="https://img.shields.io/npm/v/leaf-db?label=npm">
+  </a>
+  <a href="https://bundlephobia.com/result?p=leaf-db@latest">
+    <img alt="Bundle size" src="https://img.shields.io/bundlephobia/minzip/leaf-db@latest.svg">
+  </a>
+  <a href="https://github.com/chronoDave/leaf-db/workflows/ci">
+    <img alt="CI" src="https://github.com/chronoDave/leaf-db/workflows/ci/badge.svg?branch=master">
+  </a>
+</div>
 
-## Installation
-
-```
-// Yarn
-yarn add leaf-db
-
-// Npm
-npm i leaf-db
-```
-
-## Getting started
+## Getting Started
 
 ```JS
-// ES5
-const LeafDB = require('leaf-db');
-// ES6
 import LeafDB from 'leaf-db';
 
-const db = new LeafDB('example');
+const db = new LeafDB();
 
 db.insert({ species: 'cat', name: 'whiskers' })
-  .then(() => console.log('added whiskers to the database!'))
+  .then(inserted => console.log(`added ${inserted[0].name} to the database!`))
   .catch(console.error)
 ```
 ## API
@@ -62,7 +62,7 @@ db.insert({ species: 'cat', name: 'whiskers' })
 
 ```JS
 // Memory-only database
-const db = new Datastore('db')
+const db = new Datastore()
 
 // Persistent database with manual load
 const db = new Datastore('db', { root: process.cwd(), autoload: false })
@@ -77,7 +77,7 @@ const db = new Datastore('db', { root: process.cwd() })
 
 ### Persistence
 
-By default, `Leaf-DB` does not write directly to file. To make sure the data is persistent, call `persist()`, which will write valid to disk. Keep in mind that this function is sync, so calling this will block. To clean internal memory, call `load()` after `persist()`.
+By default, `leaf-db` does not write directly to file. To make sure the data is persistent, call `persist()`, which will write valid to disk. Keep in mind that this function is sync, so calling this will block. To clean internal memory, call `load()` after `persist()`.
 
 If `strict` is enabled, `persist()` will throw an error if corrupted data is found.
 
@@ -96,9 +96,9 @@ Inserts doc(s) into the database. `_id` is automatically generated (~16 characte
 
 Fields cannot start with `$` (modifier field) or contain `.` (used for dot-queries). Values cannot be `undefined`.
 
-`insert()` will fail if doc(s) are invalid. If `strict` is enabled, `insert()` will reject on the first invalid doc. Insertion takes place _after_ all docs are validated, meaning no data will be inserted if `insert()` rejects.
+`insert()` will fail if doc(s) are invalid. If `strict` is enabled, `insert()` will reject on the first invalid doc, otherwise invalid docs are ignored. Insertion takes place _after_ all docs are validated, meaning no data will be inserted if `insert()` rejects.
 
-`Leaf-DB` does not keep track of when docs are inserted, updated or deleted.
+`leaf-db` does not keep track of when docs are inserted, updated or deleted.
 
 <b>Example</b>
 
@@ -270,7 +270,7 @@ await db.find({ $some: [{ $has: { variants: 'weak' } }, { _id: 5 }] })
 
 ### Projection
 
-`Leaf-DB` supports projection. When using projection, only the specified fields will be returned. Empty objects can be returned if `projection` is `[]`, or when none of the fields provided exist on the found objects.
+`leaf-db` supports projection. When using projection, only the specified fields will be returned. Empty objects can be returned if `projection` is `[]`, or when none of the fields provided exist on the found objects.
 
 <b>Example</b>
 
@@ -291,7 +291,7 @@ await db.find({}, ['type'])
 
 ### Indexing
 
-`Leaf-DB` uses a hash table under the hood to store docs. All docs are indexed by `_id`, meaning using any `byId` query is considerably faster than its regular counterpart.
+`leaf-db` uses a hash table under the hood to store docs. All docs are indexed by `_id`, meaning using any `byId` query is considerably faster than its regular counterpart.
 
 The `byId` queries accept a single `_id` string, or an array of `_id` strings.
 
@@ -426,90 +426,11 @@ await db.delete({ type: 'normal' }, { multi: true })
 
 Clears both memory and database file.
 
-## Testing
-
-### Unit test
-
-```
-yarn test
-
-$ tape test/**/*.spec.js
-TAP version 13
-# [constructor] should create in-memory database
-ok 1 should be truthy
-ok 2 should be strictly equal
-ok 3 should be falsy
-
-...
-
-# [isQueryMatch] operator $has should return false if object does not contain value
-ok 305 should be falsy
-ok 306 should be falsy
-ok 307 should be falsy
-
-1..307
-# tests 307
-# pass  307
-
-# ok
-
-Done in 0.94s.
-```
-
-### Benchmark
-
-```
-yarn bench
-
-$ node test/benchmark.js
-Starting benchmark: insert()
-Starting benchmark: find()
-Starting benchmark: findById()
-Starting benchmark: update()
-Starting benchmark: updateById()
-Starting benchmark: delete()
-Starting benchmark: deleteById()
-
-Database size: 100000, sample size: 1000
-
-insert()
-Total:671.990ms
-Avg: 0.672ms
-
-find()
-Total:99206.610ms
-Avg: 99.207ms
-
-findById()
-Total:1.690ms
-Avg: 0.002ms
-
-update()
-Total:72107.507ms
-Avg: 72.108ms
-
-updateById()
-Total:3.109ms
-Avg: 0.003ms
-
-delete()
-Total:68455.880ms
-Avg: 68.456ms
-
-deleteById()
-Total:1.445ms
-Avg: 0.001ms
-Done in 240.74s.
-```
-
-## Attribution
-
-This project is heavily inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb).
-
-## License
-
-[GNU General Public License v3](./LICENSE).
-
 ## Donating
 
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y41E23T)
+
+## Acknowledgements
+ 
+ - This project is heavily inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb).
+ - <div>Icon made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>

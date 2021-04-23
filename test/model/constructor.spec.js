@@ -5,6 +5,16 @@ const test = require('tape');
 
 const LeafDB = require('../../dist/model');
 
+test('[constructor] should create in-memory database when no arguments are provided', t => {
+  const db = new LeafDB();
+
+  t.true(typeof db.data === 'object');
+  t.equal(Object.keys(db.data).length, 0);
+  t.false(fs.readdirSync(__dirname, { recursive: true }).some(file => file.includes('.txt')));
+
+  t.end();
+});
+
 test('[constructor] should create in-memory database', t => {
   const name = 'test';
   const db = new LeafDB(name);
