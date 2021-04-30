@@ -422,7 +422,7 @@ await db.delete({ type: 'normal' }, { multi: true })
 
 ### Drop
 
-`await drop() => Promise(n)`
+`drop() => void`
 
 Clears both memory and database file.
 
