@@ -44,11 +44,7 @@ module.exports = {
         'parent',
         'sibling',
         'index'
-      ],
-      alphabetize: {
-        order: 'asc',
-        caseInsensitive: true
-      }
+      ]
     }]
   }
 };

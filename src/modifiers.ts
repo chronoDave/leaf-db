@@ -1,48 +1,53 @@
 import objectGet from 'lodash.get';
 import objectSet from 'lodash.set';
 
+// Types
+import {
+  Doc,
+  Value,
+  Projection,
+  Update
+} from './types';
+
 const modifiers = {
-  add: (object: object, key: string, value: unknown) => {
-    if (
-      typeof objectGet(object, key) !== 'number' ||
-      typeof value !== 'number' ||
-      !objectGet(object, key)
-    ) return object;
-    return objectSet(object, key, objectGet(object, key) + value);
+  add: (doc: Doc, key: string, value: Value) => {
+    const cur = objectGet(doc, key);
+    if (typeof cur !== 'number' || typeof value !== 'number') return doc;
+    return objectSet(doc, key, cur + value);
   },
-  set: (object: object, key: string, value: unknown) => objectSet(object, key, value),
-  push: (object: object, key: string, value: unknown) => {
-    if (!Array.isArray(objectGet(object, key))) return object;
-    return objectSet(object, key, [...objectGet(object, key), value]);
+  set: (doc: Doc, key: string, value: Value) => objectSet(doc, key, value),
+  push: (doc: Doc, key: string, value: Value) => {
+    const cur = objectGet(doc, key);
+    if (!Array.isArray(cur)) return doc;
+    return objectSet(doc, key, [...cur, value]);
   }
 };
 
-export const objectModify = (object: object, update: LeafDB.NewDoc | LeafDB.Update) => {
-  for (let i = 0, ue = Object.entries(update); i < ue.length; i += 1) {
-    const [modifier, fields] = ue[i];
+export const docModify = (doc: Doc, update: Update) => {
+  for (let i = 0, updateEntries = Object.entries(update); i < updateEntries.length; i += 1) {
+    const [modifier, fields] = updateEntries[i];
 
-    for (let j = 0, fe = Object.entries(fields || {}); j < fe.length; j += 1) {
-      const [key, value] = fe[j];
+    for (let j = 0, fieldEntries = Object.entries(fields || {}); j < fieldEntries.length; j += 1) {
+      const [key, value] = fieldEntries[j];
 
       switch (modifier) {
         case '$add':
-          return modifiers.add(object, key, value);
+          return modifiers.add(doc, key, value);
         case '$set':
-          return modifiers.set(object, key, value);
+          return modifiers.set(doc, key, value);
         case '$push':
-          return modifiers.push(object, key, value);
+          return modifiers.push(doc, key, value);
         default:
           throw new Error(`Invalid modifier: ${modifier}`);
       }
     }
   }
 
-  return object;
+  return doc;
 };
 
-export const objectProject = (object: LeafDB.NewDoc, projection: LeafDB.Projection) => {
-  if (!object) return null;
-  if (!projection) return object;
+export const docProject = (doc: Doc, projection: Projection): Partial<Doc> => {
+  if (!projection) return doc;
 
   if (!Array.isArray(projection)) {
     throw new Error(`Invalid projection, must be of type 'Array' or falsy: ${projection}`);
@@ -55,5 +60,5 @@ export const objectProject = (object: LeafDB.NewDoc, projection: LeafDB.Projecti
   }
 
   return projection
-    .reduce((acc, key) => objectSet(acc, key, objectGet(object, key)), {});
+    .reduce((acc, key) => objectSet(acc, key, objectGet(doc, key)), {});
 };

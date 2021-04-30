@@ -1,12 +1,11 @@
 import crypto from 'crypto';
 
-export const toArray = <T>(any: T | Array<T>) => (Array.isArray(any) ? any : [any]);
+export const toArray = (any: unknown) => (Array.isArray(any) ? any : [any]);
 
 /**
- * Generate unique ID
  * @param {number} length - ID length (can be shorter if ID contains invalid characters)
  * */
-export const getUid = (length = 16) => crypto
+export const generateUid = (length = 16) => crypto
   .randomBytes(Math.ceil((length * 5) / 4))
   .toString('base64')
   .replace(/[+/]/g, '')
@@ -27,10 +26,14 @@ export const objectHas = (
   const stack = Object.entries(object);
 
   while (stack.length > 0) {
-    const [key, value] = stack.pop();
+    const item = stack.pop();
 
-    if (validator({ key, value })) return true;
-    if (value && typeof value === 'object') stack.push(...Object.entries(value));
+    if (item) {
+      const [key, value] = item;
+
+      if (validator({ key, value })) return true;
+      if (value && typeof value === 'object') stack.push(...Object.entries(value));
+    }
   }
 
   return false;

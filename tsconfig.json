@@ -15,9 +15,5 @@
     "src",
     "test",
     ".eslintrc.js"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
   ]
 }
