@@ -21,7 +21,7 @@
     "node": ">=10.12.0"
   },
   "scripts": {
-    "lint": "eslint . --ignore-pattern dist",
+    "lint": "eslint src",
     "test": "tsc && tape test/**/*.spec.js",
     "bench": "tsc && node test/benchmark.js",
     "prepublish": "rollup -c"
