@@ -17,7 +17,7 @@ export type Query =
 export type Projection = OneOrMore<string> | null;
 
 export type Update = Partial<Doc> | {
-  _id?: never
+  _id: never
   $add?: Record<string, number>,
   $set?: Record<string, OneOrMore<Value>>
 };

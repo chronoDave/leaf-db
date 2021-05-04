@@ -27,27 +27,25 @@ import {
   hasMixedModifiers
 } from './validation';
 
-class LeafDB {
+export default class LeafDB {
   root?: string;
   strict: boolean;
   file?: PathLike;
   data: Record<string, Doc>;
 
-  constructor(
-    name: string,
-    options: {
-      root?: string,
-      autoload?: boolean,
-      strict?: boolean
-    } = {}
-  ) {
+  constructor(options: {
+    name?: string,
+    root?: string,
+    autoload?: boolean,
+    strict?: boolean
+  } = {}) {
     this.root = options.root;
     this.strict = !!options.strict;
 
     if (this.root) fs.mkdirSync(this.root, { recursive: true });
 
     this.data = {};
-    this.file = (this.root && name) && path.resolve(this.root, `${name}.txt`);
+    this.file = (this.root && options.name) && path.resolve(this.root, `${options.name}.txt`);
 
     if (
       this.root &&
@@ -382,5 +380,3 @@ class LeafDB {
     if (this.file) this.persist();
   }
 }
-
-export = LeafDB;

@@ -3,17 +3,19 @@
     "target": "es5",
     "strict": true,
     "noImplicitAny": true,
+    "moduleResolution": "node",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "downlevelIteration": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "esModuleInterop": true,
-    "outDir": "./dist"
+    "outDir": "./test/build"
   },
   "include": [
     "src",
     "test",
-    ".eslintrc.js"
+    ".eslintrc.js",
+    "rollup.config.js",
   ]
 }

@@ -1,6 +1,6 @@
 const test = require('tape');
 
-const { isQueryMatch } = require('../../dist/validation');
+const { isQueryMatch } = require('../build/validation');
 
 // Utils
 const { mockObjectSimple, mockObjectNested, mockObjectComplex } = require('../_utils');

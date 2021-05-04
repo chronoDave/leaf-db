@@ -1,6 +1,6 @@
 const test = require('tape');
 
-const { docModify } = require('../../dist/modifiers');
+const { docModify } = require('../build/modifiers');
 
 // Utils
 const { invalidNumberOperator } = require('../_utils');

@@ -1,6 +1,6 @@
 const test = require('tape');
 
-const { isInvalidDoc } = require('../../dist/validation');
+const { isInvalidDoc } = require('../build/validation');
 
 // Utils
 const { mockObjectProduction } = require('../_utils');

@@ -1,6 +1,6 @@
 const test = require('tape');
 
-const { docProject } = require('../../dist/modifiers');
+const { docProject } = require('../build/modifiers');
 
 // Utils
 const { mockObjectProduction } = require('../_utils');

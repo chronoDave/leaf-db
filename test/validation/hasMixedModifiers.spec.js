@@ -1,6 +1,6 @@
 const test = require('tape');
 
-const { hasMixedModifiers } = require('../../dist/validation');
+const { hasMixedModifiers } = require('../build/validation');
 
 test('[hasMixedModifiers] should return false is object does not have mixed modifiers', t => {
   t.false(hasMixedModifiers({ a: 1 }));

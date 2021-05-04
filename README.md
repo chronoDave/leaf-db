@@ -2,12 +2,12 @@
   <img src="/assets/icon.svg" width="128" alt="leaf-db">
 
   <h1>leaf-db</h1>
-  <p><b>leaf-db</b> is a small, promise-based, embeddable database for <a href="https://nodejs.org/en/">node.js</a>.</p>
+  <p><b>leaf-db</b> is a modern, small, promise-based, embeddable database for <a href="https://nodejs.org/en/">node.js</a>.</p>
 </div>
 
 <div align="center">
   <a href="/LICENSE">
-    <img alt="License GPLv3" src="https://img.shields.io/badge/License-GPLv3-blue.svg" />
+    <img alt="License GPLv3" src="https://img.shields.io/badge/license-GPLv3-blue.svg" />
   </a>
   <a href="https://www.npmjs.com/package/leaf-db">
     <img alt="NPM" src="https://img.shields.io/npm/v/leaf-db?label=npm">
@@ -20,10 +20,19 @@
   </a>
 </div>
 
+## Install
+
+```
+yarn add leaf-db
+```
+
+_Note: This package requires Node >=10.12.0_
+
 ## Getting Started
 
 ```JS
-import LeafDB from 'leaf-db';
+import LeafDB from 'leaf-db'; // ES6
+// const LeafDB = require('leaf-db').default // ES5
 
 const db = new LeafDB();
 
