@@ -15,7 +15,7 @@
   <a href="https://bundlephobia.com/result?p=leaf-db@latest">
     <img alt="Bundle size" src="https://img.shields.io/bundlephobia/minzip/leaf-db@latest.svg">
   </a>
-  <a href="https://github.com/chronoDave/leaf-db/workflows/ci.yml">
+  <a href="https://github.com/chronoDave/leaf-db/actions/workflows/ci.yml">
     <img alt="CI" src="https://github.com/chronoDave/leaf-db/workflows/ci/badge.svg?branch=master">
   </a>
 </div>
