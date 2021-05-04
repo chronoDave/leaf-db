@@ -135,7 +135,7 @@ try {
  - `query` - Query object (default `{}`)
  - `projection` - Projection (default `null`)
 
-`await findById([_id]m projection) => Promise([docs])`
+`await findById([_id], projection) => Promise([docs])`
 
  - `_id` - Doc `_id`
  - `projection` - Projection (default `null`)
