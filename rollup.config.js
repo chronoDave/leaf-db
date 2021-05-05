@@ -1,13 +1,10 @@
 import esbuild from 'rollup-plugin-esbuild';
 import dts from 'rollup-plugin-dts';
 import commonjs from '@rollup/plugin-commonjs';
-import { terser } from 'rollup-plugin-terser';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 
-import { name } from './package.json';
-
 const input = 'src/model.ts';
-const outputFile = type => `dist/${name}.${type}`;
+const outputFile = type => `dist/leafdb.${type}`;
 
 export default [{
   input,
@@ -22,8 +19,7 @@ export default [{
     }),
     esbuild({
       target: 'esnext'
-    }),
-    terser()
+    })
   ],
   output: [{
     file: outputFile('js'),
