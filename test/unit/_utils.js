@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const LeafDB = require('./build/model').default;
+const LeafDB = require('../build/model').default;
 
 const invalidQuery = [
   1,

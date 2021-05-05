@@ -22,7 +22,9 @@
   },
   "scripts": {
     "lint": "eslint src",
-    "test": "tsc && tape test/**/*.spec.js",
+    "test:unit": "tsc && tape test/**/*.spec.js",
+    "test:integration": "yarn prepublish && tape test/**/*.test.js",
+    "test": "yarn test:unit && yarn test:integration",
     "bench": "tsc && node test/benchmark.js",
     "prepublish": "rollup -c"
   },

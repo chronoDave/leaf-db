@@ -3,7 +3,7 @@ const path = require('path');
 
 const test = require('tape');
 
-const LeafDB = require('../build/model').default;
+const LeafDB = require('../../build/model').default;
 
 test('[constructor] should create in-memory database when no arguments are provided', t => {
   const db = new LeafDB();

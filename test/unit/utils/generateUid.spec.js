@@ -1,6 +1,6 @@
 const test = require('tape');
 
-const { generateUid } = require('../build/utils');
+const { generateUid } = require('../../build/utils');
 
 test('[generateUid] should return unique ids', t => {
   t.true(typeof generateUid() === 'string');

@@ -1,6 +1,6 @@
 const test = require('tape');
 
-const { objectHas } = require('../build/utils');
+const { objectHas } = require('../../build/utils');
 
 test('[objectHas] should return true if object has key or value, at any depth', t => {
   t.true(objectHas({ a: 1 }, ({ key }) => key === 'a'));

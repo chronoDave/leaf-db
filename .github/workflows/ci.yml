@@ -26,8 +26,10 @@ jobs:
         run: yarn --frozen-lockfile
       - name: Lint
         run: yarn lint
-      - name: Test
-        run: yarn test
+      - name: Unit Test
+        run: yarn test:unit
+      - name: Integration Test
+        run: yarn test:integration
       - name: On success
         if: ${{success()}}
         run: |
