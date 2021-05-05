@@ -1,6 +1,6 @@
 const test = require('tape');
 
-const LeafDB = require('../dist/leaf-db');
+const LeafDB = require('../dist/leafdb');
 
 test('[integration] should expose LeafDB export', t => {
   try {
