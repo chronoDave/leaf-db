@@ -78,11 +78,7 @@ export default class LeafDB {
 
         if (raw && raw.length > 0) {
           try {
-            const doc = JSON.parse(raw, (_, value) => (typeof value !== 'string' ?
-              value :
-              value
-                .replace(/\\/g, '\u005c')
-                .replace(/"/g, '\u0022')));
+            const doc = JSON.parse(raw);
 
             if (!doc._id) throw new Error(`Missing field '_id': ${doc}`);
 
