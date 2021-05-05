@@ -44,8 +44,8 @@ test('[load] should parse valid persistent data', t => {
   const corrupted = db.load();
 
   t.true(typeof db.data === 'object');
-  t.equal(Object.keys(db.data).length, data.length);
-  t.equal(corrupted.length, 0);
+  t.strictEqual(Object.keys(db.data).length, data.length);
+  t.strictEqual(corrupted.length, 0);
 
   for (let i = 0; i < data.length; i += 1) {
     t.deepEqual(Object.values(db.data)[i], data[i]);
@@ -64,8 +64,8 @@ test('[load] should parse empty file', t => {
   const corrupted = db.load();
 
   t.true(typeof db.data === 'object');
-  t.equal(corrupted.length, 0);
-  t.equal(Object.keys(db.data).length, 0);
+  t.strictEqual(corrupted.length, 0);
+  t.strictEqual(Object.keys(db.data).length, 0);
 
   fs.unlinkSync(file);
 
@@ -81,8 +81,8 @@ test('[load] should ignore corrupted data', t => {
   const corrupted = db.load();
 
   t.true(typeof db.data === 'object');
-  t.equal(corrupted.length, invalidPersistent.length);
-  t.equal(Object.keys(db.data).length, 1);
+  t.strictEqual(corrupted.length, invalidPersistent.length);
+  t.strictEqual(Object.keys(db.data).length, 1);
 
   fs.unlinkSync(file);
 

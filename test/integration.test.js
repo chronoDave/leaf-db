@@ -7,7 +7,7 @@ test('[integration] should expose LeafDB export', t => {
     const db = new LeafDB();
 
     t.notEqual(db, undefined);
-    t.equal(typeof db.data, 'object');
+    t.strictEqual(typeof db.data, 'object');
   } catch (err) {
     t.fail(err.message);
   }

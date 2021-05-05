@@ -39,7 +39,7 @@ test('[updateById] should return empty array if no match is found', async t => {
     const docs = await db.updateById('3');
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 0);
+    t.strictEqual(docs.length, 0);
   } catch (err) {
     t.fail(err);
   }
@@ -69,7 +69,7 @@ test('[updateById] should replace doc if match is found', async t => {
     const docs = await db.updateById(id);
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 1);
+    t.strictEqual(docs.length, 1);
     t.deepEqual(docs[0], { _id: id });
   } catch (err) {
     t.fail(err);
@@ -87,7 +87,7 @@ test('[updateById] should replace docs if matches are found', async t => {
     const docs = await db.updateById(ids);
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, ids.length);
+    t.strictEqual(docs.length, ids.length);
 
     for (let i = 0; i < docs.length; i += 1) {
       t.true(ids.includes(docs[i]._id));
@@ -108,7 +108,7 @@ test('[updateById] should update doc if match is found', async t => {
     const docs = await db.updateById(id, { $set: { testValue: 1 } });
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 1);
+    t.strictEqual(docs.length, 1);
     t.deepEqual(docs[0], { ...mockMemory[id], testValue: 1 });
   } catch (err) {
     t.fail(err);
@@ -140,7 +140,7 @@ test('[updateById] should persist if `persist` is true', async t => {
     await db.updateById('key_4', { $set: { testValue: 1 } }, { persist: true });
     db.load();
 
-    t.equal(db.data.key_4.testValue, 1);
+    t.strictEqual(db.data.key_4.testValue, 1);
   } catch (err) {
     t.fail(err);
   }

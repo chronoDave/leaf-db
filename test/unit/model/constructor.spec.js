@@ -9,7 +9,7 @@ test('[constructor] should create in-memory database when no arguments are provi
   const db = new LeafDB();
 
   t.true(typeof db.data === 'object');
-  t.equal(Object.keys(db.data).length, 0);
+  t.strictEqual(Object.keys(db.data).length, 0);
   t.false(fs.readdirSync(__dirname, { recursive: true }).some(file => file.includes('.txt')));
 
   t.end();

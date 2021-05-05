@@ -25,7 +25,7 @@ test('[delete] should delete all data on empty query', async t => {
   try {
     const docs = await db.delete();
 
-    t.equal(docs, 5);
+    t.strictEqual(docs, 5);
 
     for (let i = 0, v = Object.values(db.data); i < v.length; i += 1) {
       t.true(v[i].$deleted);
@@ -43,7 +43,7 @@ test('[delete] should return 0 if no match is found', async t => {
   try {
     const docs = await db.delete({ _id: '3' });
 
-    t.equal(docs, 0);
+    t.strictEqual(docs, 0);
   } catch (err) {
     t.fail(err);
   }
@@ -57,7 +57,7 @@ test('[delete] should delete docs if matches are found (simple)', async t => {
   try {
     const docs = await db.delete({ data: 'test' });
 
-    t.equal(docs, 1);
+    t.strictEqual(docs, 1);
     t.true(db.data.key_1.$deleted);
   } catch (err) {
     t.fail(err);
@@ -72,7 +72,7 @@ test('[delete] should replace docs if matches are found (nested)', async t => {
   try {
     const docs = await db.delete({ 'data.label': 'test' });
 
-    t.equal(docs, 1);
+    t.strictEqual(docs, 1);
     t.true(db.data.key_5.$deleted);
   } catch (err) {
     t.fail(err);
@@ -87,7 +87,7 @@ test('[delete] should replace docs if matches are found (complex)', async t => {
   try {
     const docs = await db.delete({ $has: { 'data.values': 1 } });
 
-    t.equal(docs, 1);
+    t.strictEqual(docs, 1);
     t.true(db.data.key_4.$deleted);
   } catch (err) {
     t.fail(err);

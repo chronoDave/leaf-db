@@ -24,7 +24,7 @@ test('[find] should return all data on empty query', async t => {
     const docs = await db.find();
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, Object.keys(mockMemory).length - 1);
+    t.strictEqual(docs.length, Object.keys(mockMemory).length - 1);
     t.true(typeof docs[0] === 'object');
     t.false(docs.some(doc => doc._id === 'key_6'));
   } catch (err) {
@@ -41,7 +41,7 @@ test('[find] should return docs on query match (simple)', async t => {
     const docs = await db.find({ data: 'test' });
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 1);
+    t.strictEqual(docs.length, 1);
     t.deepEqual(docs[0], mockMemory.key_1);
   } catch (err) {
     t.fail(err);
@@ -57,7 +57,7 @@ test('[find] should return docs on query match (nested)', async t => {
     const docs = await db.find({ 'data.label': 'test' });
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 1);
+    t.strictEqual(docs.length, 1);
     t.deepEqual(docs[0], mockMemory.key_5);
   } catch (err) {
     t.fail(err);
@@ -73,7 +73,7 @@ test('[find] should return docs on query match (complex)', async t => {
     const docs = await db.find({ $has: { 'data.values': 1 } });
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 1);
+    t.strictEqual(docs.length, 1);
     t.deepEqual(docs[0], mockMemory.key_4);
   } catch (err) {
     t.fail(err);

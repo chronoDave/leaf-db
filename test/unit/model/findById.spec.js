@@ -37,7 +37,7 @@ test('[findById] should return empty array if no match is found', async t => {
     const docs = await db.findById('3');
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 0);
+    t.strictEqual(docs.length, 0);
   } catch (err) {
     t.fail(err);
   }
@@ -52,7 +52,7 @@ test('[findById] should return empty array if match is deleted', async t => {
     const docs = await db.findById('key_6');
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 0);
+    t.strictEqual(docs.length, 0);
   } catch (err) {
     t.fail(err);
   }
@@ -82,7 +82,7 @@ test('[findById] should return doc if match is found', async t => {
     const docs = await db.findById(id);
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 1);
+    t.strictEqual(docs.length, 1);
     t.deepEqual(docs[0], mockMemory[id]);
   } catch (err) {
     t.fail(err);
@@ -100,7 +100,7 @@ test('[findById] should return docs if multiple matches are found', async t => {
     const docs = await db.findById(ids);
 
     t.true(Array.isArray(docs));
-    t.equal(docs.length, 2);
+    t.strictEqual(docs.length, 2);
 
     for (let i = 0; i < docs.length; i += 1) {
       t.deepEqual(docs[i], mockMemory[ids[i]]);

@@ -38,7 +38,7 @@ test('[deleteById] should return 0 if no match is found', async t => {
   try {
     const deleted = await db.deleteById('3');
 
-    t.equal(deleted, 0);
+    t.strictEqual(deleted, 0);
   } catch (err) {
     t.fail(err);
   }
@@ -67,7 +67,7 @@ test('[deleteById] should delete doc if match is found', async t => {
   try {
     const deleted = await db.deleteById(id);
 
-    t.equal(deleted, 1);
+    t.strictEqual(deleted, 1);
     t.true(db.data[id].$deleted);
   } catch (err) {
     t.fail(err);
@@ -84,7 +84,7 @@ test('[deleteById] should delete docs if multiple matches are found', async t =>
   try {
     const deleted = await db.deleteById(ids);
 
-    t.equal(deleted, ids.length);
+    t.strictEqual(deleted, ids.length);
     for (let i = 0; i < ids.length; i += 1) {
       t.true(db.data[ids[i]].$deleted);
     }
