@@ -26,7 +26,7 @@
 ## Install
 
 ```
-yarn add leaf-db
+$ yarn add leaf-db
 ```
 
 _Note: This package requires Node >=10.12.0_
