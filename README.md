@@ -18,6 +18,9 @@
   <a href="https://github.com/chronoDave/leaf-db/actions/workflows/ci.yml">
     <img alt="CI" src="https://github.com/chronoDave/leaf-db/workflows/ci/badge.svg?branch=master">
   </a>
+  <a href="https://github.com/chronoDave/leaf-db/actions/workflows/codeql.yml">
+     <img alt="CodeQL" src="https://github.com/chronoDave/leaf-db/actions/workflows/codeql.yml/badge.svg?branch=master">
+  </a>
 </div>
 
 ## Install
