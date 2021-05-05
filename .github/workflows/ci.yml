@@ -42,4 +42,3 @@ jobs:
           wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.sh
           chmod +x discord_github.sh
           ./discord_github.sh failure
-
