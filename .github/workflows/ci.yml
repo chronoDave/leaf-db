@@ -23,7 +23,13 @@ jobs:
         run: npm run test:unit
       - name: Integration Test
         run: npm run test:integration
-      - name: Webhook
+      - name: Discord Webhook (Success)
+        if: ${{success()}}
         run: |
           wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.js
-          node ./discord_github.js ${{secrets.WEBHOOK_URL}} ${{success()}}
+          node ./discord_github.js ${{secrets.WEBHOOK_URL}} true
+      - name: Discord Webhook (Failure)
+        if: ${{failure()}}
+        run: |
+          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.js
+          node ./discord_github.js ${{secrets.WEBHOOK_URL}} false
