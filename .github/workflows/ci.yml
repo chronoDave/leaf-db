@@ -1,5 +1,7 @@
 name: ci
 on: [push, pull_request]
+env:
+  WEBHOOK_URL: ${{secrets.WEBHOOK_URL}}
 jobs:
   ci:
     name: Test
@@ -23,3 +25,15 @@ jobs:
         run: npm run test:unit
       - name: Integration Test
         run: npm run test:integration
+      - name: Success
+        if: ${{success()}}
+        run: |
+          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.sh
+          chmod +x discord_github.sh
+          ./discord_github.sh success
+      - name: Error
+        if: ${{failure()}}
+        run: |
+          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.sh
+          chmod +x discord_github.sh
+          ./discord_github.sh failure
