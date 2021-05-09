@@ -12,8 +12,7 @@ export default [{
     commonjs(),
     nodeResolve({
       resolveOnly: [
-        'lodash.get',
-        'lodash.set',
+        '@chronocide/dot-obj',
         'fast-deep-equal'
       ]
     }),

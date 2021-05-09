@@ -1,5 +1,5 @@
 import deepEqual from 'fast-deep-equal';
-import objectGet from 'lodash.get';
+import { get } from '@chronocide/dot-obj';
 
 // Types
 import {
@@ -17,11 +17,11 @@ export const isNumber = (any: unknown) => typeof any === 'number';
 export const isObject = (any: unknown) => any !== null && !Array.isArray(any) && typeof any === 'object';
 export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
 
-const exists = (object: object, keys: Value[]) => keys
+const exists = (object: Record<string, unknown>, keys: Value[]) => keys
   .filter(key => {
     if (typeof key === 'boolean') return false;
     if (typeof key === 'object') return false;
-    return objectGet(object, key) !== undefined;
+    return get(object, `${key}`) !== undefined;
   })
   .length === keys.length;
 
@@ -43,7 +43,7 @@ export const isQueryMatch = (doc: Doc, query: Query): boolean => Object
         default: {
           for (let j = 0, ofe = Object.entries(value); j < ofe.length; j += 1) {
             const [field, testValue] = ofe[j];
-            const originalValue = objectGet(doc, field); // Object value
+            const originalValue = get(doc, field); // Object value
 
             switch (key) {
               case '$gt':
@@ -87,7 +87,7 @@ export const isQueryMatch = (doc: Doc, query: Query): boolean => Object
         }
       }
     // Regular
-    } else if (!deepEqual(objectGet(doc, key), value)) {
+    } else if (!deepEqual(get(doc, key), value)) {
       return false;
     }
     // Does match

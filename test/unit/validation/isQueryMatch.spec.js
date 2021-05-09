@@ -24,7 +24,6 @@ test('[isQueryMatch] should return true if query matches', t => {
   t.true(isQueryMatch(mockObjectNested, { d: { f: { g: true, h: { i: null } }, j: 2 } }));
   // Test dot
   t.true(isQueryMatch(mockObjectComplex, { 'b.0': 2 }));
-  t.true(isQueryMatch(mockObjectComplex, { 'b[1]': null }));
   t.true(isQueryMatch(mockObjectComplex, { 'c.0.d': 'String' }));
   // Test multi match
   t.true(isQueryMatch(mockObjectSimple, { _id: 1, c: null }));

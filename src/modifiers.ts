@@ -1,5 +1,4 @@
-import objectGet from 'lodash.get';
-import objectSet from 'lodash.set';
+import { get, set } from '@chronocide/dot-obj';
 
 // Types
 import {
@@ -11,15 +10,15 @@ import {
 
 const modifiers = {
   add: (doc: Doc, key: string, value: Value) => {
-    const cur = objectGet(doc, key);
+    const cur = get(doc, key);
     if (typeof cur !== 'number' || typeof value !== 'number') return doc;
-    return objectSet(doc, key, cur + value);
+    return set(doc, key, cur + value);
   },
-  set: (doc: Doc, key: string, value: Value) => objectSet(doc, key, value),
+  set: (doc: Doc, key: string, value: Value) => set(doc, key, value),
   push: (doc: Doc, key: string, value: Value) => {
-    const cur = objectGet(doc, key);
+    const cur = get(doc, key);
     if (!Array.isArray(cur)) return doc;
-    return objectSet(doc, key, [...cur, value]);
+    return set(doc, key, [...cur, value]);
   }
 };
 
@@ -60,5 +59,5 @@ export const docProject = (doc: Doc, projection: Projection): Partial<Doc> => {
   }
 
   return projection
-    .reduce((acc, key) => objectSet(acc, key, objectGet(doc, key)), {});
+    .reduce((acc, key) => set(acc, key, get(doc, key)), {});
 };

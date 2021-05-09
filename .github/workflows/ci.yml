@@ -1,7 +1,6 @@
 name: ci
 on: [push, pull_request]
-env:
-  WEBHOOK_URL: ${{secrets.WEBHOOK_URL}}
+
 jobs:
   ci:
     name: Lint & Test
@@ -9,36 +8,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2.3.4
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)" 
-      - name: Cache node_modules
-        uses: actions/cache@v2.1.3
-        id: yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
       - name: Install Node
         uses: actions/setup-node@v2.1.3
-      - name: Install Packages
-        run: yarn --frozen-lockfile
+      - name: Cache packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: node-
+      - name: Install packages
+        run: npm i
       - name: Lint
-        run: yarn lint
+        run: npm run lint
       - name: Unit Test
-        run: yarn test:unit
+        run: npm run test:unit
       - name: Integration Test
-        run: yarn test:integration
-      - name: On success
-        if: ${{success()}}
-        run: |
-          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.sh
-          chmod +x discord_github.sh
-          ./discord_github.sh success
-      - name: On error
-        if: ${{failure()}}
-        run: |
-          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.sh
-          chmod +x discord_github.sh
-          ./discord_github.sh failure
+        run: npm run test:integration
