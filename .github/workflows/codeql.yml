@@ -1,5 +1,8 @@
 name: codeql
-on: [push, pull_request]
+on:
+  push:
+    branches: main
+    tags: '*'
 jobs:
   codeql:
     name: Analyze
