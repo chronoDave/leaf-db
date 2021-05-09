@@ -26,10 +26,10 @@ jobs:
       - name: Discord Webhook (Success)
         if: ${{success()}}
         run: |
-          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.js
+          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/github_discord.js
           node ./discord_github.js ${{secrets.WEBHOOK_URL}} true
       - name: Discord Webhook (Failure)
         if: ${{failure()}}
         run: |
-          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/discord_github.js
+          wget https://raw.githubusercontent.com/chronoDave/user-scripts/master/webhooks/github_discord.js
           node ./discord_github.js ${{secrets.WEBHOOK_URL}} false
