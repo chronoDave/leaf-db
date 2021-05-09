@@ -68,7 +68,7 @@ test('[deleteById] should delete doc if match is found', async t => {
     const deleted = await db.deleteById(id);
 
     t.strictEqual(deleted, 1);
-    t.true(db.data[id].$deleted);
+    t.true(db.map[id].$deleted);
   } catch (err) {
     t.fail(err);
   }
@@ -86,7 +86,7 @@ test('[deleteById] should delete docs if multiple matches are found', async t =>
 
     t.strictEqual(deleted, ids.length);
     for (let i = 0; i < ids.length; i += 1) {
-      t.true(db.data[ids[i]].$deleted);
+      t.true(db.map[ids[i]].$deleted);
     }
   } catch (err) {
     t.fail(err);
@@ -102,8 +102,8 @@ test('[deleteById] should persist if `persist` is true', async t => {
     await db.deleteById('key_4', { persist: true });
     db.load();
 
-    t.false(db.data.key_4);
-    t.false(db.data.key_6);
+    t.false(db.map.key_4);
+    t.false(db.map.key_6);
   } catch (err) {
     t.fail(err);
   }

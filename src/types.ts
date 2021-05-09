@@ -1,18 +1,19 @@
-export type Value = number | string | boolean | object;
+export type Value = number | string | boolean | { [key: string]: Value } | Value[];
 
 export type OneOrMore<T> = T | T[];
 
 export type Doc = {
   _id: string,
   $deleted?: boolean
-} & Partial<Record<string, OneOrMore<Value>>>;
-
-export type PartialDocs = Partial<Doc>[];
+} & Partial<Record<string, Value>>;
 
 export type Query =
-  Record<string, OneOrMore<Value>> &
-  Partial<Record<'$gt' | '$gte' | '$lt' | '$lte' | '$not' | '$has', OneOrMore<Value>>> &
-  Partial<Record<'$exists', string[]>>;
+  Record<string, Value> &
+  Partial<Record<'$gt' | '$gte' | '$lt' | '$lte', number>> &
+  Partial<Record<'$string' | '$stringStrict', string>> &
+  Partial<Record<'$exists', string[]>> &
+  Partial<Record<'$not', Value>> &
+  Partial<Record<'$has', Value[]>>;
 
 export type Projection = OneOrMore<string> | null;
 

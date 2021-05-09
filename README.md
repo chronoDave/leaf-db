@@ -69,7 +69,7 @@ db.insert({ species: 'cat', name: 'whiskers' })
 
  - `name` - Database name
  - `options.root` - Database root path, will create in-memory if not provided (default `null`)
- - `options.autoload` - Should database be loaded on creation (default `true`)
+ - `options.disableAutoload` - Should database not be loaded on creation (default `false`)
  - `options.strict` - Should database throw silent errors (default `false`)
 
 ```JS

@@ -20,16 +20,17 @@ test('[persist] should throw error if called memory mode', t => {
 test('[persist] should persist data', t => {
   const { db, file } = setup({ root: __dirname });
 
-  db.data = {
+  db.map = {
     1: { _id: 1 },
     2: { _id: 2 },
     3: { _id: 3 }
   };
+  db.list = new Set([1, 2, 3]);
   db.persist();
 
   const data = fs.readFileSync(file, 'utf-8');
 
-  t.strictEqual(Object.keys(db.data).length, data.split('\n').length);
+  t.strictEqual(Object.keys(db.map).length, data.split('\n').length);
 
   fs.unlinkSync(file);
 
@@ -39,7 +40,8 @@ test('[persist] should persist data', t => {
 test('[persist] should throw if data contains corrupt data', t => {
   const { db, file } = setup({ strict: true, root: __dirname });
 
-  db.data = {
+  db.list = new Set([1, 2, 3]);
+  db.map = {
     1: { _id: 1, $deleted: true },
     2: { _id: 2 },
     3: null

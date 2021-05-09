@@ -2,7 +2,12 @@ const fs = require('fs');
 
 const test = require('tape');
 
-const { setup, invalidQueryLoose, mockMemory } = require('../_utils');
+const {
+  setup,
+  invalidUpdate,
+  invalidQueryLoose,
+  mockMemory
+} = require('../_utils');
 
 test('[update] should throw on invalid query', async t => {
   const { db } = setup({ memory: mockMemory });
@@ -11,6 +16,21 @@ test('[update] should throw on invalid query', async t => {
     try {
       await db.update(invalidQueryLoose[i]);
       t.fail(`expected to throw: ${i}, ${invalidQueryLoose[i]}`);
+    } catch (err) {
+      t.pass(`throws: ${i}`);
+    }
+  }
+
+  t.end();
+});
+
+test('[update] should throw on invalid update', async t => {
+  const { db } = setup({ memory: mockMemory });
+
+  for (let i = 0; i < invalidUpdate.length; i += 1) {
+    try {
+      await db.update({}, invalidUpdate[i]);
+      t.fail(`expected to throw: ${i}, ${invalidUpdate[i]}`);
     } catch (err) {
       t.pass(`throws: ${i}`);
     }
@@ -144,7 +164,7 @@ test('[update] should persist if `persist` is true', async t => {
     await db.update({ _id: 'key_4' }, { $set: { testValue: 1 } }, { persist: true });
     db.load();
 
-    t.strictEqual(db.data.key_4.testValue, 1);
+    t.strictEqual(db.map.key_4.testValue, 1);
   } catch (err) {
     t.fail(err);
   }

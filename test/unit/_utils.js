@@ -22,6 +22,12 @@ const invalidQueryLoose = [
   () => null
 ];
 
+const invalidUpdate = [
+  { _id: 'INVALID' },
+  { value: '3', $set: { value: '4' } },
+  { $set: { _id: 4 } }
+];
+
 const invalidPersistent = [
   1,
   null,
@@ -139,7 +145,7 @@ const setup = ({
   root = null,
   strict = false,
   memory = null,
-  autoload = true
+  disableAutoload = false
 } = {}) => {
   let file = null;
   const name = 'test';
@@ -147,9 +153,12 @@ const setup = ({
   if (root) file = path.resolve(root, `${name}.txt`);
   if (data && file) fs.writeFileSync(file, data.map(JSON.stringify).join('\n'));
 
-  const db = new LeafDB({ name, root, strict, autoload });
+  const db = new LeafDB({ name, root, strict, disableAutoload });
 
-  if (memory) db.data = { ...memory };
+  if (memory) {
+    db.map = { ...memory };
+    db.list = Object.values(memory).map(({ _id }) => _id);
+  }
 
   return ({ name, file, db });
 };
@@ -158,6 +167,7 @@ module.exports = {
   setup,
   invalidQuery,
   invalidQueryLoose,
+  invalidUpdate,
   invalidPersistent,
   invalidData,
   invalidNumberOperator,

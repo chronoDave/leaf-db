@@ -12,8 +12,9 @@ test('[insert] should insert single doc', async t => {
   try {
     await db.insert(payload);
 
-    t.strictEqual(Object.keys(db.data).length, 1);
-    t.deepEqual(db.data[1], payload);
+    t.strictEqual(Object.keys(db.map).length, 1);
+    t.strictEqual(db.list.size, 1);
+    t.deepEqual(db.map[1], payload);
   } catch (err) {
     t.fail(err);
   }
@@ -33,8 +34,9 @@ test('[insert] should insert multiple docs', async t => {
   try {
     await db.insert(payload);
 
-    t.strictEqual(Object.keys(db.data).length, payload.length);
-    for (let i = 0, v = Object.values(db.data); i < v.length; i += 1) {
+    t.strictEqual(Object.keys(db.map).length, payload.length);
+    t.strictEqual(db.list.size, payload.length);
+    for (let i = 0, v = Object.values(db.map); i < v.length; i += 1) {
       t.true(payload.includes(v[i]));
     }
   } catch (err) {

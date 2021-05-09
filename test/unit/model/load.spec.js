@@ -7,7 +7,7 @@ const { setup, invalidPersistent } = require('../_utils');
 test('[load] should not throw if data contains backslash', t => {
   const { db, file } = setup({
     data: [{ invalid: '\\' }],
-    autoload: false,
+    disableAutoload: true,
     root: __dirname
   });
 
@@ -21,7 +21,7 @@ test('[load] should not throw if data contains backslash', t => {
 test('[load] show not throw if data contains quotation mark', t => {
   const { db, file } = setup({
     data: [{ invalid: '"' }],
-    autoload: false,
+    disableAutoload: true,
     root: __dirname
   });
 
@@ -37,18 +37,19 @@ test('[load] should parse valid persistent data', t => {
 
   const { db, file } = setup({
     data,
-    autoload: false,
+    disableAutoload: true,
     root: __dirname
   });
 
   const corrupted = db.load();
 
-  t.true(typeof db.data === 'object');
-  t.strictEqual(Object.keys(db.data).length, data.length);
+  t.true(typeof db.map === 'object');
+  t.strictEqual(Object.keys(db.map).length, data.length);
+  t.strictEqual(db.list.size, data.length);
   t.strictEqual(corrupted.length, 0);
 
   for (let i = 0; i < data.length; i += 1) {
-    t.deepEqual(Object.values(db.data)[i], data[i]);
+    t.deepEqual(Object.values(db.map)[i], data[i]);
   }
 
   fs.unlinkSync(file);
@@ -59,13 +60,14 @@ test('[load] should parse valid persistent data', t => {
 test('[load] should parse empty file', t => {
   const data = [];
 
-  const { db, file } = setup({ data, autoload: false, root: __dirname });
+  const { db, file } = setup({ data, disableAutoload: true, root: __dirname });
 
   const corrupted = db.load();
 
-  t.true(typeof db.data === 'object');
+  t.true(typeof db.map === 'object');
   t.strictEqual(corrupted.length, 0);
-  t.strictEqual(Object.keys(db.data).length, 0);
+  t.strictEqual(Object.keys(db.map).length, 0);
+  t.strictEqual(db.list.size, 0);
 
   fs.unlinkSync(file);
 
@@ -76,13 +78,14 @@ test('[load] should ignore corrupted data', t => {
   const valid = { _id: 2, valid: true };
   const data = [valid, ...invalidPersistent];
 
-  const { db, file } = setup({ data, autoload: false, root: __dirname });
+  const { db, file } = setup({ data, disableAutoload: true, root: __dirname });
 
   const corrupted = db.load();
 
-  t.true(typeof db.data === 'object');
+  t.true(typeof db.map === 'object');
   t.strictEqual(corrupted.length, invalidPersistent.length);
-  t.strictEqual(Object.keys(db.data).length, 1);
+  t.strictEqual(Object.keys(db.map).length, 1);
+  t.strictEqual(db.list.size, 1);
 
   fs.unlinkSync(file);
 
@@ -96,7 +99,7 @@ test('[load] should throw on corrupt data if strict is enabled', t => {
   const { file, db } = setup({
     data,
     strict: true,
-    autoload: false,
+    disableAutoload: true,
     root: __dirname
   });
 

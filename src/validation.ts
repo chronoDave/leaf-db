@@ -16,6 +16,7 @@ import { toArray, objectHas } from './utils';
 export const isNumber = (any: unknown) => typeof any === 'number';
 export const isObject = (any: unknown) => any !== null && !Array.isArray(any) && typeof any === 'object';
 export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
+export const isId = (any: unknown) => typeof any === 'string' && any.length > 0;
 
 const exists = (object: Record<string, unknown>, keys: Value[]) => keys
   .filter(key => {
@@ -43,24 +44,24 @@ export const isQueryMatch = (doc: Doc, query: Query): boolean => Object
         default: {
           for (let j = 0, ofe = Object.entries(value); j < ofe.length; j += 1) {
             const [field, testValue] = ofe[j];
-            const originalValue = get(doc, field); // Object value
+            const originalValue = get(doc, field);
 
             switch (key) {
               case '$gt':
                 if (!originalValue || !isNumber(originalValue) || !isNumber(testValue)) return false;
-                if (!(originalValue > testValue)) return false;
+                if (!(originalValue as number > testValue)) return false;
                 break;
               case '$gte':
                 if (!originalValue || !isNumber(originalValue) || !isNumber(testValue)) return false;
-                if (!(originalValue >= testValue)) return false;
+                if (!(originalValue as number >= testValue)) return false;
                 break;
               case '$lt':
                 if (!originalValue || !isNumber(originalValue) || !isNumber(testValue)) return false;
-                if (!(originalValue < testValue)) return false;
+                if (!(originalValue as number < testValue)) return false;
                 break;
               case '$lte':
                 if (!originalValue || !isNumber(originalValue) || !isNumber(testValue)) return false;
-                if (!(originalValue <= testValue)) return false;
+                if (!(originalValue as number <= testValue)) return false;
                 break;
               case '$not':
                 if (originalValue === testValue) return false;
