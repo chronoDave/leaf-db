@@ -2,14 +2,14 @@ import crypto from 'crypto';
 
 export const toArray = (any: unknown) => (Array.isArray(any) ? any : [any]);
 
-/**
- * @param {number} length - ID length (can be shorter if ID contains invalid characters)
- * */
-export const generateUid = (length = 16) => crypto
-  .randomBytes(Math.ceil((length * 5) / 4))
-  .toString('base64')
-  .replace(/[+/]/g, '')
-  .slice(0, length);
+export const generateUid = (() => {
+  let counter = crypto.randomBytes(1).readUInt8();
+
+  return () => {
+    counter += 1;
+    return `${Date.now().toString(16)}${crypto.randomBytes(5).toString('hex')}${counter.toString(16)}`;
+  };
+})();
 
 /**
  * Check if `object` has `key` or `value`
