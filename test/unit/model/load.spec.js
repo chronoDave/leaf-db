@@ -33,7 +33,7 @@ test('[load] show not throw if data contains quotation mark', t => {
 });
 
 test('[load] should parse valid persistent data', t => {
-  const data = [{ _id: 1 }, { _id: 2 }];
+  const data = [{ _id: '1' }, { _id: '2' }];
 
   const { db, file } = setup({
     data,
@@ -75,7 +75,7 @@ test('[load] should parse empty file', t => {
 });
 
 test('[load] should ignore corrupted data', t => {
-  const valid = { _id: 2, valid: true };
+  const valid = { _id: '2', valid: true };
   const data = [valid, ...invalidPersistent];
 
   const { db, file } = setup({ data, disableAutoload: true, root: __dirname });
@@ -93,7 +93,7 @@ test('[load] should ignore corrupted data', t => {
 });
 
 test('[load] should throw on corrupt data if strict is enabled', t => {
-  const valid = { _id: 2, valid: true };
+  const valid = { _id: '2', valid: true };
   const data = [valid, ...invalidPersistent];
 
   const { file, db } = setup({

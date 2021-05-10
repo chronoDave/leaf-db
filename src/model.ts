@@ -75,25 +75,25 @@ export default class LeafDB {
     if (fs.existsSync(this.file)) {
       this.flush();
 
-      const data = fs
+      const rawDocs = fs
         .readFileSync(this.file, 'utf-8')
         .split('\n');
 
-      for (let i = 0; i < data.length; i += 1) {
-        const raw = data[i];
+      for (let i = 0; i < rawDocs.length; i += 1) {
+        const rawDoc = rawDocs[i];
 
-        if (raw && raw.length > 0) {
+        if (rawDoc) {
           try {
-            const doc = JSON.parse(raw);
+            const doc: Doc = JSON.parse(rawDoc);
 
-            if (!doc._id) throw new Error(`Missing field '_id': ${doc}`);
+            if (!isId(doc._id)) throw new Error(`Invalid _id: ${doc}`);
 
             this.list.add(doc._id);
             this.map[doc._id] = doc;
           } catch (err) {
             if (this.strict) throw err;
 
-            corrupted.push(raw);
+            corrupted.push(rawDoc);
           }
         }
       }
@@ -139,7 +139,7 @@ export default class LeafDB {
       ) throw new Error(`Invalid payload: ${JSON.stringify(payload)}`);
 
       const inserted: Doc[] = [];
-      const newDocs: Doc[] = toArray(payload);
+      const newDocs = toArray(payload);
 
       for (let i = 0; i < newDocs.length; i += 1) {
         const newDoc = newDocs[i];
@@ -178,7 +178,7 @@ export default class LeafDB {
   findById(query: OneOrMore<string>, projection: Projection = null): Promise<Partial<Doc>[]> {
     return new Promise(resolve => {
       const payload: Partial<Doc>[] = [];
-      const _ids: string[] = toArray(query);
+      const _ids = toArray(query);
 
       for (let i = 0; i < _ids.length; i += 1) {
         const _id = _ids[i];
@@ -247,7 +247,7 @@ export default class LeafDB {
       ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
 
       const payload: Partial<Doc>[] = [];
-      const _ids: string[] = toArray(query);
+      const _ids = toArray(query);
 
       for (let i = 0; i < _ids.length; i += 1) {
         const _id = _ids[i];

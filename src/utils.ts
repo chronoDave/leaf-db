@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-export const toArray = (any: unknown) => (Array.isArray(any) ? any : [any]);
+export const toArray = <T>(x: T) => (Array.isArray(x) ? x : [x]) as T extends unknown[] ? T : T[];
 
 export const generateUid = (() => {
   let counter = crypto.randomBytes(1).readUInt8();
