@@ -2,9 +2,10 @@ import fs, { PathLike } from 'fs';
 import path from 'path';
 
 // Types
-import {
+import type {
   OneOrMore,
   Doc,
+  NewDoc,
   Projection,
   Query,
   Update
@@ -35,22 +36,21 @@ export default class LeafDB {
   private map: Record<string, Doc>;
   private list: Set<string>;
 
-  constructor(options: {
+  constructor(options?: {
     name?: string,
     root?: string,
     disableAutoload?: boolean,
     strict?: boolean
-  } = {}) {
-    this.root = options.root;
-    this.strict = !!options.strict;
-
-    if (this.root) fs.mkdirSync(this.root, { recursive: true });
-
+  }) {
+    this.strict = !!options?.strict;
     this.map = {};
     this.list = new Set();
-    this.file = (this.root && options.name) && path.resolve(this.root, `${options.name}.txt`);
 
-    if (this.root && !options.disableAutoload) this.load();
+    if (options?.root) {
+      fs.mkdirSync(options.root, { recursive: true });
+      this.file = path.resolve(options.root, `${options?.name || 'leafdb'}.txt`);
+      if (!options?.disableAutoload) this.load();
+    }
   }
 
   /** Initialize data */
@@ -66,11 +66,7 @@ export default class LeafDB {
   load() {
     const corrupted: string[] = [];
 
-    if (!this.file) return corrupted;
-
-    if (!this.root) {
-      throw new Error('Cannot load file data with an in-memory database');
-    }
+    if (!this.file) throw new Error('Cannot load file in memory mode');
 
     if (fs.existsSync(this.file)) {
       this.flush();
@@ -106,9 +102,7 @@ export default class LeafDB {
 
   /** Persist database */
   persist() {
-    if (!this.file) {
-      throw new Error('Tried to call `persist()` in memory mode');
-    }
+    if (!this.file) throw new Error('Tried to call `persist()` in memory mode');
 
     const payload: string[] = [];
 
@@ -118,6 +112,9 @@ export default class LeafDB {
 
         if (!doc.$deleted) payload.push(JSON.stringify(doc));
       } catch (err) {
+        this.list.delete(_id);
+        delete this.map[_id];
+
         if (this.strict) throw err;
       }
     });
@@ -128,10 +125,8 @@ export default class LeafDB {
   /**
    * Insert new document(s)
    * @param {object|object[]} newDocs
-   * @param {object} options
-   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
    * */
-  insert(payload: OneOrMore<Doc>, { persist = false } = {}): Promise<Doc[]> {
+  insert(payload: OneOrMore<NewDoc>): Promise<Doc[]> {
     return new Promise(resolve => {
       if (
         !Array.isArray(payload) &&
@@ -159,12 +154,10 @@ export default class LeafDB {
         }
 
         this.list.add(newDoc._id);
-        this.map[newDoc._id] = newDoc;
+        this.map[newDoc._id] = newDoc as Doc;
 
-        inserted.push(newDoc);
+        inserted.push(newDoc as Doc);
       }
-
-      if (persist) this.persist();
 
       resolve(inserted);
     });
@@ -175,7 +168,7 @@ export default class LeafDB {
    * @param {string|string[]} query - Doc _id
    * @param {string[]} projection - Projection array (default `null`)
    * */
-  findById(query: OneOrMore<string>, projection: Projection = null): Promise<Partial<Doc>[]> {
+  findById(query: OneOrMore<string>, projection?: Projection): Promise<Partial<Doc>[]> {
     return new Promise(resolve => {
       const payload: Partial<Doc>[] = [];
       const _ids = toArray(query);
@@ -199,7 +192,7 @@ export default class LeafDB {
    * @param {object} query - Query object (default `{}`)
    * @param {string[]} projection - Projection array (default `null`)
    */
-  find(query: Query = {}, projection: Projection = null): Promise<Partial<Doc>[]> {
+  find(query: Query = {}, projection?: Projection): Promise<Partial<Doc>[]> {
     return new Promise(resolve => {
       if (!query || !isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
 
@@ -223,25 +216,17 @@ export default class LeafDB {
    * Update single doc matching `_id`
    * @param {string|string[]} query - Doc _id
    * @param {object} update - New document (default `{}`) / Update query
-   * @param {object} options
-   * @param {string[]} options.projection - Projection array (default `null`)
-   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
+   * @param {string[]} projection - Projection array (default `null`)
   */
   updateById(
     query: OneOrMore<string>,
     update: Update = {},
-    options: {
-      projection: Projection,
-      persist: boolean
-    } = {
-      projection: null,
-      persist: false
-    }
+    projection?: Projection
   ): Promise<Partial<Doc>[]> {
     return new Promise(resolve => {
       if (
         !isObject(update) ||
-        update._id ||
+        '_id' in update ||
         hasMixedModifiers(update) ||
         (!hasModifiers(update) && isInvalidDoc(update))
       ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
@@ -259,14 +244,12 @@ export default class LeafDB {
         if (doc && !doc.$deleted) {
           const newDoc = hasModifiers(update) ?
             docModify(doc, update) :
-            update;
+            { ...update, _id };
 
-          this.map[_id] = { ...newDoc, _id };
-          payload.push(docProject({ ...newDoc, _id }, options.projection));
+          this.map[_id] = newDoc;
+          payload.push(docProject(newDoc, projection));
         }
       }
-
-      if (options.persist) this.persist();
 
       resolve(payload);
     });
@@ -276,27 +259,19 @@ export default class LeafDB {
    * Update documents matching `query`
    * @param {object} query - Query object (default `{}`)
    * @param {object} update - New document (default `{}`) / Update query
-   * @param {object} options
-   * @param {string[]} options.projection - Projection array (default `null`)
-   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
+   * @param {string[]} projection - Projection array (default `null`)
    */
   update(
     query: Query = {},
     update: Update = {},
-    options: {
-      projection: Projection,
-      persist: boolean
-    } = {
-      projection: null,
-      persist: false
-    }
+    projection?: Projection
   ): Promise<Partial<Doc>[]> {
     return new Promise(resolve => {
       if (!isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
 
       if (
         !isObject(update) ||
-        update._id ||
+        '_id' in update ||
         hasMixedModifiers(update) ||
         (!hasModifiers(update) && isInvalidDoc(update))
       ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
@@ -312,11 +287,9 @@ export default class LeafDB {
             update;
 
           this.map[_id] = { ...newDoc, _id };
-          payload.push(docProject({ ...newDoc, _id }, options.projection));
+          payload.push(docProject({ ...newDoc, _id }, projection));
         }
       });
-
-      if (options.persist) this.persist();
 
       resolve(payload);
     });
@@ -325,10 +298,8 @@ export default class LeafDB {
   /**
    * Delete doc matching `_id`
    * @param {string} query - Doc _id
-   * @param {object} options
-   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
   */
-  deleteById(query: OneOrMore<string>, { persist = false } = {}): Promise<number> {
+  deleteById(query: OneOrMore<string>): Promise<number> {
     return new Promise(resolve => {
       let payload = 0;
       const _ids = toArray(query);
@@ -346,8 +317,6 @@ export default class LeafDB {
         }
       }
 
-      if (persist) this.persist();
-
       resolve(payload);
     });
   }
@@ -355,10 +324,8 @@ export default class LeafDB {
   /**
    * Delete documents matching `query`
    * @param {object} query - Query object (default `{}`)
-   * @param {object} options
-   * @param {boolean} options.persist - Should inserted docs be written to disk? (default `false`)
    */
-  delete(query: Query = {}, { persist = false } = {}): Promise<number> {
+  delete(query: Query = {}): Promise<number> {
     return new Promise(resolve => {
       if (!isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
 
@@ -371,8 +338,6 @@ export default class LeafDB {
           payload += 1;
         }
       });
-
-      if (persist) this.persist();
 
       resolve(payload);
     });

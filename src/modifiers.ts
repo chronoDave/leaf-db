@@ -1,28 +1,9 @@
 import { get, set } from '@chronocide/dot-obj';
 
 // Types
-import {
-  Doc,
-  Value,
-  Projection,
-  Update
-} from './types';
+import { Doc, Projection, Update } from './types';
 
-const modifiers = {
-  add: (doc: Doc, key: string, value: Value) => {
-    const cur = get(doc, key);
-    if (typeof cur !== 'number' || typeof value !== 'number') return doc;
-    return set(doc, key, cur + value) as Doc;
-  },
-  set: (doc: Doc, key: string, value: Value): Doc => set(doc, key, value) as Doc,
-  push: (doc: Doc, key: string, value: Value): Doc => {
-    const cur = get(doc, key);
-    if (!Array.isArray(cur)) return doc;
-    return set(doc, key, [...cur, value]) as Doc;
-  }
-};
-
-export const docModify = (doc: Doc, update: Update) => {
+export const docModify = (doc: Doc, update: Update): Doc => {
   for (let i = 0, updateEntries = Object.entries(update); i < updateEntries.length; i += 1) {
     const [modifier, fields] = updateEntries[i];
 
@@ -30,13 +11,19 @@ export const docModify = (doc: Doc, update: Update) => {
       const [key, value] = fieldEntries[j];
 
       switch (modifier) {
-        case '$add':
-          return modifiers.add(doc, key, value);
+        case '$add': {
+          const cur = get(doc, key);
+          if (typeof cur !== 'number' || typeof value !== 'number') return doc;
+          return set(doc, key, cur + value) as Doc;
+        }
         case '$set':
           if (key === '_id') throw new Error(`Cannot modify field _id: ${update}`);
-          return modifiers.set(doc, key, value);
-        case '$push':
-          return modifiers.push(doc, key, value);
+          return set(doc, key, value) as Doc;
+        case '$push': {
+          const cur = get(doc, key);
+          if (!Array.isArray(cur)) return doc;
+          return set(doc, key, [...cur, value]) as Doc;
+        }
         default:
           throw new Error(`Invalid modifier: ${modifier}`);
       }
@@ -46,7 +33,7 @@ export const docModify = (doc: Doc, update: Update) => {
   return doc;
 };
 
-export const docProject = (doc: Doc, projection: Projection): Partial<Doc> => {
+export const docProject = (doc: Doc, projection?: Projection): Partial<Doc> => {
   if (!projection) return doc;
 
   if (!Array.isArray(projection)) {

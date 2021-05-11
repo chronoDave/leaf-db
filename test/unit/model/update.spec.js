@@ -112,7 +112,7 @@ test('[update] should replace docs if matches are found (complex)', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.update({ $has: { 'data.values': 1 } });
+    const docs = await db.update({ $includes: { 'data.values': 1 } });
 
     t.true(Array.isArray(docs));
     t.strictEqual(docs.length, 1);
@@ -145,7 +145,7 @@ test('[update] should accept projection', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.update({ data: 'test' }, { test: 'test' }, { projection: [] });
+    const docs = await db.update({ data: 'test' }, { test: 'test' }, []);
 
     for (let i = 0; i < docs.length; i += 1) {
       t.deepEqual(docs[i], {});
@@ -153,23 +153,6 @@ test('[update] should accept projection', async t => {
   } catch (err) {
     t.fail(err);
   }
-
-  t.end();
-});
-
-test('[update] should persist if `persist` is true', async t => {
-  const { db, file } = setup({ data: Object.values(mockMemory), root: __dirname });
-
-  try {
-    await db.update({ _id: 'key_4' }, { $set: { testValue: 1 } }, { persist: true });
-    db.load();
-
-    t.strictEqual(db.map.key_4.testValue, 1);
-  } catch (err) {
-    t.fail(err);
-  }
-
-  fs.unlinkSync(file);
 
   t.end();
 });

@@ -158,84 +158,58 @@ test('[isQueryMatch] operator $not should return false if field is equal to valu
   t.end();
 });
 
-test('[isQueryMatch] operator $exists should return true if field exists', t => {
+test('[isQueryMatch] operator $or should return true if a query matches', t => {
+  t.true(isQueryMatch(mockObjectSimple, { $or: [{ a: 0 }, { a: 1 }] }));
+  t.true(isQueryMatch(mockObjectNested, { $or: [{ 'b.c': undefined }, { 'b.c': 'string' }] }));
+  t.true(isQueryMatch(mockObjectComplex, { $or: [{ 'c.0.e.f': true }, { 'c.0.e.f': null }] }));
+
+  t.end();
+});
+
+test('[isQueryMatch] operator $or should return false if no query matches', t => {
+  t.false(isQueryMatch(mockObjectSimple, { $or: [{ a: 0 }, { c: false }] }));
+  t.false(isQueryMatch(mockObjectNested, { $or: [{ 'b.c': 3 }, { 'd.f': 'c' }] }));
+  t.false(isQueryMatch(mockObjectComplex, { $or: [{ 'c.0.e.f': 3 }, { 'c.3': 6 }] }));
+
+  t.end();
+});
+
+test('[isQueryMatch] operator $keys should return true if field exists', t => {
   // Test all data types
-  t.true(isQueryMatch(mockObjectSimple, { $exists: 'a' }));
-  t.true(isQueryMatch(mockObjectSimple, { $exists: 'b' }));
-  t.true(isQueryMatch(mockObjectSimple, { $exists: 'c' }));
-  t.true(isQueryMatch(mockObjectSimple, { $exists: 'd' }));
+  t.true(isQueryMatch(mockObjectSimple, { $keys: ['a'] }));
+  t.true(isQueryMatch(mockObjectSimple, { $keys: ['b'] }));
+  t.true(isQueryMatch(mockObjectSimple, { $keys: ['c'] }));
+  t.true(isQueryMatch(mockObjectSimple, { $keys: ['d'] }));
   // Test nesting
-  t.true(isQueryMatch(mockObjectNested, { $exists: 'd.j' }));
-  t.true(isQueryMatch(mockObjectComplex, { $exists: 'c.1.i.j.0' }));
+  t.true(isQueryMatch(mockObjectNested, { $keys: ['d.j'] }));
+  t.true(isQueryMatch(mockObjectComplex, { $keys: ['c.1.i.j.0'] }));
   // Multi field
-  t.true(isQueryMatch(mockObjectComplex, { $exists: ['a', 'b.0', 'c.1.i.j'] }));
+  t.true(isQueryMatch(mockObjectComplex, { $keys: ['a', 'b.0', 'c.1.i.j'] }));
 
   t.end();
 });
 
-test('[isQueryMatch] operator $exists should return false if field does not exist', t => {
-  t.false(isQueryMatch(mockObjectSimple, { $exists: 'e' }));
-  t.false(isQueryMatch(mockObjectNested, { $exists: 'd.c.b' }));
-  t.false(isQueryMatch(mockObjectComplex, { $exists: 'b.-1' }));
+test('[isQueryMatch] operator $keys should return false if field does not exist', t => {
+  t.false(isQueryMatch(mockObjectSimple, { $keys: ['e'] }));
+  t.false(isQueryMatch(mockObjectNested, { $keys: ['d.c.b'] }));
+  t.false(isQueryMatch(mockObjectComplex, { $keys: ['b.-1'] }));
 
   t.end();
 });
 
-test('[isQueryMatch] operator $has should return true if object contains value', t => {
-  t.true(isQueryMatch(mockObjectComplex, { $has: { b: 2 } }));
-  t.true(isQueryMatch(mockObjectComplex, { $has: { b: null } }));
-  t.true(isQueryMatch(mockObjectComplex, { $has: { c: { d: 'String', e: { f: null } } } }));
-  t.true(isQueryMatch(mockObjectComplex, { $has: { 'c.1.i.j': 4 } }));
+test('[isQueryMatch] operator $includes should return true if object contains value', t => {
+  t.true(isQueryMatch(mockObjectComplex, { $includes: { b: 2 } }));
+  t.true(isQueryMatch(mockObjectComplex, { $includes: { b: null } }));
+  t.true(isQueryMatch(mockObjectComplex, { $includes: { c: { d: 'String', e: { f: null } } } }));
+  t.true(isQueryMatch(mockObjectComplex, { $includes: { 'c.1.i.j': 4 } }));
 
   t.end();
 });
 
-test('[isQueryMatch] operator $has should return false if object does not contain value', t => {
-  t.false(isQueryMatch(mockObjectComplex, { $has: { b: 4 } }));
-  t.false(isQueryMatch(mockObjectComplex, { $has: { b: [] } }));
-  t.false(isQueryMatch(mockObjectComplex, { $has: { c: { d: 'string' } } }));
-
-  t.end();
-});
-
-test('[isQueryMatch] operator $some should return true if any query matches', t => {
-  t.true(isQueryMatch(mockObjectComplex, {
-    $some: [
-      { b: 4 },
-      { a: 2 },
-      { c: 3 },
-      { _id: 1 }
-    ]
-  }));
-  t.true(isQueryMatch(mockObjectComplex, {
-    $some: [
-      { b: 4 },
-      { a: 2 },
-      { c: 3 },
-      { $has: { b: 2 } }
-    ]
-  }));
-  t.true(isQueryMatch(mockObjectComplex, {
-    $some: [
-      { b: 4 },
-      { a: 1 },
-      { c: 3 },
-      { $has: { b: 2 } }
-    ]
-  }));
-
-  t.end();
-});
-
-test('[isQueryMatch] operator $some should return false if no query matches', t => {
-  t.false(isQueryMatch(mockObjectComplex, {
-    $some: [
-      { b: 4 },
-      { a: 2 },
-      { c: 3 },
-      { _id: 5 }
-    ]
-  }));
+test('[isQueryMatch] operator $includes should return false if object does not contain value', t => {
+  t.false(isQueryMatch(mockObjectComplex, { $includes: { b: 4 } }));
+  t.false(isQueryMatch(mockObjectComplex, { $includes: { b: [] } }));
+  t.false(isQueryMatch(mockObjectComplex, { $includes: { c: { d: 'string' } } }));
 
   t.end();
 });

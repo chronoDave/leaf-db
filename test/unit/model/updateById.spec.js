@@ -143,29 +143,12 @@ test('[updateById] should accept projection', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.updateById(id, { test: 'test' }, { projection: [] });
+    const docs = await db.updateById(id, { test: 'test' }, []);
 
     t.deepEqual(docs[0], {});
   } catch (err) {
     t.fail(err);
   }
-
-  t.end();
-});
-
-test('[updateById] should persist if `persist` is true', async t => {
-  const { db, file } = setup({ data: Object.values(mockMemory), root: __dirname });
-
-  try {
-    await db.updateById('key_4', { $set: { testValue: 1 } }, { persist: true });
-    db.load();
-
-    t.strictEqual(db.map.key_4.testValue, 1);
-  } catch (err) {
-    t.fail(err);
-  }
-
-  fs.unlinkSync(file);
 
   t.end();
 });

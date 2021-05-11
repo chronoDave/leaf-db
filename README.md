@@ -65,50 +65,49 @@ db.insert({ species: 'cat', name: 'whiskers' })
 
 ### Create / load
 
-`const db = new LeafDB(name, { root, autoload, strict })`
+`const db = new LeafDB({ name, root, autoload, strict })`
 
- - `name` - Database name
- - `options.root` - Database root path, will create in-memory if not provided (default `null`)
- - `options.disableAutoload` - Should database not be loaded on creation (default `false`)
- - `options.strict` - Should database throw silent errors (default `false`)
+ - `options.name` - Database name
+ - `options.root` - Database root path, will create in-memory if not provided
+ - `options.disableAutoload` - Should database not be loaded on creation
+ - `options.strict` - Should database throw silent errors
 
 ```JS
 // Memory-only database
 const db = new Datastore()
 
+// Persistent database with autoload
+const db = new Datastore({ root: process.cwd() });
+
 // Persistent database with manual load
-const db = new Datastore('db', { root: process.cwd(), autoload: false })
+const db = new Datastore({ name: 'db', root: process.cwd(), disableAutoload: true })
 // Loading is not neccesary, but recommended
 // Not loading means the data from file isn't read,
 // which can cause data loss when `persist()` is called (as it overwrites the file)
 db.load()
-
-// Persistent database with autoload
-const db = new Datastore('db', { root: process.cwd() })
 ```
 
 ### Persistence
 
-By default, `leaf-db` does not write directly to file. To make sure the data is persistent, call `persist()`, which will write valid to disk. Keep in mind that this function is sync, so calling this will block. To clean internal memory, call `load()` after `persist()`.
+By default, `leaf-db` does not write directly to file after operations. To make sure the data is persisted, call `persist()`, which will write valid data to disk. `persist()` also cleans out invalid data from memory.
 
 If `strict` is enabled, `persist()` will throw an error if corrupted data is found.
 
 ### Corruption
 
-Calling `load()` will return an array of corrupted raw data (string). When `persist()` is called, all corrupt items will be removed from file, so if data integrity is important make sure to re-insert (via `insert()` or `update()`) those items before calling `persist()`.
+Calling `load()` will return an array of corrupted raw data (string), which can be re-inserted before calling `persist()`.
 
 ## Inserting docs
 
-`db.insert(newDocs, options) => Promise`
+`db.insert(OneOrMore<NewDoc>) => Promise<Doc[]>`
 
- - `newDocs` - Single doc or array of docs to insert
- - `options.persist` - Should insert call persist (default `false`)
+Inserts doc(s) into the database. `_id` is automatically generated if the _id does not exist.
 
-Inserts doc(s) into the database. `_id` is automatically generated (~16 character string) if the field does not exist.
+Fields cannot start with `$` (modifier field) or contain `.` (dot-queries). Values cannot be `undefined`.
 
-Fields cannot start with `$` (modifier field) or contain `.` (used for dot-queries). Values cannot be `undefined`.
+`insert()` will reject on the first invalid doc if `strict` is enabled, otherwise invalid docs are ignored.
 
-`insert()` will fail if doc(s) are invalid. If `strict` is enabled, `insert()` will reject on the first invalid doc, otherwise invalid docs are ignored. Insertion takes place _after_ all docs are validated, meaning no data will be inserted if `insert()` rejects.
+Insertion takes place _after_ all docs are validated, meaning no data will be inserted if `insert()` rejects.
 
 `leaf-db` does not keep track of when docs are inserted, updated or deleted.
 
@@ -133,15 +132,9 @@ try {
 
 ### Basic query
 
-`await db.find(query, projection) => Promise([docs])`
+`await db.find(Query, Projection) => Promise<Doc[]>`
 
- - `query` - Query object (default `{}`)
- - `projection` - Projection (default `null`)
-
-`await findById([_id], projection) => Promise([docs])`
-
- - `_id` - Doc `_id`
- - `projection` - Projection (default `null`)
+`await db.findById(OneOrMore<string>, Projection) => Promise<Doc[]>`
 
 Find doc(s) matching query. Operators and dot notation are supported and can be mixed together.
 
@@ -193,8 +186,6 @@ await db.find({ 'properties.type': 'weak' })
 // Find all docs where first entry of variants is `strong`
 // [2]
 await db.find({ 'variants.0': 'strong' })
-// Brackets can be used for arrays as well
-await db.find({ 'variants[0]': 'strong' })
 
 // Find all docs where type of first entry of properties of first entry of variants is 'weak'
 // [3]
@@ -215,19 +206,19 @@ Operators can be used to create advanced queries. The following operators are su
 
 <b>String operators</b>
 
- - `$stringStrict` - Does string include string
- - `$string` - Does string include string, case insensitive
+ - `$string` - Does string include string
+ - `$stringStrict` - Does string include string, case sensitive
 
 <b>Object operators</b>
 
- - `$exists` - Does object key exist
+ - `$keys` - Does object have keys
 
 <b>Array operators</b>
 
 These operators will return false if the queries field is not an array
 
- - `$has` - Does array contain value
- - `$some` - Does any query match
+ - `$includes` - Does array contain value
+ - `$or` - Do any of the queries match
 
 <b>Example</b>
 
@@ -247,7 +238,7 @@ await db.find({ $lte: { _id: 4, 'properties.parent': 3 }})
 
 // $not
 // [2, 3, 4, 5]
-await db.find({ $not: { _id: 3 } })
+await db.find({ $not: { _id: 1 } })
 
 // $string
 // [1, 2]
@@ -255,29 +246,29 @@ await db.find({ $string: { type: 'mal' } })
 // []
 await db.find({ $string: { type: 'MAL' } })
 // [1, 2]
-await db.find({ $stringLoose: { type: 'MAL' } })
+await db.find({ $stringStrict: { type: 'MAL' } })
 
-// $exists
+// $keys
 // [1, 2, 3, 4]
-await db.find({ $exists: 'type' })
+await db.find({ $keys: ['type'] })
 // [1, 2, 3]
-await db.find({ $exists: ['type', 'important'] })
+await db.find({ $keys: ['type', 'important'] })
 
-// $has
+// $includes
 // [1, 2, 3, 4]
-await db.find({ $has: { variants: 'weak' } })
+await db.find({ $includes: { variants: 'weak' } })
 // [4]
-await db.find({ $has: { 'properties.variants': 'strong' } })
+await db.find({ $includes: { 'properties.variants': 'strong' } })
 // Error, field is not an array
-await db.find({ $has: { type: 'weak' } })
+await db.find({ $includes: { type: 'weak' } })
 // Error, dot notation isn't a valid object field
-await db.find({ $has: { properties: { 'variants.0': 'weak' } } })
+await db.find({ $includes: { properties: { 'variants.0': 'weak' } } })
 
-// $some
+// $or
 // [1, 2, 4]
-await db.find({ $some: [{ type: 'weak' }, { type: 'normal' }] })
+await db.find({ $or: [{ type: 'weak' }, { type: 'normal' }] })
 // [1, 2, 3, 4, 5]
-await db.find({ $some: [{ $has: { variants: 'weak' } }, { _id: 5 }] })
+await db.find({ $or: [{ $includes: { variants: 'weak' } }, { _id: 5 }] })
 ```
 
 ### Projection
@@ -309,19 +300,9 @@ The `byId` queries accept a single `_id` string, or an array of `_id` strings.
 
 ## Updating docs
 
-`await update(query, update, options) => Promise([docs])`
+`await db.update(Query, Update | NewDoc) => Promise<Doc[]>`
 
- - `query` - Query object (default `{}`)
- - `update` - Update object (default `{}`)
- - `options.projection` - Projection (default `null`)
- - `options.persist` - Should updated docs be persisted (default `false`)
-
-`await updateById([_id], update, options) => Promise([docs])`
-
- - `_id` - Doc `_id`
- - `update` - Update object (default `{}`)
- - `options.projection` - Projection (default `null`)
- - `options.persist` - Should updated docs be persisted (default `false`)
+`await db.updateById(OneOrMore<string>, Update) => Promise<Doc[]>`
 
 Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`. Returns the updated docs.
 
@@ -388,7 +369,7 @@ await db.update({} }, { $push: { count: 'orange' } })
 
 // $set
 // { _id: 3, count: 'count' }
-await db.update({ $exists: 'count' }, { $set: { count: 'count' } })
+await db.update({ $keys: ['count'] }, { $set: { count: 'count' } })
 // { _id: 1, value: 3 }
 // { _id: 2, value: 3 }
 // { _id: 3, count: 3, value: 3 }
@@ -398,15 +379,9 @@ await db.update({}, { $set: { value: 3 } })
 
 ## Deleting docs
 
-`await delete(query, options) => Promise(n)`
+`await db.delete(Query) => Promise<number>`
 
- - `query` - Query object (default `{}`)
- - `options.persist` - Should deleted docs be persisted (default `false`)
-
-`await deleteById([_id], options) => Promise(n)`
-
- - `_id` - Doc `_id`
- - `options.persist` - Should deleted docs be persisted (default `false`)
+`await db.deleteById(OneOrMore<string>) => Promise<number>`
 
 Delete doc(s) matching query object.
 
@@ -429,7 +404,7 @@ await db.delete({ _id: 2 })
 
 // Delete all matches
 // [3, 4]
-await db.delete({ type: 'normal' }, { multi: true })
+await db.delete({ type: 'normal' })
 ```
 
 ### Drop

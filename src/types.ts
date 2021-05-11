@@ -1,24 +1,37 @@
 export type Value = number | string | boolean | { [key: string]: Value } | Value[];
 
+export type ValueOf<T> = T[keyof T];
+
 export type OneOrMore<T> = T | T[];
 
 export type Doc = {
-  _id: string,
+  readonly _id: string,
   $deleted?: boolean
-} & Partial<Record<string, Value>>;
+} & Record<string, Value>;
 
-export type Query =
-  Record<string, Value> &
-  Partial<Record<'$gt' | '$gte' | '$lt' | '$lte', number>> &
-  Partial<Record<'$string' | '$stringStrict', string>> &
-  Partial<Record<'$exists', string[]>> &
-  Partial<Record<'$not', Value>> &
-  Partial<Record<'$has', Value[]>>;
+export type NewDoc = { _id?: string } & Record<string, Value>;
 
-export type Projection = OneOrMore<string> | null;
-
-export type Update = Partial<Doc> | {
-  _id: never
-  $add?: Record<string, number>,
-  $set?: Record<string, OneOrMore<Value>>
+export type Operators = {
+  $gt: number,
+  $gte: number,
+  $lt: number,
+  $lte: number,
+  $string: string,
+  $stringStrict: string,
+  $keys: string[],
+  $includes: Value[],
+  $or: Query[],
+  $not: Value
 };
+
+export type Query = Partial<Operators> & Record<string, Value>;
+
+export type Projection = string[];
+
+export type Modifiers = {
+  $add: Record<string, number>,
+  $push: Record<string, Value>,
+  $set: Record<string, Value>
+};
+
+export type Update = NewDoc | Partial<Modifiers>;

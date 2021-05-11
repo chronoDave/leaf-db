@@ -46,28 +46,6 @@ test('[insert] should insert multiple docs', async t => {
   t.end();
 });
 
-test('[insert] should persist if option.persist is true', async t => {
-  const payload = [
-    { _id: 1 },
-    { data: 'test' },
-    { name: 'debug', valid: true }
-  ];
-
-  const { db, file } = setup({ root: __dirname });
-
-  try {
-    await db.insert(payload, { persist: true });
-  } catch (err) {
-    t.fail(err);
-  }
-
-  t.true(fs.existsSync(file));
-
-  fs.unlinkSync(file);
-
-  t.end();
-});
-
 test('[insert] should throw on invalid data', async t => {
   const { db } = setup();
 

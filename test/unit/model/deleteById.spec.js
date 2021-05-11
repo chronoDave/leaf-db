@@ -94,21 +94,3 @@ test('[deleteById] should delete docs if multiple matches are found', async t =>
 
   t.end();
 });
-
-test('[deleteById] should persist if `persist` is true', async t => {
-  const { db, file } = setup({ data: Object.values(mockMemory), root: __dirname });
-
-  try {
-    await db.deleteById('key_4', { persist: true });
-    db.load();
-
-    t.false(db.map.key_4);
-    t.false(db.map.key_6);
-  } catch (err) {
-    t.fail(err);
-  }
-
-  fs.unlinkSync(file);
-
-  t.end();
-});

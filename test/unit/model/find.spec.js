@@ -70,7 +70,7 @@ test('[find] should return docs on query match (complex)', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.find({ $has: { 'data.values': 1 } });
+    const docs = await db.find({ $includes: { 'data.values': 1 } });
 
     t.true(Array.isArray(docs));
     t.strictEqual(docs.length, 1);
