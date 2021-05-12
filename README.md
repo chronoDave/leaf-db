@@ -29,7 +29,7 @@
 $ yarn add leaf-db
 ```
 
-_Note: This package requires Node >=10.12.0_
+_Note: This package requires Node >=14.5.0_
 
 ## Getting Started
 

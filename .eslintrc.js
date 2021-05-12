@@ -26,6 +26,7 @@ module.exports = {
     'comma-dangle': 'off',
     'arrow-body-style': 'warn',
     'arrow-parens': ['error', 'as-needed'],
+    'implicit-arrow-linebreak': 'off',
     'no-nested-ternary': 'off',
     'max-len': 'off',
     'no-underscore-dangle': 'off',

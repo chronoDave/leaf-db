@@ -15,79 +15,66 @@ export const isObject = (any: unknown) => any !== null && !Array.isArray(any) &&
 export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
 export const isId = (any: unknown) => typeof any === 'string' && any.length > 0;
 
-export const isOperatorMatch = (doc: Doc, operator: string, query: ValueOf<Operators>) => {
-  const matchMath = (fn: (current: number, original: number) => boolean) => {
-    if (!isObject(query)) return false;
-    return Object.entries(query).every(([key, value]) => {
-      if (typeof value !== 'number') return false;
-      const original = get(doc, key);
-      if (typeof original !== 'number') return false;
-      return fn(value, original);
-    });
-  };
-
-  const matchObject = (fn: (key: string, value: unknown) => boolean) => {
-    if (!isObject(query)) return false;
-    return Object.entries(query).every(([key, value]) => {
-      if (typeof key !== 'string') return false;
-      return fn(key, value);
-    });
-  };
-
-  const matchString = (fn: (current: string, original: string) => boolean) => {
-    if (!isObject(query)) return false;
-    return Object.entries(query).every(([key, value]) => {
-      if (typeof value !== 'string') return false;
-      const original = get(doc, key);
-      if (typeof original !== 'string') return false;
-      return fn(value, original);
-    });
-  };
-
-  switch (operator) {
-    case '$gt':
-      return matchMath((value, original) => original > value);
-    case '$gte':
-      return matchMath((value, original) => original >= value);
-    case '$lt':
-      return matchMath((value, original) => original < value);
-    case '$lte':
-      return matchMath((value, original) => original <= value);
-    case '$not':
-      return matchObject((key, value) => !deepEqual(get(doc, key), value));
-    case '$keys':
-      if (!Array.isArray(query)) return false;
-      return query.every(key => {
-        if (typeof key !== 'string') return false;
-        return get(doc, key) !== undefined;
-      });
-    case '$includes':
-      return matchObject((key, value) => {
-        const original = get(doc, key);
-        if (!Array.isArray(original)) return false;
-        return original.some(item => deepEqual(item, value));
-      });
-    case '$string':
-      return matchString((value, original) => original.toLocaleLowerCase().includes(value.toLocaleLowerCase()));
-    case '$stringStrict':
-      return matchString((value, original) => original.includes(value));
-    default:
-      throw new Error(`Invalid operator: ${operator}`);
-  }
+// Operators
+const isMatchBase = (match: (entries: [string, unknown]) => boolean) => (query: ValueOf<Operators>) => {
+  if (!isObject(query)) return false;
+  return Object.entries(query).every(match);
 };
 
-export const isQueryMatch = (doc: Doc, query: Query): boolean => Object
-  .entries(query)
-  .every(([key, value]) => {
-    if (key === '$or') {
-      if (!Array.isArray(value)) return false;
-      return value.some(nestedQuery => {
-        if (!isObject(nestedQuery)) return false;
-        return isQueryMatch(doc, nestedQuery as Query);
-      });
+const isMatchMath = (doc: Doc, match: (current: number, value: number) => boolean) => isMatchBase(([key, value]) => {
+  if (typeof value !== 'number') return false;
+  const current = get(doc, key);
+  if (typeof current !== 'number') return false;
+  return match(current, value);
+});
+
+const isMatchString = (doc: Doc, match: (current: string, value: string) => boolean) => isMatchBase(([key, value]) => {
+  if (typeof value !== 'string') return false;
+  const current = get(doc, key);
+  if (typeof current !== 'string') return false;
+  return match(current, value);
+});
+
+export const isQueryMatch = (doc: Doc, rootQuery: Query): boolean => Object
+  .entries(rootQuery)
+  .every(([operator, query]) => {
+    if (operator[0] !== '$') return deepEqual(get(doc, operator), query);
+    switch (operator) {
+      case '$or':
+        if (!Array.isArray(query)) return false;
+        return query.some(nestedQuery => {
+          if (!isObject(nestedQuery)) return false;
+          return isQueryMatch(doc, nestedQuery as Query);
+        });
+      case '$keys':
+        if (!Array.isArray(query)) return false;
+        return query.every(key => {
+          if (typeof key !== 'string') return false;
+          return get(doc, key) !== undefined;
+        });
+      case '$includes':
+        return isMatchBase(([key, value]) => {
+          const current = get(doc, key);
+          if (!Array.isArray(current)) return false;
+          return current.some(item => deepEqual(item, value));
+        })(query);
+      case '$gt':
+        return isMatchMath(doc, (x, y) => x > y)(query);
+      case '$gte':
+        return isMatchMath(doc, (x, y) => x >= y)(query);
+      case '$lt':
+        return isMatchMath(doc, (x, y) => x < y)(query);
+      case '$lte':
+        return isMatchMath(doc, (x, y) => x <= y)(query);
+      case '$not':
+        return isMatchBase(([key, value]) => !deepEqual(get(doc, key), value))(query);
+      case '$string':
+        return isMatchString(doc, (x, y) => x.toLocaleLowerCase().includes(y.toLocaleLowerCase()))(query);
+      case '$stringStrict':
+        return isMatchString(doc, (x, y) => x.includes(y))(query);
+      default:
+        throw new Error(`Invalid operator: ${operator}`);
     }
-    if (key[0] === '$') return isOperatorMatch(doc, key, value);
-    return deepEqual(get(doc, key), value);
   });
 
 export const isInvalidDoc = (doc: Partial<Doc>) => some(doc, ([key, value]) => {

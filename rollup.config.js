@@ -17,7 +17,7 @@ export default [{
       ]
     }),
     esbuild({
-      target: 'esnext'
+      target: 'es2020'
     })
   ],
   output: [{
