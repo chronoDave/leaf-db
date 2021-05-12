@@ -99,7 +99,7 @@ Calling `load()` will return an array of corrupted raw data (string), which can 
 
 ## Inserting docs
 
-`db.insert(OneOrMore<NewDoc>) => Promise<Doc[]>`
+`await db.insert(OneOrMore<NewDoc>) => Promise<Doc[]>`
 
 Inserts doc(s) into the database. `_id` is automatically generated if the _id does not exist.
 
