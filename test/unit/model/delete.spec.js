@@ -1,5 +1,3 @@
-const fs = require('fs');
-
 const test = require('tape');
 
 const { setup, invalidQueryLoose, mockMemory } = require('../_utils');

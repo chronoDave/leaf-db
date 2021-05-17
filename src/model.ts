@@ -166,7 +166,7 @@ export default class LeafDB {
   /**
    * Find doc(s) matching `_id`
    * @param {string|string[]} query - Doc _id
-   * @param {string[]} projection - Projection array (default `null`)
+   * @param {string[]} projection - Projection array
    * */
   findById(query: OneOrMore<string>, projection?: Projection): Promise<Partial<Doc>[]> {
     return new Promise(resolve => {
@@ -190,7 +190,7 @@ export default class LeafDB {
   /**
    * Find all documents matching `query`
    * @param {object} query - Query object (default `{}`)
-   * @param {string[]} projection - Projection array (default `null`)
+   * @param {string[]} projection - Projection array
    */
   find(query: Query = {}, projection?: Projection): Promise<Partial<Doc>[]> {
     return new Promise(resolve => {
@@ -201,10 +201,8 @@ export default class LeafDB {
       this.list.forEach(_id => {
         const doc = this.map[_id];
 
-        if (!doc.$deleted) {
-          if (isEmptyObject(query) || isQueryMatch(doc, query)) {
-            payload.push(docProject(doc, projection));
-          }
+        if (!doc.$deleted && (isEmptyObject(query) || isQueryMatch(doc, query))) {
+          payload.push(docProject(doc, projection));
         }
       });
 
@@ -216,7 +214,7 @@ export default class LeafDB {
    * Update single doc matching `_id`
    * @param {string|string[]} query - Doc _id
    * @param {object} update - New document (default `{}`) / Update query
-   * @param {string[]} projection - Projection array (default `null`)
+   * @param {string[]} projection - Projection array
   */
   updateById(
     query: OneOrMore<string>,
@@ -259,7 +257,7 @@ export default class LeafDB {
    * Update documents matching `query`
    * @param {object} query - Query object (default `{}`)
    * @param {object} update - New document (default `{}`) / Update query
-   * @param {string[]} projection - Projection array (default `null`)
+   * @param {string[]} projection - Projection array
    */
   update(
     query: Query = {},
