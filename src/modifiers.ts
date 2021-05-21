@@ -1,4 +1,4 @@
-import { get, set } from '@chronocide/dot-obj';
+import * as dot from '@chronocide/dot-obj';
 
 // Types
 import { Doc, Projection, Update } from './types';
@@ -12,17 +12,17 @@ export const docModify = (doc: Doc, update: Update): Doc => {
 
       switch (modifier) {
         case '$add': {
-          const cur = get(doc, key);
+          const cur = dot.get(doc, key);
           if (typeof cur !== 'number' || typeof value !== 'number') return doc;
-          return set(doc, key, cur + value) as Doc;
+          return dot.set(doc, key, cur + value) as Doc;
         }
         case '$set':
           if (key === '_id') throw new Error(`Cannot modify field _id: ${update}`);
-          return set(doc, key, value) as Doc;
+          return dot.set(doc, key, value) as Doc;
         case '$push': {
-          const cur = get(doc, key);
+          const cur = dot.get(doc, key);
           if (!Array.isArray(cur)) return doc;
-          return set(doc, key, [...cur, value]) as Doc;
+          return dot.set(doc, key, [...cur, value]) as Doc;
         }
         default:
           throw new Error(`Invalid modifier: ${modifier}`);
@@ -47,5 +47,5 @@ export const docProject = (doc: Doc, projection?: Projection): Partial<Doc> => {
   }
 
   return projection
-    .reduce((acc, key) => set(acc, key, get(doc, key)), {});
+    .reduce((acc, key) => dot.set(acc, key, dot.get(doc, key)) as Partial<Doc>, {});
 };

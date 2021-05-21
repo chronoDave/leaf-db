@@ -1,5 +1,5 @@
 import deepEqual from 'fast-deep-equal';
-import { get, some } from '@chronocide/dot-obj';
+import * as dot from '@chronocide/dot-obj';
 
 // Types
 import {
@@ -11,9 +11,9 @@ import {
 } from './types';
 
 // Basic
-export const isObject = (any: unknown) => any !== null && !Array.isArray(any) && typeof any === 'object';
+export const isObject = (x: any) => x !== null && !Array.isArray(x) && typeof x === 'object';
 export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
-export const isId = (any: unknown) => typeof any === 'string' && any.length > 0;
+export const isId = (x: any) => typeof x === 'string' && x.length > 0;
 
 // Operators
 const isMatchBase = (match: (entries: [string, unknown]) => boolean) => (query: ValueOf<Operators>) => {
@@ -23,14 +23,14 @@ const isMatchBase = (match: (entries: [string, unknown]) => boolean) => (query: 
 
 const isMatchMath = (doc: Doc, match: (current: number, value: number) => boolean) => isMatchBase(([key, value]) => {
   if (typeof value !== 'number') return false;
-  const current = get(doc, key);
+  const current = dot.get(doc, key);
   if (typeof current !== 'number') return false;
   return match(current, value);
 });
 
 const isMatchString = (doc: Doc, match: (current: string, value: string) => boolean) => isMatchBase(([key, value]) => {
   if (typeof value !== 'string') return false;
-  const current = get(doc, key);
+  const current = dot.get(doc, key);
   if (typeof current !== 'string') return false;
   return match(current, value);
 });
@@ -38,7 +38,7 @@ const isMatchString = (doc: Doc, match: (current: string, value: string) => bool
 export const isQueryMatch = (doc: Doc, rootQuery: Query): boolean => Object
   .entries(rootQuery)
   .every(([operator, query]) => {
-    if (operator[0] !== '$') return deepEqual(get(doc, operator), query);
+    if (operator[0] !== '$') return deepEqual(dot.get(doc, operator), query);
     switch (operator) {
       case '$or':
         if (!Array.isArray(query)) return false;
@@ -50,11 +50,11 @@ export const isQueryMatch = (doc: Doc, rootQuery: Query): boolean => Object
         if (!Array.isArray(query)) return false;
         return query.every(key => {
           if (typeof key !== 'string') return false;
-          return get(doc, key) !== undefined;
+          return dot.get(doc, key) !== undefined;
         });
       case '$includes':
         return isMatchBase(([key, value]) => {
-          const current = get(doc, key);
+          const current = dot.get(doc, key);
           if (!Array.isArray(current)) return false;
           return current.some(item => deepEqual(item, value));
         })(query);
@@ -67,7 +67,7 @@ export const isQueryMatch = (doc: Doc, rootQuery: Query): boolean => Object
       case '$lte':
         return isMatchMath(doc, (x, y) => x <= y)(query);
       case '$not':
-        return isMatchBase(([key, value]) => !deepEqual(get(doc, key), value))(query);
+        return isMatchBase(([key, value]) => !deepEqual(dot.get(doc, key), value))(query);
       case '$string':
         return isMatchString(doc, (x, y) => x.toLocaleLowerCase().includes(y.toLocaleLowerCase()))(query);
       case '$stringStrict':
@@ -77,18 +77,18 @@ export const isQueryMatch = (doc: Doc, rootQuery: Query): boolean => Object
     }
   });
 
-export const isInvalidDoc = (doc: Partial<Doc>) => some(doc, ([key, value]) => {
+export const isInvalidDoc = (doc: Partial<Doc>) => dot.some(doc, ([key, value]) => {
   if (key[0] === '$') return true;
   if (key.includes('.')) return true;
   if (value === undefined) return true;
   return false;
 });
 
-export const hasModifiers = (update: Update) => Object
+export const hasOperators = (update: Update) => Object
   .keys(update)
   .some(key => key[0] === '$');
 
-export const hasMixedModifiers = (update: Update) => (
-  hasModifiers(update) &&
+export const hasMixedOperators = (update: Update) => (
+  hasOperators(update) &&
   Object.keys(update).some(key => key[0] !== '$')
 );

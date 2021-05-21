@@ -2,14 +2,24 @@
   "name": "leaf-db",
   "version": "5.0.2",
   "description": "Small file-based database for node.js",
-  "main": "dist/leafdb.js",
+  "main": "dist/leafdb.cjs",
+  "module": "dist/leafdb.mjs",
   "types": "dist/leafdb.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/leafdb.mjs",
+      "require": "./dist/dotobj.cjs"
+    }
+  },
   "keywords": [
     "database",
     "embedded",
+    "persistent",
     "javascript",
     "typescript",
-    "node"
+    "nodejs",
+    "es6",
+    "promises"
   ],
   "files": [
     "dist/**/*"
@@ -18,7 +28,7 @@
   "author": "Chronocide",
   "license": "GPL-3.0",
   "engines": {
-    "node": ">=10.12.0"
+    "node": ">=14.5.0"
   },
   "scripts": {
     "lint": "eslint src",
@@ -30,7 +40,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@chronocide/dot-obj": "^1.0.2",
+    "@chronocide/dot-obj": "^1.2.0",
     "fast-deep-equal": "^3.1.3"
   },
   "devDependencies": {

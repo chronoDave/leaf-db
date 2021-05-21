@@ -23,10 +23,21 @@ import {
   isId,
   isEmptyObject,
   isQueryMatch,
-  hasModifiers,
+  hasOperators,
   isInvalidDoc,
-  hasMixedModifiers
+  hasMixedOperators
 } from './validation';
+
+export type {
+  Value,
+  Doc,
+  NewDoc,
+  Operators,
+  Query,
+  Projection,
+  Modifiers,
+  Update
+} from './types';
 
 export default class LeafDB {
   root?: string;
@@ -225,8 +236,8 @@ export default class LeafDB {
       if (
         !isObject(update) ||
         '_id' in update ||
-        hasMixedModifiers(update) ||
-        (!hasModifiers(update) && isInvalidDoc(update))
+        hasMixedOperators(update) ||
+        (!hasOperators(update) && isInvalidDoc(update))
       ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
 
       const payload: Partial<Doc>[] = [];
@@ -240,7 +251,7 @@ export default class LeafDB {
         const doc = this.map[_id];
 
         if (doc && !doc.$deleted) {
-          const newDoc = hasModifiers(update) ?
+          const newDoc = hasOperators(update) ?
             docModify(doc, update) :
             { ...update, _id };
 
@@ -270,8 +281,8 @@ export default class LeafDB {
       if (
         !isObject(update) ||
         '_id' in update ||
-        hasMixedModifiers(update) ||
-        (!hasModifiers(update) && isInvalidDoc(update))
+        hasMixedOperators(update) ||
+        (!hasOperators(update) && isInvalidDoc(update))
       ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
 
       const payload: Partial<Doc>[] = [];
@@ -280,7 +291,7 @@ export default class LeafDB {
         const doc = this.map[_id];
 
         if (!doc.$deleted && isQueryMatch(doc, query)) {
-          const newDoc = hasModifiers(update) ?
+          const newDoc = hasOperators(update) ?
             docModify(doc, update) :
             update;
 

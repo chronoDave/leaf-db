@@ -2,7 +2,7 @@
   <img src="/assets/icon.svg" width="128" alt="leaf-db">
 
   <h1>leaf-db</h1>
-  <p><b>leaf-db</b> is a modern, small, promise-based, embeddable database for <a href="https://nodejs.org/en/">node.js</a>.</p>
+  <p><b>leaf-db</b> is a modern, promise-based, embeddable database for <a href="https://nodejs.org/en/">node.js</a>.</p>
 </div>
 
 <div align="center">
