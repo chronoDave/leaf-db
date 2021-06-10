@@ -6,6 +6,10 @@ const input = 'src/model.ts';
 const outputFile = type => `dist/leafdb.${type}`;
 
 export default [{
+  external: [
+    'fast-deep-equal',
+    '@chronocide/dot-obj'
+  ],
   input,
   plugins: [
     commonjs(),
