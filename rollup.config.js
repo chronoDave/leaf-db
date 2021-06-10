@@ -1,6 +1,5 @@
 import esbuild from 'rollup-plugin-esbuild';
 import dts from 'rollup-plugin-dts';
-import commonjs from '@rollup/plugin-commonjs';
 
 const input = 'src/model.ts';
 const outputFile = type => `dist/leafdb.${type}`;
@@ -8,11 +7,13 @@ const outputFile = type => `dist/leafdb.${type}`;
 export default [{
   external: [
     'fast-deep-equal',
-    '@chronocide/dot-obj'
+    '@chronocide/dot-obj',
+    'fs',
+    'path',
+    'crypto'
   ],
   input,
   plugins: [
-    commonjs(),
     esbuild({
       target: 'esnext'
     })
