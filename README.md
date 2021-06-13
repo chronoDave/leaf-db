@@ -2,7 +2,7 @@
   <img src="/assets/icon.svg" width="128" alt="leaf-db">
 
   <h1>leaf-db</h1>
-  <p><b>leaf-db</b> is a modern, promise-based, embeddable database for <a href="https://nodejs.org/en/">node.js</a>.</p>
+  <p><b>leaf-db</b> is a modern, promise-based, strongly-typed, embeddable database for <a href="https://nodejs.org/en/">node.js</a>.</p>
 </div>
 
 <div align="center">
@@ -11,6 +11,9 @@
   </a>
   <a href="https://www.npmjs.com/package/leaf-db">
     <img alt="NPM" src="https://img.shields.io/npm/v/leaf-db?label=npm">
+  </a>
+  <a href="https://bundlephobia.com/result?p=leaf-db@latest">
+    <img alt="Bundle size" src="https://img.shields.io/bundlephobia/minzip/leaf-db@latest.svg">
   </a>
   <a href="https://github.com/chronoDave/leaf-db/actions/workflows/ci.yml">
     <img alt="CI" src="https://github.com/chronoDave/leaf-db/workflows/ci/badge.svg?branch=master">
@@ -30,6 +33,8 @@ _Note: This package requires Node >=14.5.0_
 
 ## Getting Started
 
+**JS**
+
 ```JS
 import LeafDB from 'leaf-db'; // ES6
 // const LeafDB = require('leaf-db').default // ES5
@@ -40,6 +45,20 @@ db.insert({ species: 'cat', name: 'whiskers' })
   .then(inserted => console.log(`added ${inserted[0].name} to the database!`))
   .catch(console.error)
 ```
+
+**TS**
+
+```TS
+import LeafDB from 'leaf-db';
+
+type Document = { species: string, name?: string }
+
+const db = new LeafDB<Document>();
+db.insert({ species: 'cat', name: 'whiskers' })
+  .then(inserted => console.log(`added ${inserted[0].name} to the database!`))
+  .catch(console.error)
+```
+
 ## API
 
  - [Database](#database)

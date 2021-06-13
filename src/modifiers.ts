@@ -1,9 +1,9 @@
 import * as dot from '@chronocide/dot-obj';
 
 // Types
-import { Doc, Projection, Update } from './types';
+import { DocValue, Projection, Update } from './types';
 
-export const docModify = (doc: Doc, update: Update): Doc => {
+export const docModify = <T extends DocValue>(doc: T, update: Update<T>): T => {
   for (let i = 0, updateEntries = Object.entries(update); i < updateEntries.length; i += 1) {
     const [modifier, fields] = updateEntries[i];
 
@@ -14,15 +14,15 @@ export const docModify = (doc: Doc, update: Update): Doc => {
         case '$add': {
           const cur = dot.get(doc, key);
           if (typeof cur !== 'number' || typeof value !== 'number') return doc;
-          return dot.set(doc, key, cur + value) as Doc;
+          return dot.set(doc, key, cur + value);
         }
         case '$set':
           if (key === '_id') throw new Error(`Cannot modify field _id: ${update}`);
-          return dot.set(doc, key, value) as Doc;
+          return dot.set(doc, key, value);
         case '$push': {
           const cur = dot.get(doc, key);
           if (!Array.isArray(cur)) return doc;
-          return dot.set(doc, key, [...cur, value]) as Doc;
+          return dot.set(doc, key, [...cur, value]);
         }
         default:
           throw new Error(`Invalid modifier: ${modifier}`);
@@ -33,7 +33,7 @@ export const docModify = (doc: Doc, update: Update): Doc => {
   return doc;
 };
 
-export const docProject = (doc: Doc, projection?: Projection): Partial<Doc> => {
+export const docProject = <T extends DocValue>(doc: T, projection?: Projection): Partial<T> => {
   if (!projection) return doc;
 
   if (!Array.isArray(projection)) {
@@ -47,5 +47,5 @@ export const docProject = (doc: Doc, projection?: Projection): Partial<Doc> => {
   }
 
   return projection
-    .reduce((acc, key) => dot.set(acc, key, dot.get(doc, key)) as Partial<Doc>, {});
+    .reduce((acc, key) => dot.set(acc, key, dot.get(doc, key)), {});
 };

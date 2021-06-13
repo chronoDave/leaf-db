@@ -79,16 +79,17 @@ test('[updateById] should throw if array contains invalid values', async t => {
 });
 
 test('[updateById] should replace doc if match is found', async t => {
-  const id = 'key_1';
+  const _id = 'key_1';
 
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.updateById(id);
+    const docs = await db.updateById(_id);
 
     t.true(Array.isArray(docs));
     t.strictEqual(docs.length, 1);
-    t.deepEqual(docs[0], { _id: id });
+    t.deepEqual(docs[0], { _id });
+    t.deepEqual(db.map[_id], { _id });
   } catch (err) {
     t.fail(err);
   }
@@ -108,7 +109,8 @@ test('[updateById] should replace docs if matches are found', async t => {
     t.strictEqual(docs.length, ids.length);
 
     for (let i = 0; i < docs.length; i += 1) {
-      t.true(ids.includes(docs[i]._id));
+      t.deepEqual(docs[i], { _id: ids[i] });
+      t.deepEqual(db.map[ids[i]], { _id: ids[i] });
     }
   } catch (err) {
     t.fail(err);

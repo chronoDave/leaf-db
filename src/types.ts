@@ -1,37 +1,43 @@
-export type Value = number | string | boolean | { [key: string]: Value } | Value[];
+// Types
+export type JSON = number | string | boolean | { [key: string]: JSON } | JSON[];
 
+// Helpers
 export type ValueOf<T> = T[keyof T];
-
 export type OneOrMore<T> = T | T[];
+export type Never<T> = { [Property in keyof T]?: never };
 
-export type Doc = {
-  readonly _id: string,
+// LeafDB
+export type DocBase = Record<string, JSON> & { _id?: string };
+export type DocValue =
+  DocBase &
+  Never<Tags> &
+  Never<Operators> &
+  Never<Modifiers>;
+export type Doc<T extends DocValue> = T & { readonly _id: string, $deleted?: boolean };
+
+export type Tags = {
   $deleted?: boolean
-} & Record<string, Value>;
-
-export type NewDoc = { _id?: string } & Record<string, Value>;
+};
 
 export type Operators = {
-  $gt: number,
-  $gte: number,
-  $lt: number,
-  $lte: number,
-  $string: string,
-  $stringStrict: string,
-  $keys: string[],
-  $includes: Value[],
-  $or: Query[],
-  $not: Value
+  $gt: number
+  $gte: number
+  $lt: number
+  $lte: number
+  $string: string
+  $stringStrict: string
+  $keys: string[]
+  $includes: JSON[]
+  $or: Query[]
+  $not: JSON
 };
-
-export type Query = Partial<Operators> & Record<string, Value>;
-
-export type Projection = string[];
 
 export type Modifiers = {
-  $add: Record<string, number>,
-  $push: Record<string, Value>,
-  $set: Record<string, Value>
+  $add: Record<string, number>
+  $push: DocValue
+  $set: DocValue
 };
 
-export type Update = NewDoc | Partial<Modifiers>;
+export type Query = Partial<Operators> & DocValue;
+export type Projection = string[];
+export type Update<T extends DocValue> = T | Partial<Modifiers>;

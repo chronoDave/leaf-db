@@ -5,7 +5,7 @@ import path from 'path';
 import type {
   OneOrMore,
   Doc,
-  NewDoc,
+  DocValue,
   Projection,
   Query,
   Update
@@ -29,9 +29,14 @@ import {
 } from './validation';
 
 export type {
-  Value,
+  JSON,
+  ValueOf,
+  OneOrMore,
+  Never,
+  DocBase,
+  DocValue,
   Doc,
-  NewDoc,
+  Tags,
   Operators,
   Query,
   Projection,
@@ -39,12 +44,12 @@ export type {
   Update
 } from './types';
 
-export default class LeafDB {
+export default class LeafDB<T extends DocValue> {
   root?: string;
   strict: boolean;
   file?: PathLike;
 
-  private map: Record<string, Doc>;
+  private map: Record<string, Doc<T>>;
   private list: Set<string>;
 
   constructor(options?: {
@@ -91,7 +96,7 @@ export default class LeafDB {
 
         if (rawDoc) {
           try {
-            const doc: Doc = JSON.parse(rawDoc);
+            const doc: Doc<T> = JSON.parse(rawDoc);
 
             if (!isId(doc._id)) throw new Error(`Invalid _id: ${doc}`);
 
@@ -137,14 +142,14 @@ export default class LeafDB {
    * Insert new document(s)
    * @param {object|object[]} newDocs
    * */
-  insert(payload: OneOrMore<NewDoc>): Promise<Doc[]> {
+  insert(payload: OneOrMore<T>): Promise<T[]> {
     return new Promise(resolve => {
       if (
         !Array.isArray(payload) &&
         !isObject(payload)
       ) throw new Error(`Invalid payload: ${JSON.stringify(payload)}`);
 
-      const inserted: Doc[] = [];
+      const inserted: T[] = [];
       const newDocs = toArray(payload);
 
       for (let i = 0; i < newDocs.length; i += 1) {
@@ -165,9 +170,9 @@ export default class LeafDB {
         }
 
         this.list.add(newDoc._id);
-        this.map[newDoc._id] = newDoc as Doc;
+        this.map[newDoc._id] = newDoc as Doc<T>;
 
-        inserted.push(newDoc as Doc);
+        inserted.push(newDoc as T);
       }
 
       resolve(inserted);
@@ -179,9 +184,9 @@ export default class LeafDB {
    * @param {string|string[]} query - Doc _id
    * @param {string[]} projection - Projection array
    * */
-  findById(query: OneOrMore<string>, projection?: Projection): Promise<Partial<Doc>[]> {
+  findById(query: OneOrMore<string>, projection?: Projection): Promise<Partial<T>[]> {
     return new Promise(resolve => {
-      const payload: Partial<Doc>[] = [];
+      const payload: Partial<T>[] = [];
       const _ids = toArray(query);
 
       for (let i = 0; i < _ids.length; i += 1) {
@@ -203,11 +208,11 @@ export default class LeafDB {
    * @param {object} query - Query object (default `{}`)
    * @param {string[]} projection - Projection array
    */
-  find(query: Query = {}, projection?: Projection): Promise<Partial<Doc>[]> {
+  find(query: Query = {}, projection?: Projection): Promise<Partial<T>[]> {
     return new Promise(resolve => {
       if (!query || !isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
 
-      const payload: Partial<Doc>[] = [];
+      const payload: Partial<T>[] = [];
 
       this.list.forEach(_id => {
         const doc = this.map[_id];
@@ -229,9 +234,9 @@ export default class LeafDB {
   */
   updateById(
     query: OneOrMore<string>,
-    update: Update = {},
+    update: Update<T> = {},
     projection?: Projection
-  ): Promise<Partial<Doc>[]> {
+  ): Promise<Partial<T>[]> {
     return new Promise(resolve => {
       if (
         !isObject(update) ||
@@ -240,7 +245,7 @@ export default class LeafDB {
         (!hasOperators(update) && isInvalidDoc(update))
       ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
 
-      const payload: Partial<Doc>[] = [];
+      const payload: Partial<T>[] = [];
       const _ids = toArray(query);
 
       for (let i = 0; i < _ids.length; i += 1) {
@@ -253,10 +258,11 @@ export default class LeafDB {
         if (doc && !doc.$deleted) {
           const newDoc = hasOperators(update) ?
             docModify(doc, update) :
-            { ...update, _id };
+            update as T;
 
-          this.map[_id] = newDoc;
-          payload.push(docProject(newDoc, projection));
+          const _doc = { ...newDoc, _id };
+          this.map[_id] = _doc;
+          payload.push(docProject(_doc, projection));
         }
       }
 
@@ -272,9 +278,9 @@ export default class LeafDB {
    */
   update(
     query: Query = {},
-    update: Update = {},
+    update: Update<T> = {},
     projection?: Projection
-  ): Promise<Partial<Doc>[]> {
+  ): Promise<Partial<T>[]> {
     return new Promise(resolve => {
       if (!isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
 
@@ -285,7 +291,7 @@ export default class LeafDB {
         (!hasOperators(update) && isInvalidDoc(update))
       ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
 
-      const payload: Partial<Doc>[] = [];
+      const payload: Partial<T>[] = [];
 
       this.list.forEach(_id => {
         const doc = this.map[_id];
@@ -293,10 +299,11 @@ export default class LeafDB {
         if (!doc.$deleted && isQueryMatch(doc, query)) {
           const newDoc = hasOperators(update) ?
             docModify(doc, update) :
-            update;
+            update as T;
 
-          this.map[_id] = { ...newDoc, _id };
-          payload.push(docProject({ ...newDoc, _id }, projection));
+          const _doc = { ...newDoc, _id };
+          this.map[_id] = _doc;
+          payload.push(docProject(_doc, projection));
         }
       });
 
