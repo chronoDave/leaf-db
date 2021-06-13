@@ -180,22 +180,37 @@ export default class LeafDB<T extends DocValue> {
   }
 
   /**
-   * Find doc(s) matching `_id`
-   * @param {string|string[]} query - Doc _id
+   * Find doc matching `id`
+   * @param {string} id - Doc id
    * @param {string[]} projection - Projection array
-   * */
-  findById(query: OneOrMore<string>, projection?: Projection): Promise<Partial<T>[]> {
+   */
+  findOne(id: string, projection?: Projection): Promise<Partial<T> | null> {
     return new Promise(resolve => {
+      if (!isId(id)) throw new Error(`Invalid _id: ${id}`);
+
+      const doc = this.map[id];
+      if (doc && !doc.$deleted) return resolve(project(doc, projection));
+      return resolve(null);
+    });
+  }
+
+  /**
+   * Find doc(s) matching `ids`
+   * @param {string[]} ids - Array of doc id's
+   * @param {string[]} projection - Projection array
+   */
+  findMany(ids: string[], projection?: Projection): Promise<Partial<T>[]> {
+    return new Promise(resolve => {
+      if (!Array.isArray(ids)) throw new Error(`Invalid ids, must be of type Array: ${ids}`);
+
       const payload: Partial<T>[] = [];
-      const _ids = toArray(query);
+      const _ids = toArray(ids);
 
       for (let i = 0; i < _ids.length; i += 1) {
         const _id = _ids[i];
-
         if (!isId(_id)) throw new Error(`Invalid _id: ${_id}`);
 
         const doc = this.map[_id];
-
         if (doc && !doc.$deleted) payload.push(project(doc, projection));
       }
 

@@ -33,11 +33,15 @@
   "scripts": {
     "lint": "eslint src",
     "build": "rollup -c",
-    "test:unit": "tsc && tape test/**/*.spec.js",
+    "test:unit": "tsc && tape test/unit/**/*.spec.js",
     "test:integration": "npm run build && tape test/**/*.test.js",
     "test": "npm run test:unit && npm run test:integration",
     "bench": "tsc && node test/bench.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test:model": "tsc && tape test/unit/model/*.spec.js",
+    "test:modifiers": "tsc && tape test/unit/modifiers/*.spec.js",
+    "test:utils": "tsc && tape test/unit/utils/*.spec.js",
+    "test:validation": "tsc && tape test/unit/validation/*.spec.js"
   },
   "dependencies": {
     "@chronocide/dot-obj": "^1.2.1",
@@ -45,6 +49,7 @@
   },
   "devDependencies": {
     "@types/node": "^14.14.2",
+    "@types/tape": "^4.13.0",
     "@typescript-eslint/eslint-plugin": "^4.5.0",
     "@typescript-eslint/parser": "^4.5.0",
     "benchmark": "^2.1.4",

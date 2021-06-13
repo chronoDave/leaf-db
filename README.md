@@ -150,7 +150,7 @@ try {
 
 `await db.find(Query, Projection) => Promise<Doc[]>`
 
-`await db.findById(OneOrMore<string>, Projection) => Promise<Doc[]>`
+`await db.findOne(OneOrMore<string>, Projection) => Promise<Doc[]>`
 
 Find doc(s) matching query. Operators and dot notation are supported and can be mixed together.
 

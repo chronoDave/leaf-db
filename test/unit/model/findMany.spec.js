@@ -2,11 +2,11 @@ const test = require('tape');
 
 const { setup, invalidQuery, mockMemory } = require('../_utils');
 
-test('[findById] should throw on empty query', async t => {
+test('[findMany] should throw on empty query', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    await db.findById();
+    await db.findMany();
     t.fail('expected to throw');
   } catch (err) {
     t.pass('throws');
@@ -15,12 +15,12 @@ test('[findById] should throw on empty query', async t => {
   t.end();
 });
 
-test('[findById] should throw on invalid query', async t => {
+test('[findMany] should throw on invalid query', async t => {
   const { db } = setup({ memory: mockMemory });
 
   for (let i = 0; i < invalidQuery.length; i += 1) {
     try {
-      await db.findById(invalidQuery[i]);
+      await db.findMany(invalidQuery[i]);
       t.fail(`expected to throw: ${i}, ${invalidQuery[i]}`);
     } catch (err) {
       t.pass(`throws: ${i}`);
@@ -30,41 +30,11 @@ test('[findById] should throw on invalid query', async t => {
   t.end();
 });
 
-test('[findById] should return empty array if no match is found', async t => {
+test('[findMany] should throw if array contains invalid values', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.findById('3');
-
-    t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 0);
-  } catch (err) {
-    t.fail(err);
-  }
-
-  t.end();
-});
-
-test('[findById] should return empty array if match is deleted', async t => {
-  const { db } = setup({ memory: mockMemory });
-
-  try {
-    const docs = await db.findById('key_6');
-
-    t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 0);
-  } catch (err) {
-    t.fail(err);
-  }
-
-  t.end();
-});
-
-test('[findById] should throw if array contains invalid values', async t => {
-  const { db } = setup({ memory: mockMemory });
-
-  try {
-    await db.findById(invalidQuery);
+    await db.findMany(invalidQuery);
     t.fail('expected to throw');
   } catch (err) {
     t.pass('throws');
@@ -73,17 +43,14 @@ test('[findById] should throw if array contains invalid values', async t => {
   t.end();
 });
 
-test('[findById] should return doc if match is found', async t => {
-  const id = 'key_1';
-
+test('[findMany] should return empty array if no match is found', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.findById(id);
+    const docs = await db.findMany(['3']);
 
     t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 1);
-    t.deepEqual(docs[0], mockMemory[id]);
+    t.strictEqual(docs.length, 0);
   } catch (err) {
     t.fail(err);
   }
@@ -91,13 +58,28 @@ test('[findById] should return doc if match is found', async t => {
   t.end();
 });
 
-test('[findById] should return docs if multiple matches are found', async t => {
+test('[findMany] should return empty array if match is deleted', async t => {
+  const { db } = setup({ memory: mockMemory });
+
+  try {
+    const docs = await db.findMany(['key_6']);
+
+    t.true(Array.isArray(docs));
+    t.strictEqual(docs.length, 0);
+  } catch (err) {
+    t.fail(err);
+  }
+
+  t.end();
+});
+
+test('[findMany] should return docs if matches are found', async t => {
   const ids = ['key_1', 'key_2'];
 
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.findById(ids);
+    const docs = await db.findMany(ids);
 
     t.true(Array.isArray(docs));
     t.strictEqual(docs.length, 2);
@@ -112,11 +94,11 @@ test('[findById] should return docs if multiple matches are found', async t => {
   t.end();
 });
 
-test('[findById] should accept projection', async t => {
+test('[findMany] should accept projection', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const docs = await db.findById('key_3', []);
+    const docs = await db.findMany(['key_3'], []);
 
     t.deepEqual(docs[0], {});
   } catch (err) {
