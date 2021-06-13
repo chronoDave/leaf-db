@@ -19,13 +19,12 @@ import { generateUid, toArray } from './utils';
 
 // Validation
 import {
-  isObject,
   isId,
-  isEmptyObject,
+  isObject,
   isQueryMatch,
-  hasOperators,
-  isInvalidDoc,
-  hasMixedOperators
+  isValidDoc,
+  isValidUpdate,
+  hasOperators
 } from './validation';
 
 export type {
@@ -98,7 +97,7 @@ export default class LeafDB<T extends DocValue> {
           try {
             const doc: Doc<T> = JSON.parse(rawDoc);
 
-            if (!isId(doc._id)) throw new Error(`Invalid _id: ${doc}`);
+            if (!isValidDoc(doc, true)) throw new Error(`Invalid doc: ${doc}`);
 
             this.list.add(doc._id);
             this.map[doc._id] = doc;
@@ -155,11 +154,7 @@ export default class LeafDB<T extends DocValue> {
       for (let i = 0; i < newDocs.length; i += 1) {
         const newDoc = newDocs[i];
 
-        if (!isObject(newDoc)) {
-          throw new Error(`newDoc is not an object (${typeof newDoc}): ${JSON.stringify(newDoc)}`);
-        }
-
-        if (isInvalidDoc(newDoc)) {
+        if (!isValidDoc(newDoc)) {
           throw new Error(`newDoc is not a valid document: ${JSON.stringify(newDoc)}`);
         }
 
@@ -225,14 +220,14 @@ export default class LeafDB<T extends DocValue> {
    */
   find(query: Query = {}, projection?: Projection): Promise<Partial<T>[]> {
     return new Promise(resolve => {
-      if (!query || !isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
+      if (!isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
 
       const payload: Partial<T>[] = [];
 
       this.list.forEach(_id => {
         const doc = this.map[_id];
 
-        if (!doc.$deleted && (isEmptyObject(query) || isQueryMatch(doc, query))) {
+        if (!doc.$deleted && (isQueryMatch(doc, query))) {
           payload.push(project(doc, projection));
         }
       });
@@ -253,12 +248,7 @@ export default class LeafDB<T extends DocValue> {
     projection?: Projection
   ): Promise<Partial<T>[]> {
     return new Promise(resolve => {
-      if (
-        !isObject(update) ||
-        '_id' in update ||
-        hasMixedOperators(update) ||
-        (!hasOperators(update) && isInvalidDoc(update))
-      ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
+      if (!isValidUpdate(update)) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
 
       const payload: Partial<T>[] = [];
       const _ids = toArray(query);
@@ -298,13 +288,7 @@ export default class LeafDB<T extends DocValue> {
   ): Promise<Partial<T>[]> {
     return new Promise(resolve => {
       if (!isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
-
-      if (
-        !isObject(update) ||
-        '_id' in update ||
-        hasMixedOperators(update) ||
-        (!hasOperators(update) && isInvalidDoc(update))
-      ) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
+      if (!isValidUpdate(update)) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
 
       const payload: Partial<T>[] = [];
 

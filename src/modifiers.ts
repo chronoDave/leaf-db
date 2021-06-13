@@ -18,6 +18,7 @@ export const modify = <T extends DocValue>(doc: T, update: Update<T>): T => {
         }
         case '$set':
           if (key === '_id') throw new Error(`Cannot modify field _id: ${update}`);
+          if (key[0] === '$') throw new Error(`Cannot add operator: ${update}`);
           return dot.set(doc, key, value);
         case '$push': {
           const cur = dot.get(doc, key);

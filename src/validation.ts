@@ -2,14 +2,17 @@ import deepEqual from 'fast-deep-equal';
 import * as dot from '@chronocide/dot-obj';
 
 // Types
-import { Query, Update, DocBase } from './types';
+import { Query, DocBase } from './types';
 
 // Basic
 export const isObject = (x: any) => x !== null && !Array.isArray(x) && typeof x === 'object';
 export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
 export const isId = (x: any) => typeof x === 'string' && x.length > 0;
 
+// Query
 export const isQueryMatch = <T extends DocBase>(doc: T, query: Query): boolean => {
+  if (isEmptyObject(query)) return true;
+
   const isMatchBase = <Q>(match: (entries: [string, T]) => boolean) => (value: Q) => {
     if (!isObject(value)) return false;
     return Object.entries(value).every(match);
@@ -75,18 +78,40 @@ export const isQueryMatch = <T extends DocBase>(doc: T, query: Query): boolean =
     });
 };
 
-export const isInvalidDoc = <T extends DocBase>(doc: Partial<T>) => dot.some(doc, ([key, value]) => {
-  if (key[0] === '$') return true;
-  if (key.includes('.')) return true;
-  if (value === undefined) return true;
-  return false;
-});
+// Advanced
+const isValidDocBase = ([key, value]: [string, any]) => {
+  if (key[0] === '$') return false;
+  if (key.includes('.')) return false;
+  if (value === undefined) return false;
+  return true;
+};
 
-export const hasOperators = <T extends DocBase>(update: Update<T>) => Object
+const isValidOperator = (value: any) => {
+  if (value === undefined) return false;
+  if (typeof value === 'object') return dot.every(value, isValidDocBase);
+  return true;
+};
+
+export const hasOperators = (update: DocBase) => Object
   .keys(update)
   .some(key => key[0] === '$');
 
-export const hasMixedOperators = <T extends DocBase>(update: Update<T>) => (
+export const hasMixedOperators = (update: DocBase) => (
   hasOperators(update) &&
   Object.keys(update).some(key => key[0] !== '$')
 );
+
+export const isValidDoc = (doc: DocBase, strict?: boolean) => {
+  if (!isObject(doc)) return false;
+  if (strict && !isId(doc._id)) return false;
+  return dot.every(doc, isValidDocBase);
+};
+
+export const isValidUpdate = (update: DocBase) => {
+  if (!isObject(update)) return false;
+  if (dot.some(update, ([key]) => key === '_id')) return false;
+  if (hasMixedOperators(update)) return false;
+  if (!hasOperators(update) && !isValidDoc(update)) return false;
+  if (hasOperators(update) && !Object.values(update).every(isValidOperator)) return false;
+  return true;
+};

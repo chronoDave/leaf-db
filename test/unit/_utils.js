@@ -25,7 +25,10 @@ const invalidQueryLoose = [
 const invalidUpdate = [
   { _id: 'INVALID' },
   { value: '3', $set: { value: '4' } },
-  { $set: { _id: 4 } }
+  { $set: { _id: 4 } },
+  { $set: { a: { b: { c: [{ _id: 3 }] } } } },
+  { $set: { $deleted: true } },
+  { $push: [{ value: { $set: true } }] }
 ];
 
 const invalidPersistent = [

@@ -44,7 +44,7 @@
     "test:validation": "tsc && tape test/unit/validation/*.spec.js"
   },
   "dependencies": {
-    "@chronocide/dot-obj": "^1.2.1",
+    "@chronocide/dot-obj": "^1.3.0",
     "fast-deep-equal": "^3.1.3"
   },
   "devDependencies": {
