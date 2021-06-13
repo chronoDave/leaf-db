@@ -3,7 +3,7 @@ import * as dot from '@chronocide/dot-obj';
 // Types
 import { DocValue, Projection, Update } from './types';
 
-export const docModify = <T extends DocValue>(doc: T, update: Update<T>): T => {
+export const modify = <T extends DocValue>(doc: T, update: Update<T>): T => {
   for (let i = 0, updateEntries = Object.entries(update); i < updateEntries.length; i += 1) {
     const [modifier, fields] = updateEntries[i];
 
@@ -33,7 +33,7 @@ export const docModify = <T extends DocValue>(doc: T, update: Update<T>): T => {
   return doc;
 };
 
-export const docProject = <T extends DocValue>(doc: T, projection?: Projection): Partial<T> => {
+export const project = <T extends DocValue>(doc: T, projection?: Projection): Partial<T> => {
   if (!projection) return doc;
 
   if (!Array.isArray(projection)) {

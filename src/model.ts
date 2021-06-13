@@ -12,7 +12,7 @@ import type {
 } from './types';
 
 // Modifiers
-import { docModify, docProject } from './modifiers';
+import { modify, project } from './modifiers';
 
 // Utils
 import { generateUid, toArray } from './utils';
@@ -196,7 +196,7 @@ export default class LeafDB<T extends DocValue> {
 
         const doc = this.map[_id];
 
-        if (doc && !doc.$deleted) payload.push(docProject(doc, projection));
+        if (doc && !doc.$deleted) payload.push(project(doc, projection));
       }
 
       resolve(payload);
@@ -218,7 +218,7 @@ export default class LeafDB<T extends DocValue> {
         const doc = this.map[_id];
 
         if (!doc.$deleted && (isEmptyObject(query) || isQueryMatch(doc, query))) {
-          payload.push(docProject(doc, projection));
+          payload.push(project(doc, projection));
         }
       });
 
@@ -257,12 +257,12 @@ export default class LeafDB<T extends DocValue> {
 
         if (doc && !doc.$deleted) {
           const newDoc = hasOperators(update) ?
-            docModify(doc, update) :
+            modify(doc, update) :
             update as T;
 
           const _doc = { ...newDoc, _id };
           this.map[_id] = _doc;
-          payload.push(docProject(_doc, projection));
+          payload.push(project(_doc, projection));
         }
       }
 
@@ -298,12 +298,12 @@ export default class LeafDB<T extends DocValue> {
 
         if (!doc.$deleted && isQueryMatch(doc, query)) {
           const newDoc = hasOperators(update) ?
-            docModify(doc, update) :
+            modify(doc, update) :
             update as T;
 
           const _doc = { ...newDoc, _id };
           this.map[_id] = _doc;
-          payload.push(docProject(_doc, projection));
+          payload.push(project(_doc, projection));
         }
       });
 
