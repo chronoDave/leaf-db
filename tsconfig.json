@@ -6,6 +6,7 @@
     "noImplicitAny": true,
     "moduleResolution": "node",
     "noUnusedLocals": true,
+    "strictNullChecks": true,
     "noUnusedParameters": true,
     "downlevelIteration": true,
     "forceConsistentCasingInFileNames": true,

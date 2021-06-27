@@ -31,27 +31,16 @@ test('[deleteById] should throw on invalid query', async t => {
 });
 
 test('[deleteById] should return 0 if no match is found', async t => {
+  const _id = '3';
+
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const deleted = await db.deleteById('3');
+    const deleted = await db.deleteById(_id);
 
     t.strictEqual(deleted, 0);
   } catch (err) {
     t.fail(err);
-  }
-
-  t.end();
-});
-
-test('[deleteById] should throw if array contains invalid values', async t => {
-  const { db } = setup({ memory: mockMemory });
-
-  try {
-    await db.deleteById(invalidQuery);
-    t.fail('expected to throw');
-  } catch (err) {
-    t.pass('throws');
   }
 
   t.end();
@@ -67,25 +56,6 @@ test('[deleteById] should delete doc if match is found', async t => {
 
     t.strictEqual(deleted, 1);
     t.true(db.map[id].$deleted);
-  } catch (err) {
-    t.fail(err);
-  }
-
-  t.end();
-});
-
-test('[deleteById] should delete docs if multiple matches are found', async t => {
-  const ids = ['key_1', 'key_2'];
-
-  const { db } = setup({ memory: mockMemory });
-
-  try {
-    const deleted = await db.deleteById(ids);
-
-    t.strictEqual(deleted, ids.length);
-    for (let i = 0; i < ids.length; i += 1) {
-      t.true(db.map[ids[i]].$deleted);
-    }
   } catch (err) {
     t.fail(err);
   }

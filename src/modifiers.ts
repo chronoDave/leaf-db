@@ -1,9 +1,20 @@
 import * as dot from '@chronocide/dot-obj';
 
+// Errors
+import { INVALID_MODIFIER, INVALID_PROJECTION, NOT_ARRAY } from './errors';
+
 // Types
 import { DocValue, Projection, Update } from './types';
+import { isProjection } from './validation';
 
-export const modify = <T extends DocValue>(doc: T, update: Update<T>): T => {
+/**
+ * TODO:
+ *  - Add modifier check (and cast)
+ *  - Throw error if invalid modifiers
+ *  - Add modifier validation similar to validation.ts
+ */
+
+export const modify = <T extends DocValue>(doc: T, update: Update): T => {
   for (let i = 0, updateEntries = Object.entries(update); i < updateEntries.length; i += 1) {
     const [modifier, fields] = updateEntries[i];
 
@@ -26,7 +37,7 @@ export const modify = <T extends DocValue>(doc: T, update: Update<T>): T => {
           return dot.set(doc, key, [...cur, value]);
         }
         default:
-          throw new Error(`Invalid modifier: ${modifier}`);
+          throw new Error(INVALID_MODIFIER(modifier));
       }
     }
   }
@@ -37,15 +48,11 @@ export const modify = <T extends DocValue>(doc: T, update: Update<T>): T => {
 export const project = <T extends DocValue>(doc: T, projection?: Projection): Partial<T> => {
   if (!projection) return doc;
 
-  if (!Array.isArray(projection)) {
-    throw new Error(`Invalid projection, must be of type 'Array' or falsy: ${projection}`);
-  }
+  if (!Array.isArray(projection)) throw new Error(NOT_ARRAY('projection', projection));
 
   if (projection.length === 0) return {};
 
-  if (projection.some(key => typeof key !== 'string' || key[0] === '$')) {
-    throw new Error(`Invalid projection, contains invalid key: ${projection}`);
-  }
+  if (!isProjection(projection)) throw new Error(INVALID_PROJECTION(projection));
 
   return projection
     .reduce((acc, key) => dot.set(acc, key, dot.get(doc, key)), {});

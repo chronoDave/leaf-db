@@ -1,60 +1,38 @@
 const test = require('tape');
 
-const { setup, invalidData } = require('../_utils');
+const { setup, mockObjectProduction } = require('../_utils');
 
-test('[insert] should insert single doc', async t => {
+test('[insert] should accept single doc', async t => {
   const payload = { _id: 1 };
 
   const { db } = setup();
 
   try {
-    await db.insert(payload);
+    const doc = await db.insert(payload);
 
-    t.strictEqual(Object.keys(db.map).length, 1);
-    t.strictEqual(db.list.size, 1);
-    t.deepEqual(db.map[1], payload);
+    t.true(Array.isArray(doc));
+    t.strictEqual(doc.length, 1);
+    t.deepEqual(doc[0], payload);
   } catch (err) {
-    t.fail(err);
+    t.error(err);
   }
-
-  t.end();
 });
 
-test('[insert] should insert multiple docs', async t => {
-  const payload = [
-    { _id: 1 },
-    { data: 'test' },
-    { name: 'debug', valid: true }
-  ];
+test('[insert] should accept multiple docs', async t => {
+  const payload = [mockObjectProduction, mockObjectProduction, mockObjectProduction];
 
   const { db } = setup();
 
   try {
-    await db.insert(payload);
+    const doc = await db.insert(payload);
 
-    t.strictEqual(Object.keys(db.map).length, payload.length);
-    t.strictEqual(db.list.size, payload.length);
-    for (let i = 0, v = Object.values(db.map); i < v.length; i += 1) {
-      t.true(payload.includes(v[i]));
-    }
+    t.true(Array.isArray(doc));
+    t.strictEqual(doc.length, payload.length);
+
+    const { _id, ...sample } = doc[0];
+
+    t.deepEqual(sample, payload[0]);
   } catch (err) {
-    t.fail(err);
+    t.error(err);
   }
-
-  t.end();
-});
-
-test('[insert] should throw on invalid data', async t => {
-  const { db } = setup();
-
-  for (let i = 0; i < invalidData.length; i += 1) {
-    try {
-      await db.insert(invalidData[i]);
-      t.fail(`expected to throw: ${i}, ${invalidData[i]}`);
-    } catch (err) {
-      t.pass(`throws: ${i}`);
-    }
-  }
-
-  t.end();
 });

@@ -5,21 +5,11 @@ module.exports = {
   parserOptions: {
     project: './tsconfig.json'
   },
-  overrides: [{
-    files: ['**/*.js'],
-    rules: {
-      '@typescript-eslint/naming-convention': 'off'
-    }
-  }],
   rules: {
     // TypeScript
     '@typescript-eslint/comma-dangle': 'off',
     '@typescript-eslint/lines-between-class-members': 'off',
-    '@typescript-eslint/naming-convention': ['error', {
-      selector: 'variable',
-      format: ['camelCase'],
-      leadingUnderscore: 'allow'
-    }],
+    '@typescript-eslint/naming-convention': 'off',
     // General
     'operator-linebreak': ['error', 'after'],
     'linebreak-style': 'off',
@@ -36,6 +26,7 @@ module.exports = {
       ImportDeclaration: { minProperties: 4 }
     }],
     // Import
+    'import/prefer-default-export': 'off',
     'import/order': ['error', {
       'newlines-between': 'always-and-inside-groups',
       groups: [

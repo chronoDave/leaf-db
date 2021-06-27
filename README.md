@@ -130,7 +130,7 @@ Insertion takes place _after_ all docs are validated, meaning no data will be in
 <b>Example</b>
 
 ```JS
-const doc = {
+const newDoc = {
   crud: 'create',
   data: [{
     field: 1
@@ -138,7 +138,7 @@ const doc = {
 }
 
 try {
-  await db.create(insert)
+  const doc = await db.insert(newDoc) // [newDoc]
 } catch (err) {
   console.error(err)
 }
@@ -148,9 +148,9 @@ try {
 
 ### Basic query
 
-`await db.find(Query, Projection) => Promise<Doc[]>`
+`await db.find(Query | string[], Projection) => Promise<Doc[]>`
 
-`await db.findOne(OneOrMore<string>, Projection) => Promise<Doc[]>`
+`await db.findById(string, Projection) => Promise<Doc>`
 
 Find doc(s) matching query. Operators and dot notation are supported and can be mixed together.
 
@@ -316,9 +316,9 @@ The `byId` queries accept a single `_id` string, or an array of `_id` strings.
 
 ## Updating docs
 
-`await db.update(Query, Update | NewDoc) => Promise<Doc[]>`
+`await db.update(Query | string[], Update | NewDoc) => Promise<Doc[]>`
 
-`await db.updateById(OneOrMore<string>, Update) => Promise<Doc[]>`
+`await db.updateById(string, Update) => Promise<Doc>`
 
 Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`. Returns the updated docs.
 
@@ -395,9 +395,9 @@ await db.update({}, { $set: { value: 3 } })
 
 ## Deleting docs
 
-`await db.delete(Query) => Promise<number>`
+`await db.delete(Query | string[]) => Promise<number>`
 
-`await db.deleteById(OneOrMore<string>) => Promise<number>`
+`await db.deleteById(string) => Promise<number>`
 
 Delete doc(s) matching query object.
 

@@ -1,36 +1,144 @@
 import deepEqual from 'fast-deep-equal';
 import * as dot from '@chronocide/dot-obj';
 
+// Errors
+import { INVALID_OPERATOR } from './errors';
+
 // Types
-import { Query, DocBase } from './types';
+import {
+  Update,
+  Query,
+  DocBase,
+  DocValue,
+  Doc,
+  Operators,
+  Modifiers,
+  Projection
+} from './types';
 
-// Basic
-export const isObject = (x: any) => x !== null && !Array.isArray(x) && typeof x === 'object';
-export const isEmptyObject = (object: object) => Object.keys(object).length === 0;
-export const isId = (x: any) => typeof x === 'string' && x.length > 0;
+// Operators
+export const hasTag = (key: string) => key[0] === '$';
+export const hasDot = (key: string) => key.includes('.');
+export const hasOperators = (update: DocBase): update is Partial<Modifiers> => Object.keys(update).some(hasTag);
+export const hasMixedOperators = (update: DocBase) => (
+  hasOperators(update) &&
+  !Object.keys(update).every(hasTag)
+);
 
-// Query
+// Base
+export const isObject = (object: unknown): object is object => object !== null && !Array.isArray(object) && typeof object === 'object';
+export const isEmptyObject = (object: unknown): object is {} => isObject(object) && Object.keys(object).length === 0;
+export const isId = (_id: unknown): _id is string => typeof _id === 'string' && _id.length > 0;
+export const isIdArray = (ids: unknown): ids is string[] => Array.isArray(ids) && ids.every(isId);
+export const isDocBase = (docBase: unknown): docBase is DocBase => isObject(docBase);
+
+// Leaf-DB
+export const isDoc = (doc: unknown): doc is DocValue => {
+  if (!isObject(doc)) return false;
+  return dot.every(doc, ([key, value]) => {
+    if (hasTag(key)) return false;
+    if (hasDot(key)) return false;
+    if (value === undefined) return false;
+    return true;
+  });
+};
+
+export const isDocStrict = <T extends DocValue>(doc: unknown): doc is Doc<T> => {
+  if (!isDoc(doc)) return false;
+  if (!doc._id) return false;
+  return true;
+};
+
+export const isQuery = (query: unknown): query is Query => {
+  if (!isDocBase(query)) return false;
+  if (query.$deleted) return false;
+  return true;
+};
+
+export const isUpdate = (update: unknown): update is Update => {
+  if (!isDocBase(update)) return false;
+  if (isDocStrict(update)) return false;
+  if (hasMixedOperators(update)) return false;
+  if (!hasOperators(update) && !isDoc(update)) return false;
+  if (
+    hasOperators(update) &&
+    Object.values(update).some(value => {
+      if (typeof value !== 'object') return false;
+      return dot.some(value, entry => {
+        if (hasTag(entry[0])) return true;
+        if (entry[0] === '_id') return true;
+        if (isDocBase(entry[1]) && hasOperators(entry[1])) return true;
+        if (isDocBase(entry[1]) && entry[1]._id) return true;
+        return false;
+      });
+    })
+  ) return false;
+  return true;
+};
+
+export const isProjection = (projection: unknown[]): projection is Projection => projection
+  .every(key => typeof key === 'string' && !hasTag(key));
+
+export const isModifier = <T extends keyof Modifiers>(modifier: T, value: unknown): value is Modifiers[T] => {
+  switch (modifier) {
+    case '$push':
+    case '$set':
+      return isDocBase(value);
+    case '$add':
+      if (!isObject(value)) return false;
+      if (dot.some(value, entries => typeof entries[1] !== 'number')) return false;
+      return true;
+    default:
+      return false;
+  }
+};
+
+export const isOperator = <T extends keyof Operators>(operator: T, value: unknown): value is Operators[T] => {
+  switch (operator) {
+    case '$gt':
+    case '$gte':
+    case '$lt':
+    case '$lte':
+      if (!isObject(value)) return false;
+      if (dot.some(value, entries => typeof entries[1] !== 'number')) return false;
+      return true;
+    case '$string':
+    case '$stringStrict':
+      if (!isObject(value)) return false;
+      if (dot.some(value, entries => typeof entries[1] !== 'string')) return false;
+      return true;
+    case '$includes':
+    case '$not':
+      return isDocBase(value);
+    case '$keys':
+      if (!Array.isArray(value)) return false;
+      return value.every(i => typeof i === 'string');
+    case '$or':
+      if (!Array.isArray(value)) return false;
+      return value.every(isQuery);
+    default:
+      return false;
+  }
+};
+
 export const isQueryMatch = <T extends DocBase>(doc: T, query: Query): boolean => {
   if (isEmptyObject(query)) return true;
 
-  const isMatchBase = <Q>(match: (entries: [string, T]) => boolean) => (value: Q) => {
-    if (!isObject(value)) return false;
-    return Object.entries(value).every(match);
-  };
+  const isMatchMath = (match: (x: number, y: number) => boolean) => (value: Record<string, number>) => Object
+    .entries(value)
+    .every(entry => {
+      const current = dot.get(doc, entry[0]);
+      if (typeof current !== 'number') return false;
+      return match(current, entry[1]);
+    });
 
-  const isMatchMath = (match: (current: number, value: number) => boolean) => isMatchBase(([key, value]) => {
-    if (typeof value !== 'number') return false;
-    const current = dot.get(doc, key);
-    if (typeof current !== 'number') return false;
-    return match(current, value);
-  });
-
-  const isMatchString = (match: (current: string, value: string) => boolean) => isMatchBase(([key, value]) => {
-    if (typeof value !== 'string') return false;
-    const current = dot.get(doc, key);
-    if (typeof current !== 'string') return false;
-    return match(current, value);
-  });
+  const isMatchString = (match: (a: string, b: string) => boolean) => (value: Record<string, string>) => Object
+    .entries(value)
+    .every(entry => {
+      const current = dot.get(doc, entry[0]);
+      if (typeof current !== 'string') return false;
+      return match(current, entry[1]);
+    });
 
   return Object
     .entries(query)
@@ -40,78 +148,42 @@ export const isQueryMatch = <T extends DocBase>(doc: T, query: Query): boolean =
 
       if (operator[0] !== '$') return deepEqual(dot.get(doc, operator), value);
       switch (operator) {
-        case '$or':
-          if (!Array.isArray(value)) return false;
-          return value.some(orQuery => {
-            if (!isObject(orQuery)) return false;
-            return isQueryMatch(doc, orQuery as Query);
-          });
-        case '$keys':
-          if (!Array.isArray(value)) return false;
-          return value.every(key => {
-            if (typeof key !== 'string') return false;
-            return dot.get(doc, key) !== undefined;
-          });
-        case '$includes':
-          return isMatchBase(match => {
-            const cur = dot.get(doc, match[0]);
-            if (!Array.isArray(cur)) return false;
-            return cur.some(item => deepEqual(item, match[1]));
-          })(value);
         case '$gt':
+          if (!isOperator(operator, value)) return false;
           return isMatchMath((x, y) => x > y)(value);
         case '$gte':
+          if (!isOperator(operator, value)) return false;
           return isMatchMath((x, y) => x >= y)(value);
         case '$lt':
+          if (!isOperator(operator, value)) return false;
           return isMatchMath((x, y) => x < y)(value);
         case '$lte':
+          if (!isOperator(operator, value)) return false;
           return isMatchMath((x, y) => x <= y)(value);
-        case '$not':
-          return isMatchBase(match => !deepEqual(dot.get(doc, match[0]), match[1]))(value);
         case '$string':
+          if (!isOperator(operator, value)) return false;
           return isMatchString((a, b) => a.toLocaleLowerCase().includes(b.toLocaleLowerCase()))(value);
         case '$stringStrict':
+          if (!isOperator(operator, value)) return false;
           return isMatchString((a, b) => a.includes(b))(value);
+        case '$includes':
+          if (!isOperator(operator, value)) return false;
+          return Object.entries(value).every(e => {
+            const current = dot.get(doc, e[0]);
+            if (!Array.isArray(current)) return false;
+            return current.some(item => deepEqual(item, e[1]));
+          });
+        case '$not':
+          if (!isOperator(operator, value)) return false;
+          return Object.entries(value).every(e => !deepEqual(dot.get(doc, e[0]), e[1]));
+        case '$keys':
+          if (!isOperator(operator, value)) return false;
+          return value.every(key => dot.get(doc, key) !== undefined);
+        case '$or':
+          if (!isOperator(operator, value)) return false;
+          return value.some(q => isQueryMatch(doc, q));
         default:
-          throw new Error(`Invalid operator: ${operator}`);
+          throw new Error(INVALID_OPERATOR(operator));
       }
     });
-};
-
-// Advanced
-const isValidDocBase = ([key, value]: [string, any]) => {
-  if (key[0] === '$') return false;
-  if (key.includes('.')) return false;
-  if (value === undefined) return false;
-  return true;
-};
-
-const isValidOperator = (value: any) => {
-  if (value === undefined) return false;
-  if (typeof value === 'object') return dot.every(value, isValidDocBase);
-  return true;
-};
-
-export const hasOperators = (update: DocBase) => Object
-  .keys(update)
-  .some(key => key[0] === '$');
-
-export const hasMixedOperators = (update: DocBase) => (
-  hasOperators(update) &&
-  Object.keys(update).some(key => key[0] !== '$')
-);
-
-export const isValidDoc = (doc: DocBase, strict?: boolean) => {
-  if (!isObject(doc)) return false;
-  if (strict && !isId(doc._id)) return false;
-  return dot.every(doc, isValidDocBase);
-};
-
-export const isValidUpdate = (update: DocBase) => {
-  if (!isObject(update)) return false;
-  if (dot.some(update, ([key]) => key === '_id')) return false;
-  if (hasMixedOperators(update)) return false;
-  if (!hasOperators(update) && !isValidDoc(update)) return false;
-  if (hasOperators(update) && !Object.values(update).every(isValidOperator)) return false;
-  return true;
 };

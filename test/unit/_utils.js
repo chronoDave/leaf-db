@@ -10,8 +10,7 @@ const invalidQuery = [
   true,
   '',
   () => null,
-  false,
-  { valid: false }
+  false
 ];
 
 const invalidQueryLoose = [
@@ -24,11 +23,12 @@ const invalidQueryLoose = [
 
 const invalidUpdate = [
   { _id: 'INVALID' },
-  { value: '3', $set: { value: '4' } },
+  { a: { $set: { b: 3 } } },
+  { a: '3', $set: { b: '4' } },
   { $set: { _id: 4 } },
   { $set: { a: { b: { c: [{ _id: 3 }] } } } },
   { $set: { $deleted: true } },
-  { $push: [{ value: { $set: true } }] }
+  { $push: [{ a: { $set: true } }] }
 ];
 
 const invalidPersistent = [
@@ -160,7 +160,7 @@ const setup = ({
 
   if (memory) {
     db.map = { ...memory };
-    db.list = Object.values(memory).map(({ _id }) => _id);
+    db.list = new Set(Object.values(memory).map(({ _id }) => _id));
   }
 
   return ({ name, file, db });

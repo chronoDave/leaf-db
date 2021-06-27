@@ -1,7 +1,7 @@
 import fs, { PathLike } from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
-// Types
 import type {
   OneOrMore,
   Doc,
@@ -10,23 +10,28 @@ import type {
   Query,
   Update
 } from './types';
-
-// Modifiers
 import { modify, project } from './modifiers';
-
-// Utils
-import { generateUid, toArray } from './utils';
-
-// Validation
 import {
   isId,
-  isObject,
+  isIdArray,
+  isDoc,
+  isDocStrict,
+  isQuery,
   isQueryMatch,
-  isValidDoc,
-  isValidUpdate,
-  hasOperators
+  hasOperators,
+  isUpdate,
 } from './validation';
+import {
+  MEMORY_MODE,
+  INVALID_ID,
+  INVALID_DOC,
+  INVALID_QUERY,
+  INVALID_UPDATE,
+  DUPLICATE_DOC
+} from './errors';
+import { filterNull } from './utils';
 
+// Exports
 export type {
   JSON,
   ValueOf,
@@ -37,19 +42,20 @@ export type {
   Doc,
   Tags,
   Operators,
+  Modifiers,
   Query,
   Projection,
-  Modifiers,
   Update
 } from './types';
 
 export default class LeafDB<T extends DocValue> {
-  root?: string;
-  strict: boolean;
-  file?: PathLike;
+  readonly root?: string;
+  readonly strict: boolean;
+  readonly file?: PathLike;
 
   private map: Record<string, Doc<T>>;
   private list: Set<string>;
+  private seed: number;
 
   constructor(options?: {
     name?: string,
@@ -60,6 +66,7 @@ export default class LeafDB<T extends DocValue> {
     this.strict = !!options?.strict;
     this.map = {};
     this.list = new Set();
+    this.seed = crypto.randomBytes(1).readUInt8();
 
     if (options?.root) {
       fs.mkdirSync(options.root, { recursive: true });
@@ -68,10 +75,17 @@ export default class LeafDB<T extends DocValue> {
     }
   }
 
-  /** Initialize data */
   private flush() {
     this.map = {};
     this.list = new Set();
+  }
+
+  private generateUid() {
+    const timestamp = Date.now().toString(16);
+    const random = crypto.randomBytes(5).toString('hex');
+
+    this.seed += 1;
+    return `${timestamp}${random}${this.seed.toString(16)}`;
   }
 
   /**
@@ -79,25 +93,21 @@ export default class LeafDB<T extends DocValue> {
    * @returns {string[]} List of corrupt items
    * */
   load() {
-    const corrupted: string[] = [];
+    if (!this.file) throw new Error(MEMORY_MODE('load'));
 
-    if (!this.file) throw new Error('Cannot load file in memory mode');
-
+    const corrupted = [];
     if (fs.existsSync(this.file)) {
       this.flush();
 
       const rawDocs = fs
         .readFileSync(this.file, 'utf-8')
         .split('\n');
-
       for (let i = 0; i < rawDocs.length; i += 1) {
         const rawDoc = rawDocs[i];
-
         if (rawDoc) {
           try {
-            const doc: Doc<T> = JSON.parse(rawDoc);
-
-            if (!isValidDoc(doc, true)) throw new Error(`Invalid doc: ${doc}`);
+            const doc = JSON.parse(rawDoc);
+            if (!isDocStrict<T>(doc)) throw new Error(INVALID_DOC(doc));
 
             this.list.add(doc._id);
             this.map[doc._id] = doc;
@@ -117,14 +127,12 @@ export default class LeafDB<T extends DocValue> {
 
   /** Persist database */
   persist() {
-    if (!this.file) throw new Error('Tried to call `persist()` in memory mode');
+    if (!this.file) throw new Error(MEMORY_MODE('persist'));
 
     const payload: string[] = [];
-
     this.list.forEach(_id => {
       try {
         const doc = this.map[_id];
-
         if (!doc.$deleted) payload.push(JSON.stringify(doc));
       } catch (err) {
         this.list.delete(_id);
@@ -138,98 +146,77 @@ export default class LeafDB<T extends DocValue> {
   }
 
   /**
-   * Insert new document(s)
-   * @param {object|object[]} newDocs
-   * */
-  insert(payload: OneOrMore<T>): Promise<T[]> {
+   * Insert new document
+   * @param {object} doc
+   */
+  insertOne(doc: T): Promise<T> {
     return new Promise(resolve => {
-      if (
-        !Array.isArray(payload) &&
-        !isObject(payload)
-      ) throw new Error(`Invalid payload: ${JSON.stringify(payload)}`);
+      if (!isDoc(doc)) throw new Error(INVALID_DOC(doc));
 
-      const inserted: T[] = [];
-      const newDocs = toArray(payload);
+      const newDoc = { ...doc, _id: doc._id || this.generateUid() };
+      if (this.list.has(newDoc._id)) throw new Error(DUPLICATE_DOC(newDoc));
 
-      for (let i = 0; i < newDocs.length; i += 1) {
-        const newDoc = newDocs[i];
+      this.list.add(newDoc._id);
+      this.map[newDoc._id] = newDoc;
 
-        if (!isValidDoc(newDoc)) {
-          throw new Error(`newDoc is not a valid document: ${JSON.stringify(newDoc)}`);
-        }
-
-        if (!newDoc._id) {
-          newDoc._id = generateUid();
-        } else if (this.list.has(newDoc._id)) {
-          throw new Error(`'_id' already exists: ${newDoc._id}`);
-        }
-
-        this.list.add(newDoc._id);
-        this.map[newDoc._id] = newDoc as Doc<T>;
-
-        inserted.push(newDoc as T);
-      }
-
-      resolve(inserted);
+      resolve(newDoc);
     });
   }
 
   /**
-   * Find doc matching `id`
-   * @param {string} id - Doc id
-   * @param {string[]} projection - Projection array
+   * Insert new document(s)
+   * @param {object|object[]} docs
    */
-  findOne(id: string, projection?: Projection): Promise<Partial<T> | null> {
-    return new Promise(resolve => {
-      if (!isId(id)) throw new Error(`Invalid _id: ${id}`);
+  async insert(docs: OneOrMore<T>): Promise<T[]> {
+    if (Array.isArray(docs)) return Promise.all(docs.map(doc => this.insertOne(doc)));
 
-      const doc = this.map[id];
+    try {
+      const doc = await this.insertOne(docs);
+      return Promise.resolve([doc]);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  /**
+   * Find doc by `_id`
+   * @param {string} _id Doc _id
+   * @param {string[]} projection Projection array
+   */
+  findById(_id: string, projection?: Projection): Promise<Partial<T> | null> {
+    return new Promise(resolve => {
+      if (!isId(_id)) throw new Error(INVALID_ID(_id));
+
+      const doc = this.map[_id];
       if (doc && !doc.$deleted) return resolve(project(doc, projection));
       return resolve(null);
     });
   }
 
   /**
-   * Find doc(s) matching `ids`
-   * @param {string[]} ids - Array of doc id's
-   * @param {string[]} projection - Projection array
+   * Find doc(s) by `query`
+   * @param {string[]|object} query List of doc `_id`'s / query object (default `{}`)
+   * @param projection - Projection array
    */
-  findMany(ids: string[], projection?: Projection): Promise<Partial<T>[]> {
-    return new Promise(resolve => {
-      if (!Array.isArray(ids)) throw new Error(`Invalid ids, must be of type Array: ${ids}`);
-
-      const payload: Partial<T>[] = [];
-      const _ids = toArray(ids);
-
-      for (let i = 0; i < _ids.length; i += 1) {
-        const _id = _ids[i];
-        if (!isId(_id)) throw new Error(`Invalid _id: ${_id}`);
-
-        const doc = this.map[_id];
-        if (doc && !doc.$deleted) payload.push(project(doc, projection));
+  async find(query: string[] | Query = {}, projection?: Projection): Promise<Partial<T>[]> {
+    if (isIdArray(query)) {
+      try {
+        const docs = await Promise
+          .all(query.map(id => this.findById(id, projection)))
+          .then(filterNull);
+        return Promise.resolve(docs);
+      } catch (err) {
+        return Promise.reject(err);
       }
+    }
 
-      resolve(payload);
-    });
-  }
-
-  /**
-   * Find all documents matching `query`
-   * @param {object} query - Query object (default `{}`)
-   * @param {string[]} projection - Projection array
-   */
-  find(query: Query = {}, projection?: Projection): Promise<Partial<T>[]> {
     return new Promise(resolve => {
-      if (!isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
+      if (!isQuery(query)) throw new Error(INVALID_QUERY(query));
 
       const payload: Partial<T>[] = [];
-
-      this.list.forEach(_id => {
-        const doc = this.map[_id];
-
-        if (!doc.$deleted && (isQueryMatch(doc, query))) {
-          payload.push(project(doc, projection));
-        }
+      this.list.forEach(id => {
+        const doc = this.map[id];
+        if (isQueryMatch(doc, query)) payload.push(project(doc, projection));
       });
 
       resolve(payload);
@@ -237,72 +224,73 @@ export default class LeafDB<T extends DocValue> {
   }
 
   /**
-   * Update single doc matching `_id`
-   * @param {string|string[]} query - Doc _id
-   * @param {object} update - New document (default `{}`) / Update query
-   * @param {string[]} projection - Projection array
-  */
+   * Find and update doc by `id`
+   * @param {string} _id Doc _id
+   * @param update - New document / update query (default `{}`)
+   * @param projection - Projection array
+   */
   updateById(
-    query: OneOrMore<string>,
-    update: Update<T> = {},
+    _id: string,
+    update: Update = {},
     projection?: Projection
-  ): Promise<Partial<T>[]> {
+  ): Promise<Partial<T> | null> {
     return new Promise(resolve => {
-      if (!isValidUpdate(update)) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
+      if (!isId(_id)) throw new Error(INVALID_ID(_id));
+      if (!isUpdate(update)) throw new Error(INVALID_UPDATE(update));
 
-      const payload: Partial<T>[] = [];
-      const _ids = toArray(query);
-
-      for (let i = 0; i < _ids.length; i += 1) {
-        const _id = _ids[i];
-
-        if (!isId(_id)) throw new Error(`Invalid _id: ${_id}`);
-
-        const doc = this.map[_id];
-
-        if (doc && !doc.$deleted) {
-          const newDoc = hasOperators(update) ?
+      const doc = this.map[_id];
+      if (doc && !doc.$deleted) {
+        const newDoc = {
+          ...hasOperators(update) ?
             modify(doc, update) :
-            update as T;
-
-          const _doc = { ...newDoc, _id };
-          this.map[_id] = _doc;
-          payload.push(project(_doc, projection));
-        }
+            update,
+          _id
+        };
+        this.map[_id] = newDoc;
+        return resolve(project(newDoc, projection));
       }
-
-      resolve(payload);
+      return resolve(null);
     });
   }
 
   /**
-   * Update documents matching `query`
-   * @param {object} query - Query object (default `{}`)
-   * @param {object} update - New document (default `{}`) / Update query
+   * Find and update doc(s) by `query`
+   * @param {object} query - List of doc `_id`'s / query object (default `{}`)
+   * @param {object} update - New document / update query (default `{}`)
    * @param {string[]} projection - Projection array
    */
-  update(
-    query: Query = {},
-    update: Update<T> = {},
+  async update(
+    query: string[] | Query,
+    update: Update = {},
     projection?: Projection
   ): Promise<Partial<T>[]> {
+    if (isIdArray(query)) {
+      try {
+        const docs = await Promise
+          .all(query.map(id => this.updateById(id, update, projection)))
+          .then(filterNull);
+        return Promise.resolve(docs);
+      } catch (err) {
+        return Promise.reject(err);
+      }
+    }
+
     return new Promise(resolve => {
-      if (!isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
-      if (!isValidUpdate(update)) throw new Error(`Invalid update: ${JSON.stringify(update)}`);
+      if (!isQuery(query)) throw new Error(INVALID_QUERY(query));
+      if (!isUpdate(update)) throw new Error(INVALID_UPDATE(update));
 
       const payload: Partial<T>[] = [];
-
       this.list.forEach(_id => {
         const doc = this.map[_id];
-
-        if (!doc.$deleted && isQueryMatch(doc, query)) {
-          const newDoc = hasOperators(update) ?
-            modify(doc, update) :
-            update as T;
-
-          const _doc = { ...newDoc, _id };
-          this.map[_id] = _doc;
-          payload.push(project(_doc, projection));
+        if (isQueryMatch(doc, query)) {
+          const newDoc = {
+            ...hasOperators(update) ?
+              modify(doc, update) :
+              update,
+            _id
+          };
+          this.map[_id] = newDoc;
+          payload.push(project(newDoc, projection));
         }
       });
 
@@ -311,44 +299,47 @@ export default class LeafDB<T extends DocValue> {
   }
 
   /**
-   * Delete doc matching `_id`
-   * @param {string} query - Doc _id
-  */
-  deleteById(query: OneOrMore<string>): Promise<number> {
+   * Find and delete doc by `_id`
+   * @param {string} _id Doc _id
+   */
+  deleteById(_id: string): Promise<number> {
     return new Promise(resolve => {
-      let payload = 0;
-      const _ids = toArray(query);
+      if (!isId(_id)) throw new Error(INVALID_ID(_id));
 
-      for (let i = 0; i < _ids.length; i += 1) {
-        const _id = _ids[i];
-
-        if (!isId(_id)) throw new Error(`Invalid _id: ${_id}`);
-
-        const doc = this.map[_id];
-
-        if (doc && !doc.$deleted) {
-          this.map[_id] = { ...doc, $deleted: true };
-          payload += 1;
-        }
+      const doc = this.map[_id];
+      if (doc && !doc.$deleted) {
+        this.map[_id] = { ...doc, $deleted: true };
+        return resolve(1);
       }
 
-      resolve(payload);
+      return resolve(0);
     });
   }
 
   /**
-   * Delete documents matching `query`
-   * @param {object} query - Query object (default `{}`)
+   * Find and delete doc(s) by `query`
+   * @param {object} query - List of doc `_id`'s / query object (default `{}`)
    */
-  delete(query: Query = {}): Promise<number> {
+  async delete(query: string[] | Query): Promise<number> {
+    if (isIdArray(query)) {
+      try {
+        const docs = await Promise
+          .all((query).map(id => this.deleteById(id)))
+          .then(result => result.reduce((acc, cur) => acc + cur, 0));
+        return Promise.resolve(docs);
+      } catch (err) {
+        return Promise.reject(err);
+      }
+    }
+
     return new Promise(resolve => {
-      if (!isObject(query)) throw new Error(`Invalid query: ${JSON.stringify(query)}`);
+      if (!isQuery(query)) throw new Error(INVALID_QUERY(query));
 
       let payload = 0;
       this.list.forEach(_id => {
         const doc = this.map[_id];
 
-        if (!doc.$deleted && isQueryMatch(doc, query)) {
+        if (isQueryMatch(doc, query)) {
           this.map[_id] = { ...doc, $deleted: true };
           payload += 1;
         }

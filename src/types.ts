@@ -20,24 +20,24 @@ export type Tags = {
 };
 
 export type Operators = {
-  $gt: number
-  $gte: number
-  $lt: number
-  $lte: number
-  $string: string
-  $stringStrict: string
+  $gt: Record<string, number>
+  $gte: Record<string, number>
+  $lt: Record<string, number>
+  $lte: Record<string, number>
+  $string: Record<string, string>
+  $stringStrict: Record<string, string>
+  $includes: Record<string, JSON>
+  $not: Record<string, JSON>
   $keys: string[]
-  $includes: JSON[]
   $or: Query[]
-  $not: JSON
 };
 
 export type Modifiers = {
+  $push: Record<string, DocValue>
+  $set: Record<string, DocValue>
   $add: Record<string, number>
-  $push: DocValue
-  $set: DocValue
 };
 
-export type Query = Partial<Operators> & DocValue;
+export type Query = DocValue & Partial<Operators>;
 export type Projection = string[];
-export type Update<T extends DocValue> = T | Partial<Modifiers>;
+export type Update = DocValue | Partial<Modifiers>;

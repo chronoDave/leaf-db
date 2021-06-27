@@ -70,6 +70,14 @@ test('[modify] operator $set should set field with value', t => {
     { a: { b: [{ c: 1 }] } },
     { $set: { 'a.b.0.c': { d: 1 } } }
   ), { a: { b: [{ c: { d: 1 } }] } });
+  t.deepEqual(modify(
+    { a: 1 },
+    { $set: { b: { c: 1 } } }
+  ), { a: 1, b: { c: 1 } });
+  t.deepEqual(modify(
+    { _id: 'key_1', data: 'test', values: [1, 2, 3], testValue: 1 },
+    { $set: { newValue: { testValue: 1 } } }
+  ), { _id: 'key_1', data: 'test', values: [1, 2, 3], testValue: 1, newValue: { testValue: 1 } });
 
   t.end();
 });
