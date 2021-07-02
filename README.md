@@ -49,9 +49,12 @@ db.insert({ species: 'cat', name: 'whiskers' })
 **TS**
 
 ```TS
-import LeafDB from 'leaf-db';
+import LeafDB, { Doc } from 'leaf-db';
 
-type Document = { species: string, name?: string }
+interface Document extends Doc {
+  species: string,
+  name?: string
+}
 
 const db = new LeafDB<Document>();
 db.insert({ species: 'cat', name: 'whiskers' })
