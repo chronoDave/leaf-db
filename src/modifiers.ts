@@ -4,8 +4,8 @@ import * as dot from '@chronocide/dot-obj';
 import { INVALID_MODIFIER, INVALID_PROJECTION, NOT_ARRAY } from './errors';
 
 // Types
-import { DocValue, Projection, Update } from './types';
-import { isProjection } from './validation';
+import { Doc, Projection, Update } from './types';
+import { isProjection, isTag, isObject } from './validation';
 
 /**
  * TODO:
@@ -14,11 +14,11 @@ import { isProjection } from './validation';
  *  - Add modifier validation similar to validation.ts
  */
 
-export const modify = <T extends DocValue>(doc: T, update: Update): T => {
+export const modify = <T extends Doc>(doc: T, update: Update): T => {
   for (let i = 0, updateEntries = Object.entries(update); i < updateEntries.length; i += 1) {
     const [modifier, fields] = updateEntries[i];
 
-    for (let j = 0, fieldEntries = Object.entries(fields || {}); j < fieldEntries.length; j += 1) {
+    for (let j = 0, fieldEntries = Object.entries(isObject(fields) ? fields : {}); j < fieldEntries.length; j += 1) {
       const [key, value] = fieldEntries[j];
 
       switch (modifier) {
@@ -29,7 +29,7 @@ export const modify = <T extends DocValue>(doc: T, update: Update): T => {
         }
         case '$set':
           if (key === '_id') throw new Error(`Cannot modify field _id: ${update}`);
-          if (key[0] === '$') throw new Error(`Cannot add operator: ${update}`);
+          if (isTag(key)) throw new Error(`Cannot add operator: ${update}`);
           return dot.set(doc, key, value);
         case '$push': {
           const cur = dot.get(doc, key);
@@ -45,8 +45,8 @@ export const modify = <T extends DocValue>(doc: T, update: Update): T => {
   return doc;
 };
 
-export const project = <T extends DocValue>(doc: T, projection?: Projection): Partial<T> => {
-  if (!projection) return doc;
+export const project = <T extends Doc>(doc: T, projection?: Projection): Partial<T> => {
+  if (projection === undefined) return doc;
 
   if (!Array.isArray(projection)) throw new Error(NOT_ARRAY('projection', projection));
 

@@ -9,21 +9,13 @@ import {
   Update,
   Query,
   DocBase,
-  DocValue,
   Doc,
+  DocInternal,
   Operators,
   Modifiers,
-  Projection
+  Projection,
+  Tags
 } from './types';
-
-// Operators
-export const hasTag = (key: string) => key[0] === '$';
-export const hasDot = (key: string) => key.includes('.');
-export const hasOperators = (update: DocBase): update is Partial<Modifiers> => Object.keys(update).some(hasTag);
-export const hasMixedOperators = (update: DocBase) => (
-  hasOperators(update) &&
-  !Object.keys(update).every(hasTag)
-);
 
 // Base
 export const isObject = (object: unknown): object is object => object !== null && !Array.isArray(object) && typeof object === 'object';
@@ -31,19 +23,23 @@ export const isEmptyObject = (object: unknown): object is {} => isObject(object)
 export const isId = (_id: unknown): _id is string => typeof _id === 'string' && _id.length > 0;
 export const isIdArray = (ids: unknown): ids is string[] => Array.isArray(ids) && ids.every(isId);
 export const isDocBase = (docBase: unknown): docBase is DocBase => isObject(docBase);
+export const isTag = (key: unknown): key is keyof Operators | keyof Modifiers | keyof Tags => typeof key === 'string' && key[0] === '$';
+
+// Operators
+export const hasTag = ([key, value]: [string, unknown]) => isTag(key) && value !== undefined;
+export const hasDot = ([key, value]: [string, unknown]) => key.includes('.') && value !== undefined;
+export const hasOperators = (update: object) => Object.entries(update).some(hasTag);
+export const hasMixedOperators = (update: object) =>
+  hasOperators(update) &&
+  !Object.entries(update).every(hasTag);
 
 // Leaf-DB
-export const isDoc = (doc: unknown): doc is DocValue => {
+export const isDoc = (doc: unknown): doc is Doc => {
   if (!isObject(doc)) return false;
-  return dot.every(doc, ([key, value]) => {
-    if (hasTag(key)) return false;
-    if (hasDot(key)) return false;
-    if (value === undefined) return false;
-    return true;
-  });
+  return dot.every(doc, entry => !hasTag(entry) && !hasDot(entry));
 };
 
-export const isDocStrict = <T extends DocValue>(doc: unknown): doc is Doc<T> => {
+export const isDocStrict = <T extends Doc>(doc: unknown): doc is DocInternal<T> => {
   if (!isDoc(doc)) return false;
   if (!doc._id) return false;
   return true;
@@ -63,9 +59,9 @@ export const isUpdate = (update: unknown): update is Update => {
   if (
     hasOperators(update) &&
     Object.values(update).some(value => {
-      if (typeof value !== 'object') return false;
+      if (!isObject(value) && !Array.isArray(value)) return false;
       return dot.some(value, entry => {
-        if (hasTag(entry[0])) return true;
+        if (hasTag(entry)) return true;
         if (entry[0] === '_id') return true;
         if (isDocBase(entry[1]) && hasOperators(entry[1])) return true;
         if (isDocBase(entry[1]) && entry[1]._id) return true;
@@ -77,7 +73,7 @@ export const isUpdate = (update: unknown): update is Update => {
 };
 
 export const isProjection = (projection: unknown[]): projection is Projection => projection
-  .every(key => typeof key === 'string' && !hasTag(key));
+  .every(key => typeof key === 'string' && !isTag(key));
 
 export const isModifier = <T extends keyof Modifiers>(modifier: T, value: unknown): value is Modifiers[T] => {
   switch (modifier) {
@@ -146,7 +142,7 @@ export const isQueryMatch = <T extends DocBase>(doc: T, query: Query): boolean =
       const operator = entry[0];
       const value = entry[1];
 
-      if (operator[0] !== '$') return deepEqual(dot.get(doc, operator), value);
+      if (!isTag(operator[0])) return deepEqual(dot.get(doc, operator), value);
       switch (operator) {
         case '$gt':
           if (!isOperator(operator, value)) return false;

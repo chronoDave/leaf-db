@@ -5,10 +5,10 @@ import crypto from 'crypto';
 import type {
   OneOrMore,
   Doc,
-  DocValue,
+  DocInternal,
   Projection,
   Query,
-  Update
+  Update,
 } from './types';
 import { modify, project } from './modifiers';
 import {
@@ -29,17 +29,14 @@ import {
   INVALID_UPDATE,
   DUPLICATE_DOC
 } from './errors';
-import { filterNull } from './utils';
 
 // Exports
 export type {
-  JSON,
-  ValueOf,
   OneOrMore,
   Never,
   DocBase,
-  DocValue,
   Doc,
+  DocInternal,
   Tags,
   Operators,
   Modifiers,
@@ -48,12 +45,12 @@ export type {
   Update
 } from './types';
 
-export default class LeafDB<T extends DocValue> {
+export default class LeafDB<T extends Doc> {
   readonly root?: string;
   readonly strict: boolean;
   readonly file?: PathLike;
 
-  private map: Record<string, Doc<T>>;
+  private map: Record<string, DocInternal<T>>;
   private list: Set<string>;
   private seed: number;
 
@@ -203,7 +200,7 @@ export default class LeafDB<T extends DocValue> {
       try {
         const docs = await Promise
           .all(query.map(id => this.findById(id, projection)))
-          .then(filterNull);
+          .then(result => result.flatMap(i => (i ? [i] : [])));
         return Promise.resolve(docs);
       } catch (err) {
         return Promise.reject(err);
@@ -243,10 +240,11 @@ export default class LeafDB<T extends DocValue> {
         const newDoc = {
           ...hasOperators(update) ?
             modify(doc, update) :
-            update,
+            update as T,
           _id
         };
         this.map[_id] = newDoc;
+
         return resolve(project(newDoc, projection));
       }
       return resolve(null);
@@ -268,7 +266,7 @@ export default class LeafDB<T extends DocValue> {
       try {
         const docs = await Promise
           .all(query.map(id => this.updateById(id, update, projection)))
-          .then(filterNull);
+          .then(result => result.flatMap(i => (i ? [i] : [])));
         return Promise.resolve(docs);
       } catch (err) {
         return Promise.reject(err);
@@ -286,7 +284,7 @@ export default class LeafDB<T extends DocValue> {
           const newDoc = {
             ...hasOperators(update) ?
               modify(doc, update) :
-              update,
+              update as T,
             _id
           };
           this.map[_id] = newDoc;
