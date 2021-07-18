@@ -10,15 +10,25 @@ module.exports = {
     '@typescript-eslint/comma-dangle': 'off',
     '@typescript-eslint/lines-between-class-members': 'off',
     '@typescript-eslint/naming-convention': 'off',
+    '@typescript-eslint/indent': ['error', 2, {
+      SwitchCase: 1,
+      ignoredNodes: ['TSTypeParameterInstantiation']
+    }],
     // General
     'operator-linebreak': ['error', 'after'],
     'linebreak-style': 'off',
+    'no-confusing-arrow': 'off',
     'comma-dangle': 'off',
     'arrow-body-style': 'warn',
+    'max-len': ['error', {
+      code: 100,
+      ignoreStrings: true,
+      ignoreTemplateLiterals: true,
+      ignoreComments: true
+    }],
     'arrow-parens': ['error', 'as-needed'],
     'implicit-arrow-linebreak': 'off',
     'no-nested-ternary': 'off',
-    'max-len': 'off',
     'no-underscore-dangle': 'off',
     'no-await-in-loop': 'off',
     'object-curly-newline': ['warn', {

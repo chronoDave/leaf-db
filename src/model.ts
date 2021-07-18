@@ -2,72 +2,59 @@ import fs, { PathLike } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-import type {
-  OneOrMore,
+import {
   Doc,
-  DocInternal,
-  Projection,
+  DocPrivate,
+  KeysOf,
+  OneOrMore,
   Query,
   Update,
+  Projection
 } from './types';
-import { modify, project } from './modifiers';
 import {
-  isId,
-  isIdArray,
   isDoc,
-  isDocStrict,
+  isDocPrivate,
+  isId,
+  isModifier,
   isQuery,
   isQueryMatch,
-  hasOperators,
-  isUpdate,
+  isUpdate
 } from './validation';
+import { toArray } from './utils';
+import { modify, project } from './modifiers';
 import {
-  MEMORY_MODE,
-  INVALID_ID,
   INVALID_DOC,
+  INVALID_ID,
   INVALID_QUERY,
   INVALID_UPDATE,
-  DUPLICATE_DOC
+  MEMORY_MODE
 } from './errors';
 
-// Exports
-export type {
-  OneOrMore,
-  Never,
-  DocBase,
-  Doc,
-  DocInternal,
-  Tags,
-  Operators,
-  Modifiers,
-  Query,
-  Projection,
-  Update
-} from './types';
-
-export default class LeafDB<T extends Doc> {
+export default class LeafDB<T extends object> {
   readonly root?: string;
-  readonly strict: boolean;
   readonly file?: PathLike;
 
-  private map: Record<string, DocInternal<T>>;
-  private list: Set<string>;
   private seed: number;
+  private map: Record<string, DocPrivate<T>> = {};
+  private list: Set<string> = new Set();
 
+  /**
+   * @param options.name - Database name
+   * @param options.root - Database folder, if emtpy, will run `leaf-db` in memory-mode
+   * @param options.seed - Seed used for random `_id` generation, defaults to a random seed
+   * @param options.disableAutoload - If true, disabled loading file data into memory
+   */
   constructor(options?: {
     name?: string,
     root?: string,
     disableAutoload?: boolean,
-    strict?: boolean
+    seed?: number
   }) {
-    this.strict = !!options?.strict;
-    this.map = {};
-    this.list = new Set();
-    this.seed = crypto.randomBytes(1).readUInt8();
+    this.seed = options?.seed || crypto.randomBytes(1).readUInt8();
 
     if (options?.root) {
       fs.mkdirSync(options.root, { recursive: true });
-      this.file = path.resolve(options.root, `${options?.name || 'leafdb'}.txt`);
+      this.file = path.resolve(options.root, `${options?.name || 'leaf-db'}.txt`);
       if (!options?.disableAutoload) this.load();
     }
   }
@@ -77,7 +64,49 @@ export default class LeafDB<T extends Doc> {
     this.list = new Set();
   }
 
-  private generateUid() {
+  private get(_id: string): DocPrivate<T> | null {
+    const doc = this.map[_id];
+    return !doc.$deleted ? doc : null;
+  }
+
+  private add(doc: DocPrivate<T>) {
+    this.list.add(doc._id);
+    this.map[doc._id] = doc;
+
+    return doc;
+  }
+
+  private remove(_id: string) {
+    this.list.delete(_id);
+    delete this.map[_id];
+  }
+
+  private findDoc<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
+    const doc = this.get(_id);
+
+    if (doc && isQueryMatch(doc, query)) {
+      if (projection) return project(doc, projection);
+      return doc;
+    }
+
+    return null;
+  }
+
+  private updateDoc(doc: DocPrivate<T>, update: Update<T>) {
+    const newDoc = isModifier(update) ?
+      modify(doc, update) :
+      { ...update, _id: doc._id };
+
+    this.map[doc._id] = newDoc;
+
+    return newDoc;
+  }
+
+  private deleteDoc(doc: DocPrivate<T>) {
+    this.map[doc._id] = { ...doc, $deleted: true };
+  }
+
+  generateUid() {
     const timestamp = Date.now().toString(16);
     const random = crypto.randomBytes(5).toString('hex');
 
@@ -86,268 +115,224 @@ export default class LeafDB<T extends Doc> {
   }
 
   /**
-   * Initialize database
-   * @returns {string[]} List of corrupt items
-   * */
-  load() {
+   * Load persistent data into memory.
+   *
+   * If `strict` is enabled, this will throw when it tries to load an invalid document.
+   * @returns {string[]} List of corrupted documents
+   */
+  load(strict = false) {
     if (!this.file) throw new Error(MEMORY_MODE('load'));
+    if (!fs.existsSync(this.file)) return [];
 
-    const corrupted = [];
-    if (fs.existsSync(this.file)) {
-      this.flush();
+    this.flush();
 
-      const rawDocs = fs
-        .readFileSync(this.file, 'utf-8')
-        .split('\n');
-      for (let i = 0; i < rawDocs.length; i += 1) {
-        const rawDoc = rawDocs[i];
-        if (rawDoc) {
-          try {
-            const doc = JSON.parse(rawDoc);
-            if (!isDocStrict<T>(doc)) throw new Error(INVALID_DOC(doc));
+    return fs.readFileSync(this.file, 'utf-8')
+      .split('\n')
+      .filter(raw => {
+        try {
+          const doc = JSON.parse(raw);
+          if (!isDocPrivate<T>(doc)) throw new Error(INVALID_DOC(doc));
 
-            this.list.add(doc._id);
-            this.map[doc._id] = doc;
-          } catch (err) {
-            if (this.strict) throw err;
+          this.add(doc);
 
-            corrupted.push(rawDoc);
-          }
+          return false;
+        } catch (err) {
+          if (strict) throw err;
+
+          return true;
         }
-      }
-    } else {
-      fs.writeFileSync(this.file, '');
-    }
-
-    return corrupted;
+      });
   }
 
-  /** Persist database */
-  persist() {
+  /**
+   * Persist database memory.
+   *
+   * Any documents marked for deletion will be cleaned up here.
+   * If `strict` is enabled, this will throw when persisting fails
+   * */
+  persist(strict = false) {
     if (!this.file) throw new Error(MEMORY_MODE('persist'));
 
-    const payload: string[] = [];
+    const data: string[] = [];
     this.list.forEach(_id => {
       try {
-        const doc = this.map[_id];
-        if (!doc.$deleted) payload.push(JSON.stringify(doc));
+        const doc = this.get(_id);
+        if (doc) data.push(JSON.stringify(doc));
       } catch (err) {
-        this.list.delete(_id);
-        delete this.map[_id];
+        this.remove(_id);
 
-        if (this.strict) throw err;
+        if (strict) throw err;
       }
     });
 
-    fs.writeFileSync(this.file, payload.join('\n'));
+    fs.writeFileSync(this.file, data.join('\n'));
   }
 
-  /**
-   * Insert new document
-   * @param {object} doc
-   */
-  insertOne(doc: T): Promise<T> {
-    return new Promise(resolve => {
-      if (!isDoc(doc)) throw new Error(INVALID_DOC(doc));
-
-      const newDoc = { ...doc, _id: doc._id || this.generateUid() };
-      if (this.list.has(newDoc._id)) throw new Error(DUPLICATE_DOC(newDoc));
-
-      this.list.add(newDoc._id);
-      this.map[newDoc._id] = newDoc;
-
-      resolve(newDoc);
-    });
-  }
-
-  /**
-   * Insert new document(s)
-   * @param {object|object[]} docs
-   */
-  async insert(docs: OneOrMore<T>): Promise<T[]> {
-    if (Array.isArray(docs)) return Promise.all(docs.map(doc => this.insertOne(doc)));
-
-    try {
-      const doc = await this.insertOne(docs);
-      return Promise.resolve([doc]);
-    } catch (err) {
-      return Promise.reject(err);
-    }
-  }
-
-  /**
-   * Find doc by `_id`
-   * @param {string} _id Doc _id
-   * @param {string[]} projection Projection array
-   */
-  findById(_id: string, projection?: Projection): Promise<Partial<T> | null> {
-    return new Promise(resolve => {
-      if (!isId(_id)) throw new Error(INVALID_ID(_id));
-
-      const doc = this.map[_id];
-      if (doc && !doc.$deleted) return resolve(project(doc, projection));
-      return resolve(null);
-    });
-  }
-
-  /**
-   * Find doc(s) by `query`
-   * @param {string[]|object} query List of doc `_id`'s / query object (default `{}`)
-   * @param projection - Projection array
-   */
-  async find(query: string[] | Query = {}, projection?: Projection): Promise<Partial<T>[]> {
-    if (isIdArray(query)) {
-      try {
-        const docs = await Promise
-          .all(query.map(id => this.findById(id, projection)))
-          .then(result => result.flatMap(i => (i ? [i] : [])));
-        return Promise.resolve(docs);
-      } catch (err) {
-        return Promise.reject(err);
-      }
+  /** Insert single new doc, returns created doc */
+  insertOne(newDoc: Doc<T>, options?: { strict?: boolean }) {
+    if (!isDoc(newDoc)) {
+      if (options?.strict) return Promise.reject(INVALID_DOC(newDoc));
+      return null;
     }
 
-    return new Promise(resolve => {
-      if (!isQuery(query)) throw new Error(INVALID_QUERY(query));
-
-      const payload: Partial<T>[] = [];
-      this.list.forEach(id => {
-        const doc = this.map[id];
-        if (isQueryMatch(doc, query)) payload.push(project(doc, projection));
-      });
-
-      resolve(payload);
-    });
+    return Promise.resolve(this.add({
+      ...newDoc,
+      _id: newDoc._id || this.generateUid()
+    }));
   }
 
   /**
-   * Find and update doc by `id`
-   * @param {string} _id Doc _id
-   * @param update - New document / update query (default `{}`)
-   * @param projection - Projection array
-   */
-  updateById(
+   * Insert a document or documents
+   * @param {boolean} strict - If `true`, rejects on first failed insert
+   * */
+  insert(x: OneOrMore<Doc<T>>, options?: { strict?: boolean }) {
+    return Promise
+      .all(toArray(x).map(newDoc => this.insertOne(newDoc, options)))
+      .then(docs => docs.reduce<Doc<T>[]>((acc, doc) => {
+        if (doc !== null) acc.push(doc);
+        return acc;
+      }, []));
+  }
+
+  findOneById<P extends KeysOf<Doc<T>>>(_id: string, options?: { projection?: P }) {
+    if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
+
+    const doc = this.get(_id);
+    if (doc) {
+      if (options?.projection) return Promise.resolve(project(doc, options.projection));
+      return Promise.resolve(doc);
+    }
+
+    return Promise.resolve(null);
+  }
+
+  findById<P extends KeysOf<Doc<T>>>(x: OneOrMore<string>, options?: { projection?: P }) {
+    return Promise
+      .all(toArray(x).map(_id => this.findOneById(_id, options)))
+      .then(docs => docs.reduce<Projection<DocPrivate<T>, P>[]>((acc, doc) => {
+        if (doc !== null) acc.push(doc);
+        return acc;
+      }, []));
+  }
+
+  findOne<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
+    if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
+
+    for (let i = 0, ids = Array.from(this.list); i < ids.length; i += 1) {
+      const doc = this.findDoc(ids[i], query, options?.projection);
+      if (doc) return Promise.resolve(doc);
+    }
+
+    return Promise.resolve(null);
+  }
+
+  find<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
+    if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
+
+    const docs = Array.from(this.list).reduce<Projection<DocPrivate<T>, P>[]>((acc, _id) => {
+      const doc = this.findDoc(_id, query, options?.projection);
+      if (doc) acc.push(doc);
+      return acc;
+    }, []);
+
+    return Promise.resolve(docs);
+  }
+
+  async updateOneById<P extends KeysOf<Doc<T>>>(
     _id: string,
-    update: Update = {},
-    projection?: Projection
-  ): Promise<Partial<T> | null> {
-    return new Promise(resolve => {
-      if (!isId(_id)) throw new Error(INVALID_ID(_id));
-      if (!isUpdate(update)) throw new Error(INVALID_UPDATE(update));
+    update: Update<T> = {},
+    options?: { projection?: P }
+  ) {
+    if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
+    if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
-      const doc = this.map[_id];
-      if (doc && !doc.$deleted) {
-        const newDoc = {
-          ...hasOperators(update) ?
-            modify(doc, update) :
-            update as T,
-          _id
-        };
-        this.map[_id] = newDoc;
+    const doc = await this.findOneById(_id);
+    if (!doc) return Promise.resolve(null);
 
-        return resolve(project(newDoc, projection));
-      }
-      return resolve(null);
-    });
+    const newDoc = this.updateDoc(doc, update);
+    if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
+    return Promise.resolve(newDoc);
   }
 
-  /**
-   * Find and update doc(s) by `query`
-   * @param {object} query - List of doc `_id`'s / query object (default `{}`)
-   * @param {object} update - New document / update query (default `{}`)
-   * @param {string[]} projection - Projection array
-   */
-  async update(
-    query: string[] | Query,
-    update: Update = {},
-    projection?: Projection
-  ): Promise<Partial<T>[]> {
-    if (isIdArray(query)) {
-      try {
-        const docs = await Promise
-          .all(query.map(id => this.updateById(id, update, projection)))
-          .then(result => result.flatMap(i => (i ? [i] : [])));
-        return Promise.resolve(docs);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-
-    return new Promise(resolve => {
-      if (!isQuery(query)) throw new Error(INVALID_QUERY(query));
-      if (!isUpdate(update)) throw new Error(INVALID_UPDATE(update));
-
-      const payload: Partial<T>[] = [];
-      this.list.forEach(_id => {
-        const doc = this.map[_id];
-        if (isQueryMatch(doc, query)) {
-          const newDoc = {
-            ...hasOperators(update) ?
-              modify(doc, update) :
-              update as T,
-            _id
-          };
-          this.map[_id] = newDoc;
-          payload.push(project(newDoc, projection));
-        }
-      });
-
-      resolve(payload);
-    });
+  updateById<P extends KeysOf<Doc<T>>>(
+    x: OneOrMore<string>,
+    update: Update<T> = {},
+    options?: { projection?: P }
+  ) {
+    if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
+    return Promise
+      .all(toArray(x).map(_id => this.updateOneById(_id, update, options)))
+      .then(docs => docs.reduce<Doc<T>[]>((acc, doc) => {
+        if (doc !== null) acc.push(doc);
+        return acc;
+      }, []));
   }
 
-  /**
-   * Find and delete doc by `_id`
-   * @param {string} _id Doc _id
-   */
-  deleteById(_id: string): Promise<number> {
-    return new Promise(resolve => {
-      if (!isId(_id)) throw new Error(INVALID_ID(_id));
+  async updateOne<P extends KeysOf<Doc<T>>>(
+    query: Query = {},
+    update: Update<T> = {},
+    options?: { projection?: P }
+  ) {
+    if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
+    if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
-      const doc = this.map[_id];
-      if (doc && !doc.$deleted) {
-        this.map[_id] = { ...doc, $deleted: true };
-        return resolve(1);
-      }
+    const doc = await this.findOne(query);
+    if (!doc) return Promise.resolve(null);
 
-      return resolve(0);
-    });
+    const newDoc = this.updateDoc(doc, update);
+    if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
+    return Promise.resolve(newDoc);
   }
 
-  /**
-   * Find and delete doc(s) by `query`
-   * @param {object} query - List of doc `_id`'s / query object (default `{}`)
-   */
-  async delete(query: string[] | Query): Promise<number> {
-    if (isIdArray(query)) {
-      try {
-        const docs = await Promise
-          .all((query).map(id => this.deleteById(id)))
-          .then(result => result.reduce((acc, cur) => acc + cur, 0));
-        return Promise.resolve(docs);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
+  update<P extends KeysOf<Doc<T>>>(
+    query: Query = {},
+    update: Update<T> = {},
+    options?: { projection?: P }
+  ) {
+    if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
+    if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
-    return new Promise(resolve => {
-      if (!isQuery(query)) throw new Error(INVALID_QUERY(query));
+    const newDocs = this.find(query)
+      .then(docs => docs.map(doc => {
+        const newDoc = this.updateDoc(doc, update);
+        if (options?.projection) return project(newDoc, options.projection);
+        return newDoc;
+      }));
 
-      let payload = 0;
-      this.list.forEach(_id => {
-        const doc = this.map[_id];
-
-        if (isQueryMatch(doc, query)) {
-          this.map[_id] = { ...doc, $deleted: true };
-          payload += 1;
-        }
-      });
-
-      resolve(payload);
-    });
+    return Promise.resolve(newDocs);
   }
 
-  /** Drop database */
+  async deleteOneById(_id: string) {
+    if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
+
+    const doc = await this.findOneById(_id);
+    if (!doc) return Promise.resolve(0);
+
+    this.deleteDoc(doc);
+    return Promise.resolve(1);
+  }
+
+  deleteById(x: OneOrMore<string>) {
+    return Promise.all(toArray(x).map(_id => this.deleteOneById(_id)))
+      .then(n => n.reduce<number>((acc, cur) => acc + cur, 0));
+  }
+
+  async deleteOne(query: Query = {}) {
+    const doc = await this.findOne(query);
+    if (!doc) return Promise.resolve(0);
+
+    this.deleteDoc(doc);
+    return Promise.resolve(1);
+  }
+
+  async delete(query: Query = {}) {
+    return this.find(query)
+      .then(docs => docs.reduce<number>((acc, cur) => {
+        this.deleteDoc(cur);
+        return acc + 1;
+      }, 0));
+  }
+
   drop() {
     this.flush();
     if (this.file) this.persist();

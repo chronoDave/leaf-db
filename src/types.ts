@@ -1,9 +1,11 @@
-// Helpers
+export type Join<T extends Array<string | number | Symbol>> = T[number];
+export type KeysOf<T extends object> = Array<keyof T>;
 export type OneOrMore<T> = T | T[];
-export type Never<T> = { [P in keyof T]?: undefined };
+export type Projection<T extends object, P extends KeysOf<T>> = Pick<T, Join<P>>;
 
-// LeafDB
-export type Tags = {
+export type Doc<T extends object> = T & { _id?: string };
+export type DocPrivate<T extends object> = Doc<T> & {
+  readonly _id: string,
   $deleted?: boolean
 };
 
@@ -21,21 +23,10 @@ export type Operators = {
 };
 
 export type Modifiers = {
-  $push: Record<string, Doc>
-  $set: Record<string, Doc>
+  $push: Record<string, object>
+  $set: Record<string, object>
   $add: Record<string, number>
 };
 
-export type Query = Doc & Partial<Operators>;
-export type Projection = string[];
-export type Update = Doc | Partial<Modifiers>;
-
-export type DocBase = Record<string, unknown> & { _id?: string };
-export type Doc =
-  DocBase &
-  Never<Tags> &
-  Never<Operators> &
-  Never<Modifiers>;
-
-// Internal
-export type DocInternal<T extends Doc> = T & { readonly _id: string } & Tags;
+export type Query = object & Partial<Operators>;
+export type Update<T> = T | Partial<Modifiers>;
