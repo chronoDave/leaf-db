@@ -43,21 +43,27 @@ export const isDoc = <T extends object>(x: unknown): x is Doc<T> =>
   ));
 export const isDocPrivate = <T extends object>(x: unknown): x is DocPrivate<T> =>
   isDoc(x) &&
-  !!x._id &&
-  isId(x._id);
+  typeof x._id === 'string' &&
+  x._id.length > 0;
 export const isQuery = (x: unknown): x is Query =>
   isObject(x) &&
   dot.every(x, entry => !hasKey(entry, '$deleted'));
 export const isModifier = (x: unknown): x is Partial<Modifiers> =>
   isObject(x) &&
+  Object.keys(x).length > 0 &&
   dot.every(x, entry => (
     !hasKey(entry, '$deleted') &&
     !hasKey(entry, '_id')
-  ));
+  )) &&
+  Object.entries(x).every(hasTag);
 export const isUpdate = <T>(x: unknown): x is Update<T> =>
   isObject(x) &&
-  !(isDoc(x) && isModifier(x)) &&
-  (isDoc(x) || isModifier(x));
+  dot.every(x, entry => (
+    !hasKey(entry, '_id') &&
+    !hasKey(entry, '$deleted')
+  )) &&
+  (Object.entries(x).every(hasTag) || !Object.entries(x).some(hasTag)) &&
+  Object.entries(x).every(entry => typeof entry[1] === 'object' ? !dot.some(entry[1], hasTag) : true);
 
 // Leaf-DB validators
 export const hasOperator = <T extends keyof Operators>(
@@ -99,11 +105,10 @@ export const hasModifier = <T extends keyof Modifiers>(
     case '$push':
     case '$set':
       if (!isObject(x)) return false;
-      if (dot.some(x, entry => typeof entry[1] !== 'number')) return false;
       return true;
-    case 'add':
+    case '$add':
       if (!isObject(x)) return false;
-      if (dot.some(x, entry => !isObject(entry[1]))) return false;
+      if (dot.some(x, entry => typeof entry[1] !== 'number')) return false;
       return true;
     default:
       return false;

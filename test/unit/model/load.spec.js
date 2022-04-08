@@ -98,13 +98,12 @@ test('[load] should throw on corrupt data if strict is enabled', t => {
 
   const { file, db } = setup({
     data,
-    strict: true,
     disableAutoload: true,
     root: __dirname
   });
 
   try {
-    db.load();
+    db.load(true);
     t.fail('expected to throw');
   } catch (err) {
     t.pass('throws');

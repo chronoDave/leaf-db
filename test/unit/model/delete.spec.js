@@ -17,79 +17,79 @@ test('[delete] should throw error on invalid query', async t => {
   t.end();
 });
 
-// test('[delete] should delete all data on empty query', async t => {
-//   const { db } = setup({ memory: mockMemory });
+test('[delete] should delete all data on empty query', async t => {
+  const { db } = setup({ memory: mockMemory });
 
-//   try {
-//     const docs = await db.delete();
+  try {
+    const docs = await db.delete();
 
-//     t.strictEqual(docs, 5);
+    t.strictEqual(docs, 5);
 
-//     for (let i = 0, v = Object.values(db.map); i < v.length; i += 1) {
-//       t.true(v[i].$deleted);
-//     }
-//   } catch (err) {
-//     t.fail(err);
-//   }
+    for (let i = 0, v = Object.values(db.map); i < v.length; i += 1) {
+      t.true(v[i].$deleted);
+    }
+  } catch (err) {
+    t.fail(err);
+  }
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('[delete] should return 0 if no match is found', async t => {
-//   const { db } = setup({ memory: mockMemory });
+test('[delete] should return 0 if no match is found', async t => {
+  const { db } = setup({ memory: mockMemory });
 
-//   try {
-//     const docs = await db.delete({ _id: '3' });
+  try {
+    const docs = await db.delete({ _id: '3' });
 
-//     t.strictEqual(docs, 0);
-//   } catch (err) {
-//     t.fail(err);
-//   }
+    t.strictEqual(docs, 0);
+  } catch (err) {
+    t.fail(err);
+  }
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('[delete] should delete docs if matches are found (simple)', async t => {
-//   const { db } = setup({ memory: mockMemory });
+test('[delete] should delete docs if matches are found (simple)', async t => {
+  const { db } = setup({ memory: mockMemory });
 
-//   try {
-//     const docs = await db.delete({ data: 'test' });
+  try {
+    const docs = await db.delete({ data: 'test' });
 
-//     t.strictEqual(docs, 1);
-//     t.true(db.map.key_1.$deleted);
-//   } catch (err) {
-//     t.fail(err);
-//   }
+    t.strictEqual(docs, 1);
+    t.true(db.map.key_1.$deleted);
+  } catch (err) {
+    t.fail(err);
+  }
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('[delete] should replace docs if matches are found (nested)', async t => {
-//   const { db } = setup({ memory: mockMemory });
+test('[delete] should replace docs if matches are found (nested)', async t => {
+  const { db } = setup({ memory: mockMemory });
 
-//   try {
-//     const docs = await db.delete({ 'data.label': 'test' });
+  try {
+    const docs = await db.delete({ 'data.label': 'test' });
 
-//     t.strictEqual(docs, 1);
-//     t.true(db.map.key_5.$deleted);
-//   } catch (err) {
-//     t.fail(err);
-//   }
+    t.strictEqual(docs, 1);
+    t.true(db.map.key_5.$deleted);
+  } catch (err) {
+    t.fail(err);
+  }
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('[delete] should replace docs if matches are found (complex)', async t => {
-//   const { db } = setup({ memory: mockMemory });
+test('[delete] should replace docs if matches are found (complex)', async t => {
+  const { db } = setup({ memory: mockMemory });
 
-//   try {
-//     const docs = await db.delete({ $includes: { 'data.values': 1 } });
+  try {
+    const docs = await db.delete({ $includes: { 'data.values': 1 } });
 
-//     t.strictEqual(docs, 1);
-//     t.true(db.map.key_4.$deleted);
-//   } catch (err) {
-//     t.fail(err);
-//   }
+    t.strictEqual(docs, 1);
+    t.true(db.map.key_4.$deleted);
+  } catch (err) {
+    t.fail(err);
+  }
 
-//   t.end();
-// });
+  t.end();
+});

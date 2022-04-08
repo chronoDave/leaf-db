@@ -8,7 +8,7 @@ test('[persist] should throw error if called memory mode', t => {
   const { db } = setup();
 
   try {
-    db.persist();
+    db.persist(true);
     t.fail('expected to throw');
   } catch (err) {
     t.pass('throws');
@@ -48,13 +48,12 @@ test('[persist] should throw if data contains corrupt data', t => {
   };
 
   try {
-    db.persist();
+    db.persist(true);
     t.fail('expected to throw');
+    fs.unlinkSync(file);
   } catch (err) {
     t.pass('throws');
   }
-
-  fs.unlinkSync(file);
 
   t.end();
 });

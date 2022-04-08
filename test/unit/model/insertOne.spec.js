@@ -7,7 +7,7 @@ test('[insertOne] should throw on invalid data', async t => {
 
   for (let i = 0; i < invalidData.length; i += 1) {
     try {
-      await db.insertOne(invalidData[i]);
+      await db.insertOne(invalidData[i], { strict: true });
       t.fail(`expected to throw: ${i}, ${invalidData[i]}`);
     } catch (err) {
       t.pass(`throws: ${i}`);
@@ -17,13 +17,13 @@ test('[insertOne] should throw on invalid data', async t => {
   t.end();
 });
 
-test('[insertOne[ should throw if doc already exists', async t => {
+test('[insertOne] should throw if doc already exists', async t => {
   const payload = { _id: 'key_1' };
 
   const { db } = setup({ memory: mockMemory });
 
   try {
-    await db.insertOne(payload);
+    await db.insertOne(payload, { strict: true });
     t.fail('expected to throw on duplicate id');
   } catch (err) {
     t.pass('throws');

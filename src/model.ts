@@ -66,7 +66,8 @@ export default class LeafDB<T extends object> {
 
   private get(_id: string): DocPrivate<T> | null {
     const doc = this.map[_id];
-    return !doc.$deleted ? doc : null;
+
+    return (doc && !doc.$deleted) ? doc : null;
   }
 
   private add(doc: DocPrivate<T>) {
@@ -139,7 +140,7 @@ export default class LeafDB<T extends object> {
         } catch (err) {
           if (strict) throw err;
 
-          return true;
+          return raw.length !== 0;
         }
       });
   }
@@ -157,11 +158,12 @@ export default class LeafDB<T extends object> {
     this.list.forEach(_id => {
       try {
         const doc = this.get(_id);
-        if (doc) data.push(JSON.stringify(doc));
+        if (!doc) throw new Error(INVALID_DOC(doc));
+        data.push(JSON.stringify(doc));
       } catch (err) {
-        this.remove(_id);
-
         if (strict) throw err;
+
+        this.remove(_id);
       }
     });
 
@@ -170,7 +172,7 @@ export default class LeafDB<T extends object> {
 
   /** Insert single new doc, returns created doc */
   insertOne(newDoc: Doc<T>, options?: { strict?: boolean }) {
-    if (!isDoc(newDoc)) {
+    if (!isDoc(newDoc) || this.get(newDoc._id as string)) {
       if (options?.strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }

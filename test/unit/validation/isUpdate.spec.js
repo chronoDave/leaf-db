@@ -7,7 +7,7 @@ const { invalidUpdate } = require('../_utils');
 
 test('[isUpdate] should return false if update is invalid', t => {
   for (let i = 0; i < invalidUpdate.length; i += 1) {
-    t.false(isUpdate(invalidUpdate[i]), i);
+    t.false(isUpdate(invalidUpdate[i]), JSON.stringify(invalidUpdate[i]));
   }
 
   t.end();

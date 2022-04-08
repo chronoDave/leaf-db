@@ -58,7 +58,7 @@ test('[updateById] should replace doc if match is found', async t => {
   try {
     const doc = await db.updateById(_id);
 
-    t.deepEqual(doc, { _id });
+    t.deepEqual(doc, [{ _id }]);
     t.deepEqual(db.map[_id], { _id });
   } catch (err) {
     t.fail(err);
@@ -76,7 +76,7 @@ test('[updateById] should update doc if match is found', async t => {
   try {
     const doc = await db.updateById(id, { $set: { newValue } });
 
-    t.deepEqual(doc, { ...mockMemory[id], newValue });
+    t.deepEqual(doc, [{ ...mockMemory[id], newValue }]);
   } catch (err) {
     t.fail(err);
   }
@@ -90,9 +90,9 @@ test('[updateById] should accept projection', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const doc = await db.updateById(id, { test: 'test' }, []);
+    const doc = await db.updateById(id, { test: 'test' }, { projection: [] });
 
-    t.deepEqual(doc, {});
+    t.deepEqual(doc, [{}]);
   } catch (err) {
     t.fail(err);
   }

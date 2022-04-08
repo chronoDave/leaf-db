@@ -38,7 +38,7 @@ test('[findById] should return null if no match is found', async t => {
   try {
     const doc = await db.findById(payload);
 
-    t.equal(doc, null);
+    t.deepEqual(doc, []);
   } catch (err) {
     t.fail(err);
   }
@@ -54,7 +54,7 @@ test('[findById] should return null if match is deleted', async t => {
   try {
     const doc = await db.findById(payload);
 
-    t.equal(doc, null);
+    t.deepEqual(doc, []);
   } catch (err) {
     t.fail(err);
   }
@@ -70,7 +70,7 @@ test('[findById] should return doc if match is found', async t => {
   try {
     const doc = await db.findById(id);
 
-    t.deepEqual(doc, mockMemory[id]);
+    t.deepEqual(doc, [mockMemory[id]]);
   } catch (err) {
     t.fail(err);
   }
@@ -84,9 +84,9 @@ test('[findById] should accept projection', async t => {
   const { db } = setup({ memory: mockMemory });
 
   try {
-    const doc = await db.findById(id, []);
+    const doc = await db.findById(id, { projection: [] });
 
-    t.deepEqual(doc, {});
+    t.deepEqual(doc, [{}]);
   } catch (err) {
     t.fail(err);
   }

@@ -11,7 +11,7 @@ test('[project] should throw error if projection is not an array if defined', t 
   for (let i = 0; i < invalidTypes.length; i += 1) {
     try {
       project(mockObjectProduction, invalidTypes[i]);
-      t.fail(`Expected to throw: ${invalidTypes[i]}, ${i}`);
+      t.fail(`Expected to throw: ${JSON.stringify(invalidTypes[i])}`);
     } catch (err) {
       t.pass(`throws: ${i}`);
     }
@@ -26,7 +26,7 @@ test('[project] should throw error if projection contains invalid keys', t => {
   for (let i = 0; i < invalidKeys.length; i += 1) {
     try {
       project(mockObjectProduction, [invalidKeys[i]]);
-      t.fail(`Expected to throw: ${invalidKeys[i]}, ${i}`);
+      t.fail(`Expected to throw: ${JSON.stringify(invalidKeys[i])}`);
     } catch (err) {
       t.pass(`throws: ${i}`);
     }
