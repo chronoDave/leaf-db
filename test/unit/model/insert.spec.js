@@ -24,12 +24,12 @@ test('[insert] should accept multiple docs', async t => {
   const { db } = setup();
 
   try {
-    const doc = await db.insert(payload);
+    const docs = await db.insert(payload);
 
-    t.true(Array.isArray(doc));
-    t.strictEqual(doc.length, payload.length);
+    t.true(Array.isArray(docs));
+    t.strictEqual(docs.length, payload.length);
 
-    const { _id, ...sample } = doc[0];
+    const { _id, ...sample } = docs[0];
 
     t.deepEqual(sample, payload[0]);
   } catch (err) {

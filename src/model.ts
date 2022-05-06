@@ -29,11 +29,11 @@ import {
   INVALID_UPDATE,
   MEMORY_MODE
 } from './errors';
+import Store from './store';
 
 export default class LeafDB<T extends object> {
   private _seed: number;
-  private _map: Record<string, DocPrivate<T>> = {};
-  private _list: Set<string> = new Set();
+  private readonly _store = new Store<T>();
 
   readonly root?: string;
   readonly file?: PathLike;
@@ -59,31 +59,8 @@ export default class LeafDB<T extends object> {
     }
   }
 
-  private _flush() {
-    this._map = {};
-    this._list = new Set();
-  }
-
-  private _get(_id: string): DocPrivate<T> | null {
-    const doc = this._map[_id];
-
-    return (doc && !doc.$deleted) ? doc : null;
-  }
-
-  private _add(doc: DocPrivate<T>) {
-    this._list.add(doc._id);
-    this._map[doc._id] = doc;
-
-    return doc;
-  }
-
-  private _remove(_id: string) {
-    this._list.delete(_id);
-    delete this._map[_id];
-  }
-
   private _findDoc<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
-    const doc = this._get(_id);
+    const doc = this._store.get(_id);
 
     if (doc && isQueryMatch(doc, query)) {
       if (projection) return project(doc, projection);
@@ -98,13 +75,7 @@ export default class LeafDB<T extends object> {
       modify(doc, update) :
       { ...update, _id: doc._id };
 
-    this._map[doc._id] = newDoc;
-
-    return newDoc;
-  }
-
-  private _deleteDoc(doc: DocPrivate<T>) {
-    this._map[doc._id] = { ...doc, $deleted: true };
+    return this._store.set(newDoc);
   }
 
   generateUid() {
@@ -125,7 +96,7 @@ export default class LeafDB<T extends object> {
     if (!this.file) throw new Error(MEMORY_MODE('load'));
     if (!fs.existsSync(this.file)) return [];
 
-    this._flush();
+    this._store.clear();
 
     return fs.readFileSync(this.file, 'utf-8')
       .split('\n')
@@ -134,7 +105,7 @@ export default class LeafDB<T extends object> {
           const doc = JSON.parse(raw);
           if (!isDocPrivate<T>(doc)) throw new Error(INVALID_DOC(doc));
 
-          this._add(doc);
+          this._store.set(doc);
 
           return false;
         } catch (err) {
@@ -155,15 +126,14 @@ export default class LeafDB<T extends object> {
     if (!this.file) throw new Error(MEMORY_MODE('persist'));
 
     const data: string[] = [];
-    this._list.forEach(_id => {
+    this._store.forEach(doc => {
       try {
-        const doc = this._get(_id);
         if (!doc) throw new Error(INVALID_DOC(doc));
         data.push(JSON.stringify(doc));
       } catch (err) {
         if (strict) throw err;
 
-        this._remove(_id);
+        this._store.delete(doc._id);
       }
     });
 
@@ -172,12 +142,12 @@ export default class LeafDB<T extends object> {
 
   /** Insert single new doc, returns created doc */
   insertOne(newDoc: Doc<T>, options?: { strict?: boolean }) {
-    if (!isDoc(newDoc) || this._get(newDoc._id as string)) {
+    if (!isDoc(newDoc) || (newDoc._id && this._store.get(newDoc._id))) {
       if (options?.strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }
 
-    return Promise.resolve(this._add({
+    return Promise.resolve(this._store.set({
       ...newDoc,
       _id: newDoc._id || this.generateUid()
     }));
@@ -199,7 +169,7 @@ export default class LeafDB<T extends object> {
   async findOneById<P extends KeysOf<Doc<T>>>(_id: string, options?: { projection?: P }) {
     if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
 
-    const doc = this._get(_id);
+    const doc = this._store.get(_id);
     if (doc) {
       if (options?.projection) return Promise.resolve(project(doc, options.projection));
       return Promise.resolve(doc);
@@ -220,7 +190,7 @@ export default class LeafDB<T extends object> {
   async findOne<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    for (let i = 0, ids = Array.from(this._list); i < ids.length; i += 1) {
+    for (let i = 0, ids = this._store.keys(); i < ids.length; i += 1) {
       const doc = this._findDoc(ids[i], query, options?.projection);
       if (doc) return Promise.resolve(doc);
     }
@@ -231,7 +201,7 @@ export default class LeafDB<T extends object> {
   async find<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = Array.from(this._list).reduce<Projection<DocPrivate<T>, P>[]>((acc, _id) => {
+    const docs = this._store.keys().reduce<Projection<DocPrivate<T>, P>[]>((acc, _id) => {
       const doc = this._findDoc(_id, query, options?.projection);
       if (doc) acc.push(doc);
       return acc;
@@ -310,7 +280,7 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(0);
 
-    this._deleteDoc(doc);
+    this._store.delete(doc._id);
     return Promise.resolve(1);
   }
 
@@ -323,20 +293,20 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(0);
 
-    this._deleteDoc(doc);
+    this._store.delete(doc._id);
     return Promise.resolve(1);
   }
 
   async delete(query: Query = {}) {
     return this.find(query)
       .then(docs => docs.reduce<number>((acc, cur) => {
-        this._deleteDoc(cur);
+        this._store.delete(cur._id);
         return acc + 1;
       }, 0));
   }
 
   drop() {
-    this._flush();
+    this._store.clear();
     if (this.file) this.persist();
   }
 }

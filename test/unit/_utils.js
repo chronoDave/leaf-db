@@ -139,7 +139,7 @@ const mockObjectProduction = {
     copyright: 'Creative Commons Attribution: http://creativecommons.org/licenses/by/3.0/',
     comment: [
       'URL: http://freemusicarchive.org/music/Tours/Enthusiast/Tours_-_Enthusiast\r\nComments: http://freemusicarchive.org/\r\nCurator: \r\nCopyright: Creative Commons Attribution: http://creativecommons.org/licenses/by/3.0/'
-    ],
+    ]
   }
 };
 
@@ -159,8 +159,8 @@ const setup = ({
   const db = new LeafDB({ name, root, strict, disableAutoload });
 
   if (memory) {
-    db._map = { ...memory };
-    db._list = new Set(Object.values(memory).map(({ _id }) => _id));
+    db._store._map = new Map();
+    Object.values(memory).map(value => db._store._map.set(value._id, value));
   }
 
   return ({ name, file, db });

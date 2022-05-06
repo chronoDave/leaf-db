@@ -9,8 +9,7 @@ test('[drop] should drop data', async t => {
 
   await db.drop();
 
-  t.strictEqual(Object.keys(db._map).length, 0);
-  t.strictEqual(db._list.size, 0);
+  t.strictEqual(db._store.keys().length, 0);
 
   t.end();
 });
@@ -20,8 +19,7 @@ test('[drop] should drop data and persist if not in memory mode', async t => {
 
   await db.drop();
 
-  t.strictEqual(Object.keys(db._map).length, 0);
-  t.strictEqual(db._list.size, 0);
+  t.strictEqual(db._store.keys().length, 0);
 
   const fileData = fs.readFileSync(file, 'utf-8').split('\n');
 

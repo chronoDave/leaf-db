@@ -7,8 +7,7 @@ test('[integration] should expose LeafDB export', t => {
     const db = new LeafDB();
 
     t.notEqual(db, undefined);
-    t.strictEqual(typeof db._map, 'object');
-    t.true(db._list instanceof Set);
+    t.true(db._store._map instanceof Map);
   } catch (err) {
     t.fail(err.message);
   }
