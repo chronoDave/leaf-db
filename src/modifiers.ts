@@ -1,7 +1,15 @@
 import * as dot from '@chronocide/dot-obj';
 
-import { INVALID_MODIFIER, INVALID_PROJECTION, NOT_ARRAY } from './errors';
-import { KeysOf, Projection, Modifiers } from './types';
+import {
+  INVALID_MODIFIER,
+  INVALID_PROJECTION,
+  NOT_ARRAY
+} from './errors';
+import {
+  KeysOf,
+  Projection,
+  Modifiers
+} from './types';
 import { hasModifier, isTag } from './validation';
 
 const fromDot = (x: string, v: any) => {
@@ -37,6 +45,7 @@ export const project = <T extends object, P extends KeysOf<T>>(
       ...acc,
       ...v
     });
+  // eslint-disable-next-line @typescript-eslint/prefer-reduce-type-parameter
   }, {} as Projection<T, P>);
 };
 

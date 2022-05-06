@@ -31,12 +31,12 @@ import {
 } from './errors';
 
 export default class LeafDB<T extends object> {
+  private _seed: number;
+  private _map: Record<string, DocPrivate<T>> = {};
+  private _list: Set<string> = new Set();
+
   readonly root?: string;
   readonly file?: PathLike;
-
-  private seed: number;
-  private map: Record<string, DocPrivate<T>> = {};
-  private list: Set<string> = new Set();
 
   /**
    * @param options.name - Database name
@@ -50,7 +50,7 @@ export default class LeafDB<T extends object> {
     disableAutoload?: boolean,
     seed?: number
   }) {
-    this.seed = options?.seed || crypto.randomBytes(1).readUInt8();
+    this._seed = options?.seed || crypto.randomBytes(1).readUInt8();
 
     if (options?.root) {
       fs.mkdirSync(options.root, { recursive: true });
@@ -59,31 +59,31 @@ export default class LeafDB<T extends object> {
     }
   }
 
-  private flush() {
-    this.map = {};
-    this.list = new Set();
+  private _flush() {
+    this._map = {};
+    this._list = new Set();
   }
 
-  private get(_id: string): DocPrivate<T> | null {
-    const doc = this.map[_id];
+  private _get(_id: string): DocPrivate<T> | null {
+    const doc = this._map[_id];
 
     return (doc && !doc.$deleted) ? doc : null;
   }
 
-  private add(doc: DocPrivate<T>) {
-    this.list.add(doc._id);
-    this.map[doc._id] = doc;
+  private _add(doc: DocPrivate<T>) {
+    this._list.add(doc._id);
+    this._map[doc._id] = doc;
 
     return doc;
   }
 
-  private remove(_id: string) {
-    this.list.delete(_id);
-    delete this.map[_id];
+  private _remove(_id: string) {
+    this._list.delete(_id);
+    delete this._map[_id];
   }
 
-  private findDoc<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
-    const doc = this.get(_id);
+  private _findDoc<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
+    const doc = this._get(_id);
 
     if (doc && isQueryMatch(doc, query)) {
       if (projection) return project(doc, projection);
@@ -93,26 +93,26 @@ export default class LeafDB<T extends object> {
     return null;
   }
 
-  private updateDoc(doc: DocPrivate<T>, update: Update<T>) {
+  private _updateDoc(doc: DocPrivate<T>, update: Update<T>) {
     const newDoc = isModifier(update) ?
       modify(doc, update) :
       { ...update, _id: doc._id };
 
-    this.map[doc._id] = newDoc;
+    this._map[doc._id] = newDoc;
 
     return newDoc;
   }
 
-  private deleteDoc(doc: DocPrivate<T>) {
-    this.map[doc._id] = { ...doc, $deleted: true };
+  private _deleteDoc(doc: DocPrivate<T>) {
+    this._map[doc._id] = { ...doc, $deleted: true };
   }
 
   generateUid() {
     const timestamp = Date.now().toString(16);
     const random = crypto.randomBytes(5).toString('hex');
 
-    this.seed += 1;
-    return `${timestamp}${random}${this.seed.toString(16)}`;
+    this._seed += 1;
+    return `${timestamp}${random}${this._seed.toString(16)}`;
   }
 
   /**
@@ -125,7 +125,7 @@ export default class LeafDB<T extends object> {
     if (!this.file) throw new Error(MEMORY_MODE('load'));
     if (!fs.existsSync(this.file)) return [];
 
-    this.flush();
+    this._flush();
 
     return fs.readFileSync(this.file, 'utf-8')
       .split('\n')
@@ -134,7 +134,7 @@ export default class LeafDB<T extends object> {
           const doc = JSON.parse(raw);
           if (!isDocPrivate<T>(doc)) throw new Error(INVALID_DOC(doc));
 
-          this.add(doc);
+          this._add(doc);
 
           return false;
         } catch (err) {
@@ -155,15 +155,15 @@ export default class LeafDB<T extends object> {
     if (!this.file) throw new Error(MEMORY_MODE('persist'));
 
     const data: string[] = [];
-    this.list.forEach(_id => {
+    this._list.forEach(_id => {
       try {
-        const doc = this.get(_id);
+        const doc = this._get(_id);
         if (!doc) throw new Error(INVALID_DOC(doc));
         data.push(JSON.stringify(doc));
       } catch (err) {
         if (strict) throw err;
 
-        this.remove(_id);
+        this._remove(_id);
       }
     });
 
@@ -172,12 +172,12 @@ export default class LeafDB<T extends object> {
 
   /** Insert single new doc, returns created doc */
   insertOne(newDoc: Doc<T>, options?: { strict?: boolean }) {
-    if (!isDoc(newDoc) || this.get(newDoc._id as string)) {
+    if (!isDoc(newDoc) || this._get(newDoc._id as string)) {
       if (options?.strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }
 
-    return Promise.resolve(this.add({
+    return Promise.resolve(this._add({
       ...newDoc,
       _id: newDoc._id || this.generateUid()
     }));
@@ -187,7 +187,7 @@ export default class LeafDB<T extends object> {
    * Insert a document or documents
    * @param {boolean} strict - If `true`, rejects on first failed insert
    * */
-  insert(x: OneOrMore<Doc<T>>, options?: { strict?: boolean }) {
+  async insert(x: OneOrMore<Doc<T>>, options?: { strict?: boolean }) {
     return Promise
       .all(toArray(x).map(newDoc => this.insertOne(newDoc, options)))
       .then(docs => docs.reduce<Doc<T>[]>((acc, doc) => {
@@ -196,10 +196,10 @@ export default class LeafDB<T extends object> {
       }, []));
   }
 
-  findOneById<P extends KeysOf<Doc<T>>>(_id: string, options?: { projection?: P }) {
+  async findOneById<P extends KeysOf<Doc<T>>>(_id: string, options?: { projection?: P }) {
     if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
 
-    const doc = this.get(_id);
+    const doc = this._get(_id);
     if (doc) {
       if (options?.projection) return Promise.resolve(project(doc, options.projection));
       return Promise.resolve(doc);
@@ -208,31 +208,31 @@ export default class LeafDB<T extends object> {
     return Promise.resolve(null);
   }
 
-  findById<P extends KeysOf<Doc<T>>>(x: OneOrMore<string>, options?: { projection?: P }) {
+  async findById<P extends KeysOf<Doc<T>>>(x: OneOrMore<string>, options?: { projection?: P }) {
     return Promise
-      .all(toArray(x).map(_id => this.findOneById(_id, options)))
+      .all(toArray(x).map(async _id => this.findOneById(_id, options)))
       .then(docs => docs.reduce<Projection<DocPrivate<T>, P>[]>((acc, doc) => {
         if (doc !== null) acc.push(doc);
         return acc;
       }, []));
   }
 
-  findOne<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
+  async findOne<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    for (let i = 0, ids = Array.from(this.list); i < ids.length; i += 1) {
-      const doc = this.findDoc(ids[i], query, options?.projection);
+    for (let i = 0, ids = Array.from(this._list); i < ids.length; i += 1) {
+      const doc = this._findDoc(ids[i], query, options?.projection);
       if (doc) return Promise.resolve(doc);
     }
 
     return Promise.resolve(null);
   }
 
-  find<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
+  async find<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = Array.from(this.list).reduce<Projection<DocPrivate<T>, P>[]>((acc, _id) => {
-      const doc = this.findDoc(_id, query, options?.projection);
+    const docs = Array.from(this._list).reduce<Projection<DocPrivate<T>, P>[]>((acc, _id) => {
+      const doc = this._findDoc(_id, query, options?.projection);
       if (doc) acc.push(doc);
       return acc;
     }, []);
@@ -251,19 +251,19 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(null);
 
-    const newDoc = this.updateDoc(doc, update);
+    const newDoc = this._updateDoc(doc, update);
     if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
     return Promise.resolve(newDoc);
   }
 
-  updateById<P extends KeysOf<Doc<T>>>(
+  async updateById<P extends KeysOf<Doc<T>>>(
     x: OneOrMore<string>,
     update: Update<T> = {},
     options?: { projection?: P }
   ) {
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
     return Promise
-      .all(toArray(x).map(_id => this.updateOneById(_id, update, options)))
+      .all(toArray(x).map(async _id => this.updateOneById(_id, update, options)))
       .then(docs => docs.reduce<Doc<T>[]>((acc, doc) => {
         if (doc !== null) acc.push(doc);
         return acc;
@@ -281,12 +281,12 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(null);
 
-    const newDoc = this.updateDoc(doc, update);
+    const newDoc = this._updateDoc(doc, update);
     if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
     return Promise.resolve(newDoc);
   }
 
-  update<P extends KeysOf<Doc<T>>>(
+  async update<P extends KeysOf<Doc<T>>>(
     query: Query = {},
     update: Update<T> = {},
     options?: { projection?: P }
@@ -296,7 +296,7 @@ export default class LeafDB<T extends object> {
 
     const newDocs = this.find(query)
       .then(docs => docs.map(doc => {
-        const newDoc = this.updateDoc(doc, update);
+        const newDoc = this._updateDoc(doc, update);
         if (options?.projection) return project(newDoc, options.projection);
         return newDoc;
       }));
@@ -310,12 +310,12 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(0);
 
-    this.deleteDoc(doc);
+    this._deleteDoc(doc);
     return Promise.resolve(1);
   }
 
-  deleteById(x: OneOrMore<string>) {
-    return Promise.all(toArray(x).map(_id => this.deleteOneById(_id)))
+  async deleteById(x: OneOrMore<string>) {
+    return Promise.all(toArray(x).map(async _id => this.deleteOneById(_id)))
       .then(n => n.reduce<number>((acc, cur) => acc + cur, 0));
   }
 
@@ -323,20 +323,20 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(0);
 
-    this.deleteDoc(doc);
+    this._deleteDoc(doc);
     return Promise.resolve(1);
   }
 
   async delete(query: Query = {}) {
     return this.find(query)
       .then(docs => docs.reduce<number>((acc, cur) => {
-        this.deleteDoc(cur);
+        this._deleteDoc(cur);
         return acc + 1;
       }, 0));
   }
 
   drop() {
-    this.flush();
+    this._flush();
     if (this.file) this.persist();
   }
 }

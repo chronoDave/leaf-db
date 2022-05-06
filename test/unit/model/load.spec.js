@@ -43,13 +43,13 @@ test('[load] should parse valid persistent data', t => {
 
   const corrupted = db.load();
 
-  t.true(typeof db.map === 'object');
-  t.strictEqual(Object.keys(db.map).length, data.length);
-  t.strictEqual(db.list.size, data.length);
+  t.true(typeof db._map === 'object');
+  t.strictEqual(Object.keys(db._map).length, data.length);
+  t.strictEqual(db._list.size, data.length);
   t.strictEqual(corrupted.length, 0);
 
   for (let i = 0; i < data.length; i += 1) {
-    t.deepEqual(Object.values(db.map)[i], data[i]);
+    t.deepEqual(Object.values(db._map)[i], data[i]);
   }
 
   fs.unlinkSync(file);
@@ -64,10 +64,10 @@ test('[load] should parse empty file', t => {
 
   const corrupted = db.load();
 
-  t.true(typeof db.map === 'object');
+  t.true(typeof db._map === 'object');
   t.strictEqual(corrupted.length, 0);
-  t.strictEqual(Object.keys(db.map).length, 0);
-  t.strictEqual(db.list.size, 0);
+  t.strictEqual(Object.keys(db._map).length, 0);
+  t.strictEqual(db._list.size, 0);
 
   fs.unlinkSync(file);
 
@@ -82,10 +82,10 @@ test('[load] should ignore corrupted data', t => {
 
   const corrupted = db.load();
 
-  t.true(typeof db.map === 'object');
+  t.true(typeof db._map === 'object');
   t.strictEqual(corrupted.length, invalidPersistent.length);
-  t.strictEqual(Object.keys(db.map).length, 1);
-  t.strictEqual(db.list.size, 1);
+  t.strictEqual(Object.keys(db._map).length, 1);
+  t.strictEqual(db._list.size, 1);
 
   fs.unlinkSync(file);
 

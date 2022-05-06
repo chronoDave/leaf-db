@@ -159,8 +159,8 @@ const setup = ({
   const db = new LeafDB({ name, root, strict, disableAutoload });
 
   if (memory) {
-    db.map = { ...memory };
-    db.list = new Set(Object.values(memory).map(({ _id }) => _id));
+    db._map = { ...memory };
+    db._list = new Set(Object.values(memory).map(({ _id }) => _id));
   }
 
   return ({ name, file, db });

@@ -7,9 +7,34 @@ module.exports = {
   },
   rules: {
     // TypeScript
-    '@typescript-eslint/comma-dangle': 'off',
+    '@typescript-eslint/await-thenable': 'error',
+    '@typescript-eslint/comma-dangle': ['error', 'never'],
     '@typescript-eslint/lines-between-class-members': 'off',
-    '@typescript-eslint/naming-convention': 'off',
+    '@typescript-eslint/prefer-readonly': ['error'],
+    '@typescript-eslint/prefer-reduce-type-parameter': ['error'],
+    '@typescript-eslint/promise-function-async': ['error'],
+    '@typescript-eslint/naming-convention': ['error', {
+      // Enforce camelCase
+      selector: 'variableLike',
+      format: ['camelCase', 'UPPER_CASE'],
+      leadingUnderscore: 'allow'
+    }, {
+      // Enforce underscore on private members
+      selector: 'memberLike',
+      modifiers: ['private'],
+      format: ['camelCase'],
+      leadingUnderscore: 'require'
+    }, {
+      // Enforce sensible boolean prefixes
+      selector: 'variable',
+      types: ['boolean'],
+      format: ['PascalCase'],
+      prefix: ['is', 'has']
+    }, {
+      // Enforce PascalCase on types / interfaces
+      selector: 'typeLike',
+      format: ['PascalCase']
+    }],
     '@typescript-eslint/indent': ['error', 2, {
       SwitchCase: 1,
       ignoredNodes: ['TSTypeParameterInstantiation']
@@ -28,12 +53,11 @@ module.exports = {
     }],
     'arrow-parens': ['error', 'as-needed'],
     'implicit-arrow-linebreak': 'off',
-    'no-nested-ternary': 'off',
     'no-underscore-dangle': 'off',
     'no-await-in-loop': 'off',
     'object-curly-newline': ['warn', {
-      ObjectPattern: { minProperties: 4 },
-      ImportDeclaration: { minProperties: 4 }
+      ObjectPattern: { minProperties: 3 },
+      ImportDeclaration: { minProperties: 3 }
     }],
     // Import
     'import/prefer-default-export': 'off',

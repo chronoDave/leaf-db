@@ -25,7 +25,7 @@ test('[delete] should delete all data on empty query', async t => {
 
     t.strictEqual(docs, 5);
 
-    for (let i = 0, v = Object.values(db.map); i < v.length; i += 1) {
+    for (let i = 0, v = Object.values(db._map); i < v.length; i += 1) {
       t.true(v[i].$deleted);
     }
   } catch (err) {
@@ -56,7 +56,7 @@ test('[delete] should delete docs if matches are found (simple)', async t => {
     const docs = await db.delete({ data: 'test' });
 
     t.strictEqual(docs, 1);
-    t.true(db.map.key_1.$deleted);
+    t.true(db._map.key_1.$deleted);
   } catch (err) {
     t.fail(err);
   }
@@ -71,7 +71,7 @@ test('[delete] should replace docs if matches are found (nested)', async t => {
     const docs = await db.delete({ 'data.label': 'test' });
 
     t.strictEqual(docs, 1);
-    t.true(db.map.key_5.$deleted);
+    t.true(db._map.key_5.$deleted);
   } catch (err) {
     t.fail(err);
   }
@@ -86,7 +86,7 @@ test('[delete] should replace docs if matches are found (complex)', async t => {
     const docs = await db.delete({ $includes: { 'data.values': 1 } });
 
     t.strictEqual(docs, 1);
-    t.true(db.map.key_4.$deleted);
+    t.true(db._map.key_4.$deleted);
   } catch (err) {
     t.fail(err);
   }
