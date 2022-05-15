@@ -24,7 +24,7 @@ test('[find] should return all data on empty query', async t => {
     const docs = await db.find();
 
     t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, Object.keys(mockMemory).length - 1);
+    t.strictEqual(docs.length, Object.keys(mockMemory).length);
     t.true(typeof docs[0] === 'object');
     t.false(docs.some(doc => doc._id === 'key_6'));
   } catch (err) {

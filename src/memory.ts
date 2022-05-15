@@ -7,7 +7,11 @@ export type MemoryOptions = {
 };
 
 export default class Memory<T extends Record<string, unknown>> {
-  private readonly _map: Map<string, Doc<T>> = new Map();
+  private readonly _docs = new Map<string, Doc<T>>();
+  private readonly _index = {
+    _deleted: new Set<string>()
+  };
+
   private _seed: number;
 
   constructor(options: MemoryOptions) {
@@ -23,36 +27,35 @@ export default class Memory<T extends Record<string, unknown>> {
   }
 
   get(id: string) {
-    const doc = this._map.get(id);
-    if (!doc || doc.$deleted) return null;
+    const doc = this._docs.get(id);
+    if (!doc || this._index._deleted.has(doc._id)) return null;
     return doc;
   }
 
-  set(doc: T) {
-    const _id = typeof doc._id === 'string' ?
-      doc._id :
+  set(newDoc: T) {
+    const _id = typeof newDoc._id === 'string' ?
+      newDoc._id :
       this._generateUid();
 
-    this._map.set(_id, { ...doc, _id });
-    return this._map.get(_id) as Doc<T>;
+    const doc = { ...newDoc, _id };
+
+    this._docs.set(_id, doc);
+    return doc;
   }
 
   delete(id: string) {
-    const doc = this.get(id);
-    if (doc) {
-      this._map.set(id, {
-        ...doc,
-        $deleted: true
-      });
-    }
+    if (this._index._deleted.has(id)) return;
+    if (!this.get(id)) return;
+
+    this._index._deleted.add(id);
   }
 
   all() {
-    return Array.from(this._map.values())
-      .filter(doc => !doc.$deleted);
+    return Array.from(this._docs.values());
   }
 
   clear() {
-    this._map.clear();
+    this._index._deleted.clear();
+    this._docs.clear();
   }
 }

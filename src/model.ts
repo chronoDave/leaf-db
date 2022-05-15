@@ -76,6 +76,11 @@ export default class LeafDB<T extends Record<string, unknown>> {
     return newDoc;
   }
 
+  private _delete(_id: string) {
+    this._memory.delete(_id);
+    this._storage?.append(JSON.stringify({ _id, __deleted: true }));
+  }
+
   /**
    * Load persistent data into memory.
    *
@@ -88,9 +93,13 @@ export default class LeafDB<T extends Record<string, unknown>> {
     await this._storage.open(raw => {
       try {
         const doc = JSON.parse(raw);
-        if (!isDocPrivate<T>(doc)) throw new Error(INVALID_DOC(doc));
+        if (!isDocPrivate<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
 
-        this._set(doc);
+        if (doc.__deleted) {
+          this._delete(doc._id);
+        } else {
+          this._set(doc);
+        }
       } catch (err) {
         invalid.push(raw);
         if (strict) throw err;
@@ -241,7 +250,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(0);
 
-    this._memory.delete(doc._id as string);
+    this._delete(doc._id as string);
     return Promise.resolve(1);
   }
 
@@ -254,14 +263,14 @@ export default class LeafDB<T extends Record<string, unknown>> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(0);
 
-    this._memory.delete(doc._id as string);
+    this._delete(doc._id as string);
     return Promise.resolve(1);
   }
 
   async delete(query: Query = {}) {
     return this.find(query)
       .then(docs => docs.reduce<number>((acc, cur) => {
-        this._memory.delete(cur._id as string);
+        this._delete(cur._id as string);
         return acc + 1;
       }, 0));
   }

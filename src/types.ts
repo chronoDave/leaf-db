@@ -5,7 +5,6 @@ export type Projection<T extends Record<string, unknown>, P extends KeysOf<T>> =
 
 export type Doc<T extends Record<string, unknown>> = T & {
   readonly _id: string
-  $deleted?: boolean
 };
 
 export type Operators = {

@@ -52,12 +52,12 @@ test('[load] should parse valid persistent data', async t => {
   const corrupted = await db.load();
   db.close();
 
-  t.true(typeof db._memory._map === 'object');
-  t.strictEqual(db._memory._map.size, data.length);
+  t.true(typeof db._memory._docs === 'object');
+  t.strictEqual(db._memory._docs.size, data.length);
   t.strictEqual(corrupted.length, 0);
 
   for (let i = 0; i < data.length; i += 1) {
-    t.deepEqual(db._memory._map.get(data[i]._id), data[i]);
+    t.deepEqual(db._memory._docs.get(data[i]._id), data[i]);
   }
 
   fs.unlinkSync(file);
@@ -72,9 +72,9 @@ test('[load] should parse empty file', async t => {
   const corrupted = await db.load();
   db.close();
 
-  t.true(typeof db._memory._map === 'object');
+  t.true(typeof db._memory._docs === 'object');
   t.strictEqual(corrupted.length, 0);
-  t.strictEqual(db._memory._map.size, 0);
+  t.strictEqual(db._memory._docs.size, 0);
 
   fs.unlinkSync(file);
 
@@ -90,9 +90,25 @@ test('[load] should ignore corrupted data', async t => {
   const corrupted = await db.load();
   db.close();
 
-  t.true(typeof db._memory._map === 'object');
+  t.true(typeof db._memory._docs === 'object');
   t.strictEqual(corrupted.length, invalidPersistent.length);
-  t.strictEqual(db._memory._map.size, 1);
+  t.strictEqual(db._memory._docs.size, 1);
+
+  fs.unlinkSync(file);
+
+  t.end();
+});
+
+test('[load] should ignore deleted data', async t => {
+  const data = [{ _id: '2' }, { _id: '3', __deleted: true }];
+
+  const { db, file } = setup({ data, root: __dirname });
+
+  const corrupted = await db.load();
+  db.close();
+
+  t.strictEqual(corrupted.length, 0);
+  t.strictEqual(db._memory._docs.size, 1);
 
   fs.unlinkSync(file);
 

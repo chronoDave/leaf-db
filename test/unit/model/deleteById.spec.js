@@ -55,7 +55,7 @@ test('[deleteById] should delete doc if match is found', async t => {
     const deleted = await db.deleteById(id);
 
     t.strictEqual(deleted, 1);
-    t.true(db._memory._map.get(id).$deleted);
+    t.true(db._memory._index._deleted.has(id));
   } catch (err) {
     t.fail(err);
   }

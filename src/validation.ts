@@ -45,22 +45,15 @@ export const isDocPrivate = <T extends Record<string, unknown>>(x: unknown): x i
   typeof x._id === 'string' &&
   x._id.length > 0;
 export const isQuery = (x: unknown): x is Query =>
-  isObject(x) &&
-  dot.every(x, entry => !hasKey(entry, '$deleted'));
+  isObject(x);
 export const isModifier = (x: unknown): x is Partial<Modifiers> =>
   isObject(x) &&
   Object.keys(x).length > 0 &&
-  dot.every(x, entry => (
-    !hasKey(entry, '$deleted') &&
-    !hasKey(entry, '_id')
-  )) &&
+  dot.every(x, entry => !hasKey(entry, '_id')) &&
   Object.entries(x).every(hasTag);
 export const isUpdate = <T>(x: unknown): x is Update<T> =>
   isObject(x) &&
-  dot.every(x, entry => (
-    !hasKey(entry, '_id') &&
-    !hasKey(entry, '$deleted')
-  )) &&
+  dot.every(x, entry => !hasKey(entry, '_id')) &&
   (Object.entries(x).every(hasTag) || !Object.entries(x).some(hasTag)) &&
   Object.entries(x).every(entry => typeof entry[1] === 'object' ? !dot.some(entry[1], hasTag) : true);
 

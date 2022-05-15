@@ -28,7 +28,6 @@ const invalidUpdate = [
   { a: '3', $set: { b: '4' } },
   { $set: { _id: 4 } },
   { $set: { a: { b: { c: [{ _id: 3 }] } } } },
-  { $set: { $deleted: true } },
   { $push: [{ a: { $set: true } }] }
 ];
 
@@ -71,8 +70,7 @@ const mockMemory = {
   key_2: { _id: 'key_2', data: 'not_test', values: [4, 5, 6] },
   key_3: { _id: 'key_3', values: [4, 5, 6] },
   key_4: { _id: 'key_4', data: { values: [1, 2, 3] } },
-  key_5: { _id: 'key_5', data: { label: 'test', values: [{ label: 'test' }] } },
-  key_6: { _id: 'key_6', data: 'test', $deleted: true }
+  key_5: { _id: 'key_5', data: { label: 'test', values: [{ label: 'test' }] } }
 };
 
 const mockObjectSimple = {
@@ -169,8 +167,8 @@ const setup = options => {
   });
 
   if (options?.memory) {
-    db._memory._map = new Map();
-    Object.values(options.memory).map(value => db._memory._map.set(value._id, value));
+    db._memory._docs = new Map();
+    Object.values(options.memory).map(value => db._memory._docs.set(value._id, value));
   }
 
   return ({ temp, name, file, db });

@@ -47,9 +47,10 @@ test('[findById] should return null if no match is found', async t => {
 });
 
 test('[findById] should return null if match is deleted', async t => {
-  const payload = mockMemory.key_6._id;
+  const payload = mockMemory.key_5._id;
 
   const { db } = setup({ memory: mockMemory });
+  db._memory._index._deleted.add(payload);
 
   try {
     const doc = await db.findById(payload);
