@@ -13,6 +13,10 @@ module.exports = {
     '@typescript-eslint/prefer-readonly': ['error'],
     '@typescript-eslint/prefer-reduce-type-parameter': ['error'],
     '@typescript-eslint/promise-function-async': ['error'],
+    '@typescript-eslint/strict-boolean-expressions': ['error', {
+      allowNullableBoolean: true,
+      allowNullableString: true
+    }],
     '@typescript-eslint/naming-convention': ['error', {
       // Enforce camelCase
       selector: 'variableLike',

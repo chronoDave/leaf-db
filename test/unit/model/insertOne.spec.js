@@ -39,8 +39,8 @@ test('[insertOne] should insert single doc', async t => {
     const doc = await db.insertOne(payload);
 
     t.deepEqual(doc, payload, 'should return doc');
-    t.strictEqual(db._store.keys().length, 1, 'should have map data');
-    t.deepEqual(db._store._map.get(payload._id), payload, 'should set map data');
+    t.strictEqual(db._memory.keys().length, 1, 'should have map data');
+    t.deepEqual(db._memory._map.get(payload._id), payload, 'should set map data');
   } catch (err) {
     t.fail(err);
   }

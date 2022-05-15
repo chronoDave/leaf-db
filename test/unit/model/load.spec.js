@@ -4,51 +4,60 @@ const test = require('tape');
 
 const { setup, invalidPersistent } = require('../_utils');
 
-test('[load] should not throw if data contains backslash', t => {
+test('[load] should not throw if data contains backslash', async t => {
   const { db, file } = setup({
     data: [{ invalid: '\\' }],
-    disableAutoload: true,
     root: __dirname
   });
 
-  db.load();
+  try {
+    await db.load();
+    t.pass('does not throw');
+  } catch (err) {
+    t.fail(err);
+  }
 
+  db.close();
   fs.unlinkSync(file);
 
   t.end();
 });
 
-test('[load] show not throw if data contains quotation mark', t => {
+test('[load] show not throw if data contains quotation mark', async t => {
   const { db, file } = setup({
     data: [{ invalid: '"' }],
-    disableAutoload: true,
     root: __dirname
   });
 
-  db.load();
+  try {
+    await db.load();
+    t.pass('does not throw');
+  } catch (err) {
+    t.fail(err);
+  }
 
+  db.close();
   fs.unlinkSync(file);
 
   t.end();
 });
 
-test('[load] should parse valid persistent data', t => {
+test('[load] should parse valid persistent data', async t => {
   const data = [{ _id: '1' }, { _id: '2' }];
-
   const { db, file } = setup({
     data,
-    disableAutoload: true,
     root: __dirname
   });
 
-  const corrupted = db.load();
+  const corrupted = await db.load();
+  db.close();
 
-  t.true(typeof db._store._map === 'object');
-  t.strictEqual(db._store.keys().length, data.length);
+  t.true(typeof db._memory._map === 'object');
+  t.strictEqual(db._memory._map.size, data.length);
   t.strictEqual(corrupted.length, 0);
 
   for (let i = 0; i < data.length; i += 1) {
-    t.deepEqual(db._store._map.get(data[i]._id), data[i]);
+    t.deepEqual(db._memory._map.get(data[i]._id), data[i]);
   }
 
   fs.unlinkSync(file);
@@ -56,56 +65,58 @@ test('[load] should parse valid persistent data', t => {
   t.end();
 });
 
-test('[load] should parse empty file', t => {
+test('[load] should parse empty file', async t => {
   const data = [];
+  const { db, file } = setup({ data, root: __dirname });
 
-  const { db, file } = setup({ data, disableAutoload: true, root: __dirname });
+  const corrupted = await db.load();
+  db.close();
 
-  const corrupted = db.load();
-
-  t.true(typeof db._store._map === 'object');
+  t.true(typeof db._memory._map === 'object');
   t.strictEqual(corrupted.length, 0);
-  t.strictEqual(db._store.keys().length, 0);
+  t.strictEqual(db._memory._map.size, 0);
 
   fs.unlinkSync(file);
 
   t.end();
 });
 
-test('[load] should ignore corrupted data', t => {
+test('[load] should ignore corrupted data', async t => {
   const valid = { _id: '2', valid: true };
   const data = [valid, ...invalidPersistent];
 
-  const { db, file } = setup({ data, disableAutoload: true, root: __dirname });
+  const { db, file } = setup({ data, root: __dirname });
 
-  const corrupted = db.load();
+  const corrupted = await db.load();
+  db.close();
 
-  t.true(typeof db._store._map === 'object');
+  t.true(typeof db._memory._map === 'object');
   t.strictEqual(corrupted.length, invalidPersistent.length);
-  t.strictEqual(db._store.keys().length, 1);
+  t.strictEqual(db._memory._map.size, 1);
 
   fs.unlinkSync(file);
 
   t.end();
 });
 
-test('[load] should throw on corrupt data if strict is enabled', t => {
+test('[load] should throw on corrupt data if strict is enabled', async t => {
   const valid = { _id: '2', valid: true };
   const data = [valid, ...invalidPersistent];
 
-  const { file, db } = setup({
+  const { temp, file, db } = setup({
     data,
-    disableAutoload: true,
     root: __dirname
   });
 
   try {
-    db.load(true);
+    await db.load(true);
     t.fail('expected to throw');
   } catch (err) {
     t.pass('throws');
   }
 
+  db.close();
+  fs.unlinkSync(temp);
   fs.unlinkSync(file);
 
   t.end();

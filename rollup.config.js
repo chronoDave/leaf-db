@@ -8,6 +8,7 @@ export default [{
   external: [
     'fast-deep-equal',
     '@chronocide/dot-obj',
+    'rlr',
     'fs',
     'path',
     'crypto'
@@ -21,7 +22,7 @@ export default [{
   output: [{
     file: outputFile('cjs'),
     exports: 'auto',
-    format: 'cjs',
+    format: 'cjs'
   }, {
     file: outputFile('mjs'),
     exports: 'auto',

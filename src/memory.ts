@@ -1,6 +1,6 @@
 import { DocPrivate } from './types';
 
-export default class Store<T extends object> {
+export default class Memory<T extends object> {
   private readonly _map: Map<string, DocPrivate<T>> = new Map();
 
   set(doc: DocPrivate<T>) {

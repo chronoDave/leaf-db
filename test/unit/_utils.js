@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const LeafDB = require('../build/model').default;
 
@@ -147,23 +148,26 @@ const setup = ({
   data = null,
   root = null,
   strict = false,
-  memory = null,
-  disableAutoload = false
+  memory = null
 } = {}) => {
   let file = null;
+  let temp = null;
   const name = 'test';
 
-  if (root) file = path.resolve(root, `${name}.txt`);
-  if (data && file) fs.writeFileSync(file, data.map(JSON.stringify).join('\n'));
-
-  const db = new LeafDB({ name, root, strict, disableAutoload });
-
-  if (memory) {
-    db._store._map = new Map();
-    Object.values(memory).map(value => db._store._map.set(value._id, value));
+  if (root) {
+    file = path.resolve(root, `${name}.txt`);
+    temp = path.resolve(root, `_${name}.txt`);
+    fs.writeFileSync(file, data ? data.map(JSON.stringify).join(os.EOL) : '');
   }
 
-  return ({ name, file, db });
+  const db = new LeafDB({ name, root, strict });
+
+  if (memory) {
+    db._memory._map = new Map();
+    Object.values(memory).map(value => db._memory._map.set(value._id, value));
+  }
+
+  return ({ temp, name, file, db });
 };
 
 module.exports = {

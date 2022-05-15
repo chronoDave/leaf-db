@@ -1,5 +1,3 @@
-import fs, { PathLike } from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 
 import {
@@ -29,38 +27,41 @@ import {
   INVALID_UPDATE,
   MEMORY_MODE
 } from './errors';
-import Store from './store';
+import Memory from './memory';
+import Storage from './storage';
 
 export default class LeafDB<T extends object> {
+  private readonly _storage?: Storage;
+  private readonly _memory = new Memory<T>();
   private _seed: number;
-  private readonly _store = new Store<T>();
-
-  readonly root?: string;
-  readonly file?: PathLike;
 
   /**
    * @param options.name - Database name
    * @param options.root - Database folder, if emtpy, will run `leaf-db` in memory-mode
    * @param options.seed - Seed used for random `_id` generation, defaults to a random seed
-   * @param options.disableAutoload - If true, disabled loading file data into memory
    */
   constructor(options?: {
     name?: string,
     root?: string,
-    disableAutoload?: boolean,
     seed?: number
   }) {
-    this._seed = options?.seed || crypto.randomBytes(1).readUInt8();
+    this._seed = options?.seed ?? crypto.randomBytes(1).readUInt8();
 
     if (options?.root) {
-      fs.mkdirSync(options.root, { recursive: true });
-      this.file = path.resolve(options.root, `${options?.name || 'leaf-db'}.txt`);
-      if (!options?.disableAutoload) this.load();
+      this._storage = new Storage({
+        root: options.root,
+        name: options.name
+      });
     }
   }
 
+  private _set(doc: DocPrivate<T>) {
+    this._memory.set(doc);
+    this._storage?.append(JSON.stringify(doc));
+  }
+
   private _findDoc<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
-    const doc = this._store.get(_id);
+    const doc = this._memory.get(_id);
 
     if (doc && isQueryMatch(doc, query)) {
       if (projection) return project(doc, projection);
@@ -75,7 +76,7 @@ export default class LeafDB<T extends object> {
       modify(doc, update) :
       { ...update, _id: doc._id };
 
-    return this._store.set(newDoc);
+    return this._memory.set(newDoc);
   }
 
   generateUid() {
@@ -90,64 +91,38 @@ export default class LeafDB<T extends object> {
    * Load persistent data into memory.
    *
    * If `strict` is enabled, this will throw when it tries to load an invalid document.
-   * @returns {string[]} List of corrupted documents
    */
-  load(strict = false) {
-    if (!this.file) throw new Error(MEMORY_MODE('load'));
-    if (!fs.existsSync(this.file)) return [];
+  async load(strict = false) {
+    if (!this._storage) throw new Error(MEMORY_MODE('load'));
 
-    this._store.clear();
-
-    return fs.readFileSync(this.file, 'utf-8')
-      .split('\n')
-      .filter(raw => {
-        try {
-          const doc = JSON.parse(raw);
-          if (!isDocPrivate<T>(doc)) throw new Error(INVALID_DOC(doc));
-
-          this._store.set(doc);
-
-          return false;
-        } catch (err) {
-          if (strict) throw err;
-
-          return raw.length !== 0;
-        }
-      });
-  }
-
-  /**
-   * Persist database memory.
-   *
-   * Any documents marked for deletion will be cleaned up here.
-   * If `strict` is enabled, this will throw when persisting fails
-   * */
-  persist(strict = false) {
-    if (!this.file) throw new Error(MEMORY_MODE('persist'));
-
-    const data: string[] = [];
-    this._store.forEach(doc => {
+    const invalid: string[] = [];
+    await this._storage.open(raw => {
       try {
-        if (!doc) throw new Error(INVALID_DOC(doc));
-        data.push(JSON.stringify(doc));
-      } catch (err) {
-        if (strict) throw err;
+        const doc = JSON.parse(raw);
+        if (!isDocPrivate<T>(doc)) throw new Error(INVALID_DOC(doc));
 
-        this._store.delete(doc._id);
+        this._set(doc);
+      } catch (err) {
+        invalid.push(raw);
+        if (strict) throw err;
       }
     });
 
-    fs.writeFileSync(this.file, data.join('\n'));
+    return invalid;
+  }
+
+  async close() {
+    this._storage?.close();
   }
 
   /** Insert single new doc, returns created doc */
   insertOne(newDoc: Doc<T>, options?: { strict?: boolean }) {
-    if (!isDoc(newDoc) || (newDoc._id && this._store.get(newDoc._id))) {
+    if (!isDoc(newDoc) || (newDoc._id && this._memory.get(newDoc._id))) {
       if (options?.strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }
 
-    return Promise.resolve(this._store.set({
+    return Promise.resolve(this._memory.set({
       ...newDoc,
       _id: newDoc._id || this.generateUid()
     }));
@@ -169,7 +144,7 @@ export default class LeafDB<T extends object> {
   async findOneById<P extends KeysOf<Doc<T>>>(_id: string, options?: { projection?: P }) {
     if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
 
-    const doc = this._store.get(_id);
+    const doc = this._memory.get(_id);
     if (doc) {
       if (options?.projection) return Promise.resolve(project(doc, options.projection));
       return Promise.resolve(doc);
@@ -190,7 +165,7 @@ export default class LeafDB<T extends object> {
   async findOne<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    for (let i = 0, ids = this._store.keys(); i < ids.length; i += 1) {
+    for (let i = 0, ids = this._memory.keys(); i < ids.length; i += 1) {
       const doc = this._findDoc(ids[i], query, options?.projection);
       if (doc) return Promise.resolve(doc);
     }
@@ -201,7 +176,7 @@ export default class LeafDB<T extends object> {
   async find<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = this._store.keys().reduce<Projection<DocPrivate<T>, P>[]>((acc, _id) => {
+    const docs = this._memory.keys().reduce<Projection<DocPrivate<T>, P>[]>((acc, _id) => {
       const doc = this._findDoc(_id, query, options?.projection);
       if (doc) acc.push(doc);
       return acc;
@@ -280,7 +255,7 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(0);
 
-    this._store.delete(doc._id);
+    this._memory.delete(doc._id);
     return Promise.resolve(1);
   }
 
@@ -293,20 +268,20 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(0);
 
-    this._store.delete(doc._id);
+    this._memory.delete(doc._id);
     return Promise.resolve(1);
   }
 
   async delete(query: Query = {}) {
     return this.find(query)
       .then(docs => docs.reduce<number>((acc, cur) => {
-        this._store.delete(cur._id);
+        this._memory.delete(cur._id);
         return acc + 1;
       }, 0));
   }
 
   drop() {
-    this._store.clear();
-    if (this.file) this.persist();
+    this._memory.clear();
+    this._storage?.clear();
   }
 }

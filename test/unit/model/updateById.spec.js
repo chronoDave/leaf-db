@@ -59,8 +59,8 @@ test('[updateById] should replace doc if match is found', async t => {
     const doc = await db.updateById(_id);
 
     t.deepEqual(doc, [{ _id }]);
-    t.deepEqual(db._store.get(_id), { _id });
-    t.deepEqual(db._store._map.get(_id), { _id });
+    t.deepEqual(db._memory.get(_id), { _id });
+    t.deepEqual(db._memory._map.get(_id), { _id });
   } catch (err) {
     t.fail(err);
   }

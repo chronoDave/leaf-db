@@ -66,7 +66,6 @@ db.insert({ species: 'cat', name: 'whiskers' })
 
  - [Database](#database)
    - [Create / load](#create-load)
-   - [Persistence](#persistence)
    - [Corruption](#corruption)
  - [Inserting docs](#inserting-docs)
  - [Finding docs](#finding-docs)
@@ -84,37 +83,29 @@ db.insert({ species: 'cat', name: 'whiskers' })
 
 ### Create / load
 
-`const db = new LeafDB({ name, root, autoload, strict })`
+`const db = new LeafDB({ name, root, strict })`
 
  - `options.name` - Database name
  - `options.root` - Database root path, will create in-memory if not provided
- - `options.disableAutoload` - Should database not be loaded on creation
  - `options.strict` - Should database throw silent errors
 
 ```JS
 // Memory-only database
 const db = new Datastore()
 
-// Persistent database with autoload
-const db = new Datastore({ root: process.cwd() });
-
-// Persistent database with manual load
-const db = new Datastore({ name: 'db', root: process.cwd(), disableAutoload: true })
+// Persistent database
+const db = new Datastore({ name: 'db', root: process.cwd() })
 // Loading is not neccesary, but recommended
 // Not loading means the data from file isn't read,
-// which can cause data loss when `persist()` is called (as it overwrites the file)
 db.load()
+
+// Closing database
+db.close()
 ```
-
-### Persistence
-
-By default, `leaf-db` does not write directly to file after operations. To make sure the data is persisted, call `persist()`, which will write valid data to disk. `persist()` also cleans out invalid data from memory.
-
-If `strict` is enabled, `persist()` will throw an error if corrupted data is found.
 
 ### Corruption
 
-Calling `load()` will return an array of corrupted raw data (string), which can be re-inserted before calling `persist()`.
+Calling `load()` will return an array of corrupted raw data (string).
 
 ## Inserting docs
 
