@@ -17,8 +17,6 @@ export const isObject = (x: unknown): x is object =>
   typeof x === 'object';
 export const isObjectEmtpy = (x: object) =>
   Object.keys(x).length === 0;
-export const isId = (x: string) =>
-  x.length > 0;
 export const isTag = (x: string) =>
   x[0] === '$';
 

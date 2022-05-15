@@ -5,7 +5,6 @@ export const MISSING_FD = 'Cannot call operation if file is not opened';
 
 const INVALID = (param: string) => (value: unknown) => `Invalid ${param}: ${JSON.stringify(value)}`;
 export const INVALID_DOC = INVALID('doc');
-export const INVALID_ID = INVALID('_id');
 export const INVALID_QUERY = INVALID('query');
 export const INVALID_UPDATE = INVALID('update');
 export const INVALID_OPERATOR = INVALID('operator');

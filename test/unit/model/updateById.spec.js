@@ -1,36 +1,12 @@
 const test = require('tape');
 
-const {
-  setup,
-  invalidUpdate,
-  invalidQuery,
-  mockMemory
-} = require('../_utils');
+const { setup, invalidUpdate, mockMemory } = require('../_utils');
 
-test('[updateById] should throw on empty query', async t => {
+test('[updateById] should return empty array on empty', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    await db.updateById();
-    t.fail('expected to throw');
-  } catch (err) {
-    t.pass('throws');
-  }
-
-  t.end();
-});
-
-test('[updateById] should throw on invalid query', async t => {
-  const { db } = setup({ memory: mockMemory });
-
-  for (let i = 0; i < invalidQuery.length; i += 1) {
-    try {
-      await db.updateById(invalidQuery[i]);
-      t.fail(`expected to throw: ${i}, ${invalidQuery[i]}`);
-    } catch (err) {
-      t.pass(`throws: ${i}`);
-    }
-  }
+  const docs = await db.updateById();
+  t.equal(docs.length, 0);
 
   t.end();
 });

@@ -9,7 +9,6 @@ import {
 import {
   isDoc,
   isDocPrivate,
-  isId,
   isModifier,
   isQuery,
   isQueryMatch,
@@ -19,7 +18,6 @@ import { toArray } from './utils';
 import { modify, project } from './modifiers';
 import {
   INVALID_DOC,
-  INVALID_ID,
   INVALID_QUERY,
   INVALID_UPDATE,
   MEMORY_MODE
@@ -137,8 +135,6 @@ export default class LeafDB<T extends Record<string, unknown>> {
   }
 
   async findOneById<P extends KeysOf<Doc<T>>>(_id: string, options?: { projection?: P }) {
-    if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
-
     const doc = this._memory.get(_id);
     if (doc) {
       if (options?.projection) return Promise.resolve(project(doc, options.projection));
@@ -185,7 +181,6 @@ export default class LeafDB<T extends Record<string, unknown>> {
     update: Update<T> = {},
     options?: { projection?: P }
   ) {
-    if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
     const doc = await this.findOneById(_id);
@@ -245,8 +240,6 @@ export default class LeafDB<T extends Record<string, unknown>> {
   }
 
   async deleteOneById(_id: string) {
-    if (!isId(_id)) return Promise.reject(INVALID_ID(_id));
-
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(0);
 

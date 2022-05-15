@@ -1,31 +1,12 @@
 const test = require('tape');
 
-const { setup, invalidQuery, mockMemory } = require('../_utils');
+const { setup, mockMemory } = require('../_utils');
 
-test('[deleteById] should throw on emtpy query', async t => {
+test('[deleteById] should return 0 on emtpy _id', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    await db.deleteById();
-    t.fail('expected to throw');
-  } catch (err) {
-    t.pass('throws');
-  }
-
-  t.end();
-});
-
-test('[deleteById] should throw on invalid query', async t => {
-  const { db } = setup({ memory: mockMemory });
-
-  for (let i = 0; i < invalidQuery.length; i += 1) {
-    try {
-      await db.deleteById(invalidQuery[i]);
-      t.fail(`expected to throw: ${i}, ${invalidQuery[i]}`);
-    } catch (err) {
-      t.pass(`throws: ${i}`);
-    }
-  }
+  const deleted = await db.deleteById();
+  t.strictEqual(deleted, 0);
 
   t.end();
 });
