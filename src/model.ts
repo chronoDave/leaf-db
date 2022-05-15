@@ -1,8 +1,5 @@
-import crypto from 'crypto';
-
 import {
   Doc,
-  DocPrivate,
   KeysOf,
   OneOrMore,
   Query,
@@ -30,10 +27,9 @@ import {
 import Memory from './memory';
 import Storage from './storage';
 
-export default class LeafDB<T extends object> {
+export default class LeafDB<T extends Record<string, unknown>> {
   private readonly _storage?: Storage;
-  private readonly _memory = new Memory<T>();
-  private _seed: number;
+  private readonly _memory: Memory<T>;
 
   /**
    * @param options.name - Database name
@@ -45,7 +41,7 @@ export default class LeafDB<T extends object> {
     root?: string,
     seed?: number
   }) {
-    this._seed = options?.seed ?? crypto.randomBytes(1).readUInt8();
+    this._memory = new Memory({ seed: options?.seed });
 
     if (options?.root) {
       this._storage = new Storage({
@@ -55,7 +51,7 @@ export default class LeafDB<T extends object> {
     }
   }
 
-  private _set(doc: DocPrivate<T>) {
+  private _set(doc: Doc<T>) {
     this._memory.set(doc);
     this._storage?.append(JSON.stringify(doc));
   }
@@ -71,20 +67,12 @@ export default class LeafDB<T extends object> {
     return null;
   }
 
-  private _updateDoc(doc: DocPrivate<T>, update: Update<T>) {
+  private _updateDoc(doc: Doc<T>, update: Update<T>) {
     const newDoc = isModifier(update) ?
       modify(doc, update) :
       { ...update, _id: doc._id };
 
     return this._memory.set(newDoc);
-  }
-
-  generateUid() {
-    const timestamp = Date.now().toString(16);
-    const random = crypto.randomBytes(5).toString('hex');
-
-    this._seed += 1;
-    return `${timestamp}${random}${this._seed.toString(16)}`;
   }
 
   /**
@@ -116,23 +104,20 @@ export default class LeafDB<T extends object> {
   }
 
   /** Insert single new doc, returns created doc */
-  insertOne(newDoc: Doc<T>, options?: { strict?: boolean }) {
-    if (!isDoc(newDoc) || (newDoc._id && this._memory.get(newDoc._id))) {
+  insertOne(newDoc: T, options?: { strict?: boolean }) {
+    if (!isDoc(newDoc) || (typeof newDoc._id === 'string' && this._memory.get(newDoc._id))) {
       if (options?.strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }
 
-    return Promise.resolve(this._memory.set({
-      ...newDoc,
-      _id: newDoc._id || this.generateUid()
-    }));
+    return Promise.resolve(this._memory.set(newDoc));
   }
 
   /**
    * Insert a document or documents
    * @param {boolean} strict - If `true`, rejects on first failed insert
    * */
-  async insert(x: OneOrMore<Doc<T>>, options?: { strict?: boolean }) {
+  async insert(x: OneOrMore<T>, options?: { strict?: boolean }) {
     return Promise
       .all(toArray(x).map(newDoc => this.insertOne(newDoc, options)))
       .then(docs => docs.reduce<Doc<T>[]>((acc, doc) => {
@@ -156,7 +141,7 @@ export default class LeafDB<T extends object> {
   async findById<P extends KeysOf<Doc<T>>>(x: OneOrMore<string>, options?: { projection?: P }) {
     return Promise
       .all(toArray(x).map(async _id => this.findOneById(_id, options)))
-      .then(docs => docs.reduce<Projection<DocPrivate<T>, P>[]>((acc, doc) => {
+      .then(docs => docs.reduce<Projection<Doc<T>, P>[]>((acc, doc) => {
         if (doc !== null) acc.push(doc);
         return acc;
       }, []));
@@ -176,7 +161,7 @@ export default class LeafDB<T extends object> {
   async find<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = this._memory.all().reduce<Projection<DocPrivate<T>, P>[]>((acc, { _id }) => {
+    const docs = this._memory.all().reduce<Projection<Doc<T>, P>[]>((acc, { _id }) => {
       const doc = this._findDoc(_id, query, options?.projection);
       if (doc) acc.push(doc);
       return acc;
@@ -196,7 +181,7 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(null);
 
-    const newDoc = this._updateDoc(doc, update);
+    const newDoc = this._updateDoc(doc as Doc<T>, update);
     if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
     return Promise.resolve(newDoc);
   }
@@ -209,7 +194,7 @@ export default class LeafDB<T extends object> {
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
     return Promise
       .all(toArray(x).map(async _id => this.updateOneById(_id, update, options)))
-      .then(docs => docs.reduce<Doc<T>[]>((acc, doc) => {
+      .then(docs => docs.reduce<T[]>((acc, doc) => {
         if (doc !== null) acc.push(doc);
         return acc;
       }, []));
@@ -226,7 +211,7 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(null);
 
-    const newDoc = this._updateDoc(doc, update);
+    const newDoc = this._updateDoc(doc as Doc<T>, update);
     if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
     return Promise.resolve(newDoc);
   }
@@ -241,7 +226,7 @@ export default class LeafDB<T extends object> {
 
     const newDocs = this.find(query)
       .then(docs => docs.map(doc => {
-        const newDoc = this._updateDoc(doc, update);
+        const newDoc = this._updateDoc(doc as Doc<T>, update);
         if (options?.projection) return project(newDoc, options.projection);
         return newDoc;
       }));
@@ -255,7 +240,7 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(0);
 
-    this._memory.delete(doc._id);
+    this._memory.delete(doc._id as string);
     return Promise.resolve(1);
   }
 
@@ -268,14 +253,14 @@ export default class LeafDB<T extends object> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(0);
 
-    this._memory.delete(doc._id);
+    this._memory.delete(doc._id as string);
     return Promise.resolve(1);
   }
 
   async delete(query: Query = {}) {
     return this.find(query)
       .then(docs => docs.reduce<number>((acc, cur) => {
-        this._memory.delete(cur._id);
+        this._memory.delete(cur._id as string);
         return acc + 1;
       }, 0));
   }

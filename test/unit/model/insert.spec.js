@@ -3,7 +3,7 @@ const test = require('tape');
 const { setup, mockObjectProduction } = require('../_utils');
 
 test('[insert] should accept single doc', async t => {
-  const payload = { _id: 1 };
+  const payload = { _id: '1' };
 
   const { db } = setup();
 

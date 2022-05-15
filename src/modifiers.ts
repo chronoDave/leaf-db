@@ -20,7 +20,7 @@ const fromDot = (x: string, v: any) => {
   return obj;
 };
 
-export const project = <T extends object, P extends KeysOf<T>>(
+export const project = <T extends Record<string, unknown>, P extends KeysOf<T>>(
   doc: T,
   projection?: P
 ) => {
@@ -41,7 +41,10 @@ export const project = <T extends object, P extends KeysOf<T>>(
   }, {} as Projection<T, P>);
 };
 
-export const modify = <T extends object>(doc: T, modifiers: Partial<Modifiers>): T => {
+export const modify = <T extends Record<string, unknown>>(
+  doc: T,
+  modifiers: Partial<Modifiers>
+): T => {
   Object.entries(modifiers).forEach(([modifier, value]) => {
     switch (modifier) {
       case '$push':
