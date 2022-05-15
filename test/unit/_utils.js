@@ -144,27 +144,33 @@ const mockObjectProduction = {
   }
 };
 
-const setup = ({
-  data = null,
-  root = null,
-  strict = false,
-  memory = null
-} = {}) => {
+/**
+ * @param {object} options
+ * @param {object?} options.data
+ * @param {string?} options.root
+ * @param {boolean?} options.strict
+ * @param {object?} options.memory
+ */
+const setup = options => {
   let file = null;
   let temp = null;
   const name = 'test';
 
-  if (root) {
-    file = path.resolve(root, `${name}.txt`);
-    temp = path.resolve(root, `_${name}.txt`);
-    fs.writeFileSync(file, data ? data.map(JSON.stringify).join(os.EOL) : '');
+  if (options?.root) {
+    file = path.resolve(options.root, `${name}.txt`);
+    temp = path.resolve(options.root, `_${name}.txt`);
+    fs.writeFileSync(file, options?.data ? options.data.map(JSON.stringify).join(os.EOL) : '');
   }
 
-  const db = new LeafDB({ name, root, strict });
+  const db = new LeafDB({
+    name,
+    root: options?.root ?? null,
+    strict: options?.strict ?? null
+  });
 
-  if (memory) {
+  if (options?.memory) {
     db._memory._map = new Map();
-    Object.values(memory).map(value => db._memory._map.set(value._id, value));
+    Object.values(options.memory).map(value => db._memory._map.set(value._id, value));
   }
 
   return ({ temp, name, file, db });

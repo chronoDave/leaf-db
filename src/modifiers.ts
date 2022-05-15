@@ -1,15 +1,7 @@
 import * as dot from '@chronocide/dot-obj';
 
-import {
-  INVALID_MODIFIER,
-  INVALID_PROJECTION,
-  NOT_ARRAY
-} from './errors';
-import {
-  KeysOf,
-  Projection,
-  Modifiers
-} from './types';
+import { INVALID_MODIFIER, INVALID_PROJECTION, NOT_ARRAY } from './errors';
+import { KeysOf, Projection, Modifiers } from './types';
 import { hasModifier, isTag } from './validation';
 
 const fromDot = (x: string, v: any) => {

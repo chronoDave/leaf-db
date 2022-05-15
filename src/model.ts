@@ -165,8 +165,8 @@ export default class LeafDB<T extends object> {
   async findOne<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    for (let i = 0, ids = this._memory.keys(); i < ids.length; i += 1) {
-      const doc = this._findDoc(ids[i], query, options?.projection);
+    for (let i = 0, ids = this._memory.all(); i < ids.length; i += 1) {
+      const doc = this._findDoc(ids[i]._id, query, options?.projection);
       if (doc) return Promise.resolve(doc);
     }
 
@@ -176,7 +176,7 @@ export default class LeafDB<T extends object> {
   async find<P extends KeysOf<Doc<T>>>(query: Query = {}, options?: { projection?: P }) {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = this._memory.keys().reduce<Projection<DocPrivate<T>, P>[]>((acc, _id) => {
+    const docs = this._memory.all().reduce<Projection<DocPrivate<T>, P>[]>((acc, { _id }) => {
       const doc = this._findDoc(_id, query, options?.projection);
       if (doc) acc.push(doc);
       return acc;

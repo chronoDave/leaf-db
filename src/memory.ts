@@ -3,19 +3,15 @@ import { DocPrivate } from './types';
 export default class Memory<T extends object> {
   private readonly _map: Map<string, DocPrivate<T>> = new Map();
 
-  set(doc: DocPrivate<T>) {
-    this._map.set(doc._id, doc);
-    return doc;
-  }
-
   get(id: string) {
     const doc = this._map.get(id);
     if (!doc || doc.$deleted) return null;
     return doc;
   }
 
-  clear() {
-    this._map.clear();
+  set(doc: DocPrivate<T>) {
+    this._map.set(doc._id, doc);
+    return doc;
   }
 
   delete(id: string) {
@@ -28,13 +24,12 @@ export default class Memory<T extends object> {
     }
   }
 
-  forEach(...args: Parameters<Map<string, DocPrivate<T>>['forEach']>) {
-    this._map.forEach(...args);
+  all() {
+    return Array.from(this._map.values())
+      .filter(doc => !doc.$deleted);
   }
 
-  keys() {
-    return Array.from(this._map.values())
-      .filter(doc => !doc.$deleted)
-      .map(doc => doc._id);
+  clear() {
+    this._map.clear();
   }
 }

@@ -23,6 +23,11 @@ module.exports = {
       format: ['camelCase', 'UPPER_CASE'],
       leadingUnderscore: 'allow'
     }, {
+      // Ignore imports
+      selector: 'variable',
+      format: ['PascalCase', 'camelCase', 'UPPER_CASE'],
+      modifiers: ['global']
+    }, {
       // Enforce underscore on private members
       selector: 'memberLike',
       modifiers: ['private'],
@@ -60,8 +65,8 @@ module.exports = {
     'no-underscore-dangle': 'off',
     'no-await-in-loop': 'off',
     'object-curly-newline': ['warn', {
-      ObjectPattern: { minProperties: 3 },
-      ImportDeclaration: { minProperties: 3 }
+      ObjectPattern: { minProperties: 4 },
+      ImportDeclaration: { minProperties: 4 }
     }],
     // Import
     'import/prefer-default-export': 'off',
