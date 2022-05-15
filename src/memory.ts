@@ -1,6 +1,5 @@
-import crypto from 'crypto';
-
 import { Doc } from './types';
+import { idGenerator } from './utils';
 
 export type MemoryOptions = {
   seed?: number
@@ -8,29 +7,20 @@ export type MemoryOptions = {
 
 export default class Memory<T extends Record<string, unknown>> {
   private readonly _docs = new Map<string, Doc<T>>();
+  private readonly _generateId: () => string;
 
-  private _seed: number;
-
-  constructor(options: MemoryOptions) {
-    this._seed = options?.seed ?? crypto.randomBytes(1).readUInt8();
+  constructor(options?: MemoryOptions) {
+    this._generateId = idGenerator(options?.seed);
   }
 
-  private _generateUid() {
-    const timestamp = Date.now().toString(16);
-    const random = crypto.randomBytes(5).toString('hex');
-
-    this._seed += 1;
-    return `${timestamp}${random}${this._seed.toString(16)}`;
+  get(_id: string) {
+    return this._docs.get(_id) || null;
   }
 
-  get(id: string) {
-    return this._docs.get(id) || null;
-  }
-
-  set(newDoc: T) {
+  set(newDoc: T | Doc<T>) {
     const _id = typeof newDoc._id === 'string' ?
       newDoc._id :
-      this._generateUid();
+      this._generateId();
 
     const doc = { ...newDoc, _id };
 

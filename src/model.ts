@@ -8,7 +8,7 @@ import {
 } from './types';
 import {
   isDoc,
-  isDocPrivate,
+  isDraft,
   isModifier,
   isQuery,
   isQueryMatch,
@@ -60,7 +60,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     return null;
   }
 
-  private _set(doc: Doc<T>, update?: Update<T>) {
+  private _set(doc: T, update?: Update<T>) {
     let newDoc = doc;
     if (update) {
       newDoc = isModifier(update) ?
@@ -91,7 +91,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     await this._storage.open(raw => {
       try {
         const doc = JSON.parse(raw);
-        if (!isDocPrivate<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
+        if (!isDoc<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
 
         if (doc.__deleted) {
           this._delete(doc._id);
@@ -113,7 +113,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
 
   /** Insert single new doc, returns created doc */
   insertOne(newDoc: T, options?: { strict?: boolean }) {
-    if (!isDoc(newDoc) || (typeof newDoc._id === 'string' && this._memory.get(newDoc._id))) {
+    if (!isDraft(newDoc) || (typeof newDoc._id === 'string' && this._memory.get(newDoc._id))) {
       if (options?.strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }

@@ -32,14 +32,14 @@ export const hasKey = (entry: [string, unknown], key: string) =>
   entry[1] !== undefined;
 
 // Leaf-DB guards
-export const isDoc = <T extends Record<string, unknown>>(x: unknown): x is T =>
+export const isDraft = <T extends Record<string, unknown>>(x: unknown): x is T =>
   isObject(x) &&
   dot.every(x, entry => (
     !hasDot(entry) &&
     !hasTag(entry)
   ));
-export const isDocPrivate = <T extends Record<string, unknown>>(x: unknown): x is Doc<T> =>
-  isDoc(x) &&
+export const isDoc = <T extends Record<string, unknown>>(x: unknown): x is Doc<T> =>
+  isDraft(x) &&
   typeof x._id === 'string' &&
   x._id.length > 0;
 export const isQuery = (x: unknown): x is Query =>
