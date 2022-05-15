@@ -32,65 +32,30 @@ test('[findById] should throw on invalid _id', async t => {
 
 test('[findById] should return null if no match is found', async t => {
   const payload = '3';
-
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const doc = await db.findById(payload);
-
-    t.deepEqual(doc, []);
-  } catch (err) {
-    t.fail(err);
-  }
-
-  t.end();
-});
-
-test('[findById] should return null if match is deleted', async t => {
-  const payload = mockMemory.key_5._id;
-
-  const { db } = setup({ memory: mockMemory });
-  db._memory._index._deleted.add(payload);
-
-  try {
-    const doc = await db.findById(payload);
-
-    t.deepEqual(doc, []);
-  } catch (err) {
-    t.fail(err);
-  }
+  const doc = await db.findById(payload);
+  t.deepEqual(doc, []);
 
   t.end();
 });
 
 test('[findById] should return doc if match is found', async t => {
   const id = mockMemory.key_1._id;
-
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const doc = await db.findById(id);
-
-    t.deepEqual(doc, [mockMemory[id]]);
-  } catch (err) {
-    t.fail(err);
-  }
+  const doc = await db.findById(id);
+  t.deepEqual(doc, [mockMemory[id]]);
 
   t.end();
 });
 
 test('[findById] should accept projection', async t => {
   const id = mockMemory.key_1._id;
-
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const doc = await db.findById(id, { projection: [] });
-
-    t.deepEqual(doc, [{}]);
-  } catch (err) {
-    t.fail(err);
-  }
+  const doc = await db.findById(id, { projection: [] });
+  t.deepEqual(doc, [{}]);
 
   t.end();
 });

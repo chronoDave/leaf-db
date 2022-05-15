@@ -1,8 +1,6 @@
 const test = require('tape');
 
 const { project } = require('../../build/modifiers');
-
-// Utils
 const { mockObjectProduction } = require('../_utils');
 
 test('[project] should throw error if projection is not an array if defined', t => {

@@ -1,8 +1,6 @@
 const test = require('tape');
 
 const { modify } = require('../../build/modifiers');
-
-// Utils
 const { invalidNumberOperator } = require('../_utils');
 
 test('[modify] operator $add should increase field with value', t => {

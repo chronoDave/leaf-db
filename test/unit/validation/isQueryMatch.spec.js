@@ -1,8 +1,6 @@
 const test = require('tape');
 
 const { isQueryMatch } = require('../../build/validation');
-
-// Utils
 const { mockObjectSimple, mockObjectNested, mockObjectComplex } = require('../_utils');
 
 test('[isQueryMatch] should return true on empty query', t => {
@@ -15,7 +13,7 @@ test('[isQueryMatch] should return true on empty query', t => {
 
 test('[isQueryMatch] should return true if query matches', t => {
   // Test all data types
-  t.true(isQueryMatch(mockObjectSimple, { _id: 1 }));
+  t.true(isQueryMatch(mockObjectSimple, { _id: '1' }));
   t.true(isQueryMatch(mockObjectSimple, { b: 'string' }));
   t.true(isQueryMatch(mockObjectSimple, { c: null }));
   t.true(isQueryMatch(mockObjectSimple, { d: false }));
@@ -26,17 +24,16 @@ test('[isQueryMatch] should return true if query matches', t => {
   t.true(isQueryMatch(mockObjectComplex, { 'b.0': 2 }));
   t.true(isQueryMatch(mockObjectComplex, { 'c.0.d': 'String' }));
   // Test multi match
-  t.true(isQueryMatch(mockObjectSimple, { _id: 1, c: null }));
-  t.true(isQueryMatch(mockObjectNested, { _id: 1, 'b.c': 'string' }));
-  t.true(isQueryMatch(mockObjectComplex, { _id: 1, 'c.1.i.j.0': 4 }));
+  t.true(isQueryMatch(mockObjectSimple, { _id: '1', c: null }));
+  t.true(isQueryMatch(mockObjectNested, { _id: '1', 'b.c': 'string' }));
+  t.true(isQueryMatch(mockObjectComplex, { _id: '1', 'c.1.i.j.0': 4 }));
 
   t.end();
 });
 
 test('[isQueryMatch] should return false if query matches', t => {
   // Test all data types
-  t.false(isQueryMatch(mockObjectSimple, { _id: 2 }));
-  t.false(isQueryMatch(mockObjectSimple, { _id: '1' }));
+  t.false(isQueryMatch(mockObjectSimple, { _id: 1 }));
   t.false(isQueryMatch(mockObjectSimple, { b: '' }));
   t.false(isQueryMatch(mockObjectSimple, { c: false }));
   t.false(isQueryMatch(mockObjectSimple, { d: null }));

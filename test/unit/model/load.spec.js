@@ -1,5 +1,4 @@
 const fs = require('fs');
-
 const test = require('tape');
 
 const { setup, invalidPersistent } = require('../_utils');
@@ -55,7 +54,6 @@ test('[load] should parse valid persistent data', async t => {
   t.true(typeof db._memory._docs === 'object');
   t.strictEqual(db._memory._docs.size, data.length);
   t.strictEqual(corrupted.length, 0);
-
   for (let i = 0; i < data.length; i += 1) {
     t.deepEqual(db._memory._docs.get(data[i]._id), data[i]);
   }

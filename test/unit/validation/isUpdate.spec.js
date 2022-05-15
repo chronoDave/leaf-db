@@ -1,8 +1,6 @@
 const test = require('tape');
 
 const { isUpdate } = require('../../build/validation');
-
-// Utils
 const { invalidUpdate } = require('../_utils');
 
 test('[isUpdate] should return false if update is invalid', t => {

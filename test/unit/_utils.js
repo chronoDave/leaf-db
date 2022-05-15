@@ -74,7 +74,7 @@ const mockMemory = {
 };
 
 const mockObjectSimple = {
-  _id: 1,
+  _id: '1',
   a: 1,
   b: 'string',
   c: null,
@@ -82,7 +82,7 @@ const mockObjectSimple = {
 };
 
 const mockObjectNested = {
-  _id: 1,
+  _id: '1',
   a: 1,
   b: {
     c: 'string'
@@ -99,7 +99,7 @@ const mockObjectNested = {
 };
 
 const mockObjectComplex = {
-  _id: 1,
+  _id: '1',
   a: 1,
   b: [2, null, 3],
   c: [

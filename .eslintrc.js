@@ -71,13 +71,11 @@ module.exports = {
     // Import
     'import/prefer-default-export': 'off',
     'import/order': ['error', {
-      'newlines-between': 'always-and-inside-groups',
+      'newlines-between': 'always',
       groups: [
-        'builtin',
-        'external',
+        ['builtin', 'external'],
         'internal',
-        'parent',
-        'sibling',
+        ['parent', 'sibling'],
         'index'
       ]
     }]

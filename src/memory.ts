@@ -8,9 +8,6 @@ export type MemoryOptions = {
 
 export default class Memory<T extends Record<string, unknown>> {
   private readonly _docs = new Map<string, Doc<T>>();
-  private readonly _index = {
-    _deleted: new Set<string>()
-  };
 
   private _seed: number;
 
@@ -27,9 +24,7 @@ export default class Memory<T extends Record<string, unknown>> {
   }
 
   get(id: string) {
-    const doc = this._docs.get(id);
-    if (!doc || this._index._deleted.has(doc._id)) return null;
-    return doc;
+    return this._docs.get(id) || null;
   }
 
   set(newDoc: T) {
@@ -44,10 +39,7 @@ export default class Memory<T extends Record<string, unknown>> {
   }
 
   delete(id: string) {
-    if (this._index._deleted.has(id)) return;
-    if (!this.get(id)) return;
-
-    this._index._deleted.add(id);
+    return this._docs.delete(id);
   }
 
   all() {
@@ -55,7 +47,6 @@ export default class Memory<T extends Record<string, unknown>> {
   }
 
   clear() {
-    this._index._deleted.clear();
     this._docs.clear();
   }
 }

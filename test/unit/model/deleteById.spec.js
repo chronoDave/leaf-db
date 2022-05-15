@@ -32,33 +32,20 @@ test('[deleteById] should throw on invalid query', async t => {
 
 test('[deleteById] should return 0 if no match is found', async t => {
   const _id = '3';
-
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const deleted = await db.deleteById(_id);
-
-    t.strictEqual(deleted, 0);
-  } catch (err) {
-    t.fail(err);
-  }
+  const deleted = await db.deleteById(_id);
+  t.strictEqual(deleted, 0);
 
   t.end();
 });
 
 test('[deleteById] should delete doc if match is found', async t => {
   const id = 'key_1';
-
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const deleted = await db.deleteById(id);
-
-    t.strictEqual(deleted, 1);
-    t.true(db._memory._index._deleted.has(id));
-  } catch (err) {
-    t.fail(err);
-  }
+  const deleted = await db.deleteById(id);
+  t.strictEqual(deleted, 1);
 
   t.end();
 });

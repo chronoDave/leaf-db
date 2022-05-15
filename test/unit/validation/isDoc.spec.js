@@ -1,8 +1,6 @@
 const test = require('tape');
 
 const { isDoc } = require('../../build/validation');
-
-// Utils
 const { mockObjectProduction } = require('../_utils');
 
 test('[isDoc] should return false if doc is invalid', t => {
@@ -25,7 +23,7 @@ test('[isDoc] should return true is doc is valid', t => {
   t.true(isDoc({ date: {} }));
   t.true(isDoc({ a: '反復回転時計' }));
   t.true(isDoc({ a: 'a\\null\\undefined' }));
-  t.true(isDoc({ _id: 1, a: { b: [{ c: [undefined] }] } }));
+  t.true(isDoc({ _id: '1', a: { b: [{ c: [undefined] }] } }));
 
   t.end();
 });

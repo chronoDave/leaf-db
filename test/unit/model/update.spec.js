@@ -40,18 +40,13 @@ test('[update] should throw on invalid update', async t => {
 test('[update] should update all data on empty query', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.update();
+  const docs = await db.update();
+  t.true(Array.isArray(docs));
+  t.strictEqual(docs.length, 5);
 
-    t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 5);
-
-    for (let i = 0; i < docs.length; i += 1) {
-      t.strictEqual(Object.keys(docs[i]).length, 1);
-      t.true(docs[i]._id);
-    }
-  } catch (err) {
-    t.fail(err);
+  for (let i = 0; i < docs.length; i += 1) {
+    t.strictEqual(Object.keys(docs[i]).length, 1);
+    t.true(docs[i]._id);
   }
 
   t.end();
@@ -60,14 +55,9 @@ test('[update] should update all data on empty query', async t => {
 test('[update] should return empty array if no match is found', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.update({ _id: '3' });
-
-    t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 0);
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.update({ _id: '3' });
+  t.true(Array.isArray(docs));
+  t.strictEqual(docs.length, 0);
 
   t.end();
 });
@@ -75,16 +65,11 @@ test('[update] should return empty array if no match is found', async t => {
 test('[update] should replace docs if matches are found (simple)', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.update({ data: 'test' });
-
-    t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 1);
-    t.strictEqual(Object.keys(docs[0]).length, 1);
-    t.true(docs[0]._id);
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.update({ data: 'test' });
+  t.true(Array.isArray(docs));
+  t.strictEqual(docs.length, 1);
+  t.strictEqual(Object.keys(docs[0]).length, 1);
+  t.true(docs[0]._id);
 
   t.end();
 });
@@ -92,16 +77,11 @@ test('[update] should replace docs if matches are found (simple)', async t => {
 test('[update] should replace docs if matches are found (nested)', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.update({ 'data.label': 'test' });
-
-    t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 1);
-    t.strictEqual(Object.keys(docs[0]).length, 1);
-    t.true(docs[0]._id);
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.update({ 'data.label': 'test' });
+  t.true(Array.isArray(docs));
+  t.strictEqual(docs.length, 1);
+  t.strictEqual(Object.keys(docs[0]).length, 1);
+  t.true(docs[0]._id);
 
   t.end();
 });
@@ -109,16 +89,11 @@ test('[update] should replace docs if matches are found (nested)', async t => {
 test('[update] should replace docs if matches are found (complex)', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.update({ $includes: { 'data.values': 1 } });
-
-    t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 1);
-    t.strictEqual(Object.keys(docs[0]).length, 1);
-    t.true(docs[0]._id);
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.update({ $includes: { 'data.values': 1 } });
+  t.true(Array.isArray(docs));
+  t.strictEqual(docs.length, 1);
+  t.strictEqual(Object.keys(docs[0]).length, 1);
+  t.true(docs[0]._id);
 
   t.end();
 });
@@ -126,15 +101,10 @@ test('[update] should replace docs if matches are found (complex)', async t => {
 test('[update] should update doc if match is found', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.update({ data: 'test' }, { $set: { testValue: 1 } });
-
-    t.true(Array.isArray(docs));
-    t.strictEqual(docs.length, 1);
-    t.deepEqual(docs[0], { ...mockMemory.key_1, testValue: 1 });
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.update({ data: 'test' }, { $set: { testValue: 1 } });
+  t.true(Array.isArray(docs));
+  t.strictEqual(docs.length, 1);
+  t.deepEqual(docs[0], { ...mockMemory.key_1, testValue: 1 });
 
   t.end();
 });
@@ -142,14 +112,9 @@ test('[update] should update doc if match is found', async t => {
 test('[update] should accept projection', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.update({ data: 'test' }, { test: 'test' }, { projection: [] });
-
-    for (let i = 0; i < docs.length; i += 1) {
-      t.deepEqual(docs[i], {});
-    }
-  } catch (err) {
-    t.fail(err);
+  const docs = await db.update({ data: 'test' }, { test: 'test' }, { projection: [] });
+  for (let i = 0; i < docs.length; i += 1) {
+    t.deepEqual(docs[i], {});
   }
 
   t.end();

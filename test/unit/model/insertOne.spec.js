@@ -19,7 +19,6 @@ test('[insertOne] should throw on invalid data', async t => {
 
 test('[insertOne] should throw if doc already exists', async t => {
   const payload = { _id: 'key_1' };
-
   const { db } = setup({ memory: mockMemory });
 
   try {
@@ -28,22 +27,19 @@ test('[insertOne] should throw if doc already exists', async t => {
   } catch (err) {
     t.pass('throws');
   }
+
+  t.end();
 });
 
 test('[insertOne] should insert single doc', async t => {
   const payload = { _id: 'key_1' };
-
   const { db } = setup();
 
-  try {
-    const doc = await db.insertOne(payload);
+  const doc = await db.insertOne(payload);
 
-    t.deepEqual(doc, payload, 'should return doc');
-    t.strictEqual(db._memory._docs.size, 1, 'should have map data');
-    t.deepEqual(db._memory._docs.get(payload._id), payload, 'should set map data');
-  } catch (err) {
-    t.fail(err);
-  }
+  t.deepEqual(doc, payload, 'should return doc');
+  t.strictEqual(db._memory._docs.size, 1, 'should have map data');
+  t.deepEqual(db._memory._docs.get(payload._id), payload, 'should set map data');
 
   t.end();
 });
@@ -51,13 +47,8 @@ test('[insertOne] should insert single doc', async t => {
 test('[insertOne] should add doc _id if it does not exist', async t => {
   const { db } = setup();
 
-  try {
-    const doc = await db.insertOne({});
-
-    t.true(doc._id);
-  } catch (err) {
-    t.fail(err);
-  }
+  const doc = await db.insertOne({});
+  t.true(doc._id);
 
   t.end();
 });

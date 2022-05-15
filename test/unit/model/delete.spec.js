@@ -20,14 +20,8 @@ test('[delete] should throw error on invalid query', async t => {
 test('[delete] should delete all data on empty query', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.delete();
-
-    t.strictEqual(docs, 5);
-    t.equal(db._memory._index._deleted.size, docs);
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.delete();
+  t.strictEqual(docs, 5);
 
   t.end();
 });
@@ -35,13 +29,8 @@ test('[delete] should delete all data on empty query', async t => {
 test('[delete] should return 0 if no match is found', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.delete({ _id: '3' });
-
-    t.strictEqual(docs, 0);
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.delete({ _id: '3' });
+  t.strictEqual(docs, 0);
 
   t.end();
 });
@@ -49,14 +38,8 @@ test('[delete] should return 0 if no match is found', async t => {
 test('[delete] should delete docs if matches are found (simple)', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.delete({ data: 'test' });
-
-    t.strictEqual(docs, 1);
-    t.true(db._memory._index._deleted.has('key_1'));
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.delete({ data: 'test' });
+  t.strictEqual(docs, 1);
 
   t.end();
 });
@@ -64,14 +47,8 @@ test('[delete] should delete docs if matches are found (simple)', async t => {
 test('[delete] should replace docs if matches are found (nested)', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.delete({ 'data.label': 'test' });
-
-    t.strictEqual(docs, 1);
-    t.true(db._memory._index._deleted.has('key_5'));
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.delete({ 'data.label': 'test' });
+  t.strictEqual(docs, 1);
 
   t.end();
 });
@@ -79,14 +56,8 @@ test('[delete] should replace docs if matches are found (nested)', async t => {
 test('[delete] should replace docs if matches are found (complex)', async t => {
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const docs = await db.delete({ $includes: { 'data.values': 1 } });
-
-    t.strictEqual(docs, 1);
-    t.true(db._memory._index._deleted.has('key_4'));
-  } catch (err) {
-    t.fail(err);
-  }
+  const docs = await db.delete({ $includes: { 'data.values': 1 } });
+  t.strictEqual(docs, 1);
 
   t.end();
 });

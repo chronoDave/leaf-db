@@ -52,18 +52,13 @@ test('[updateById] should throw on invalid update', async t => {
 
 test('[updateById] should replace doc if match is found', async t => {
   const _id = 'key_1';
-
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const doc = await db.updateById(_id);
+  const doc = await db.updateById(_id);
 
-    t.deepEqual(doc, [{ _id }]);
-    t.deepEqual(db._memory.get(_id), { _id });
-    t.deepEqual(db._memory._docs.get(_id), { _id });
-  } catch (err) {
-    t.fail(err);
-  }
+  t.deepEqual(doc, [{ _id }]);
+  t.deepEqual(db._memory.get(_id), { _id });
+  t.deepEqual(db._memory._docs.get(_id), { _id });
 
   t.end();
 });
@@ -71,32 +66,20 @@ test('[updateById] should replace doc if match is found', async t => {
 test('[updateById] should update doc if match is found', async t => {
   const id = 'key_1';
   const newValue = { testValue: 1 };
-
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const doc = await db.updateById(id, { $set: { newValue } });
-
-    t.deepEqual(doc, [{ ...mockMemory[id], newValue }]);
-  } catch (err) {
-    t.fail(err);
-  }
+  const doc = await db.updateById(id, { $set: { newValue } });
+  t.deepEqual(doc, [{ ...mockMemory[id], newValue }]);
 
   t.end();
 });
 
 test('[updateById] should accept projection', async t => {
   const id = 'key_1';
-
   const { db } = setup({ memory: mockMemory });
 
-  try {
-    const doc = await db.updateById(id, { test: 'test' }, { projection: [] });
-
-    t.deepEqual(doc, [{}]);
-  } catch (err) {
-    t.fail(err);
-  }
+  const doc = await db.updateById(id, { test: 'test' }, { projection: [] });
+  t.deepEqual(doc, [{}]);
 
   t.end();
 });

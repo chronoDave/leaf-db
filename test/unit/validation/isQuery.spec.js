@@ -1,8 +1,6 @@
 const test = require('tape');
 
 const { isQuery } = require('../../build/validation');
-
-// Utils
 const { invalidQuery } = require('../_utils');
 
 test('[isQuery] should return false if query is invalid', t => {

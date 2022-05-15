@@ -27,7 +27,7 @@ export default class Storage {
     this._temp = path.format({ ...file, name: `_${name}` });
   }
 
-  async append(raw: string) {
+  append(raw: string) {
     if (typeof this._fd !== 'number') throw new Error(MISSING_FD);
     fs.appendFileSync(this._fd, raw);
   }
