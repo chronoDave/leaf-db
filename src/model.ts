@@ -51,12 +51,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     }
   }
 
-  private _set(doc: Doc<T>) {
-    this._memory.set(doc);
-    this._storage?.append(JSON.stringify(doc));
-  }
-
-  private _findDoc<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
+  private _get<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
     const doc = this._memory.get(_id);
 
     if (doc && isQueryMatch(doc, query)) {
@@ -67,12 +62,18 @@ export default class LeafDB<T extends Record<string, unknown>> {
     return null;
   }
 
-  private _updateDoc(doc: Doc<T>, update: Update<T>) {
-    const newDoc = isModifier(update) ?
-      modify(doc, update) :
-      { ...update, _id: doc._id };
+  private _set(doc: Doc<T>, update?: Update<T>) {
+    let newDoc = doc;
+    if (update) {
+      newDoc = isModifier(update) ?
+        modify(doc, update) :
+        { ...update, _id: doc._id };
+    }
 
-    return this._memory.set(newDoc);
+    this._memory.set(newDoc);
+    this._storage?.append(JSON.stringify(newDoc));
+
+    return newDoc;
   }
 
   /**
@@ -151,7 +152,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
     for (let i = 0, ids = this._memory.all(); i < ids.length; i += 1) {
-      const doc = this._findDoc(ids[i]._id, query, options?.projection);
+      const doc = this._get(ids[i]._id, query, options?.projection);
       if (doc) return Promise.resolve(doc);
     }
 
@@ -162,7 +163,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
     const docs = this._memory.all().reduce<Projection<Doc<T>, P>[]>((acc, { _id }) => {
-      const doc = this._findDoc(_id, query, options?.projection);
+      const doc = this._get(_id, query, options?.projection);
       if (doc) acc.push(doc);
       return acc;
     }, []);
@@ -181,7 +182,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     const doc = await this.findOneById(_id);
     if (!doc) return Promise.resolve(null);
 
-    const newDoc = this._updateDoc(doc as Doc<T>, update);
+    const newDoc = this._set(doc as Doc<T>, update);
     if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
     return Promise.resolve(newDoc);
   }
@@ -211,7 +212,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(null);
 
-    const newDoc = this._updateDoc(doc as Doc<T>, update);
+    const newDoc = this._set(doc as Doc<T>, update);
     if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
     return Promise.resolve(newDoc);
   }
@@ -226,7 +227,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
 
     const newDocs = this.find(query)
       .then(docs => docs.map(doc => {
-        const newDoc = this._updateDoc(doc as Doc<T>, update);
+        const newDoc = this._set(doc as Doc<T>, update);
         if (options?.projection) return project(newDoc, options.projection);
         return newDoc;
       }));
