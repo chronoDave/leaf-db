@@ -97,7 +97,7 @@ const db = new Datastore()
 const db = new Datastore({ name: 'db', root: process.cwd() })
 // Loading is not neccesary, but recommended
 // Not loading means the data from file isn't read,
-db.load()
+db.open()
 
 // Closing database
 db.close()
@@ -105,7 +105,7 @@ db.close()
 
 ### Corruption
 
-Calling `load()` will return an array of corrupted raw data (string).
+Calling `open()` will return an array of corrupted raw data (string).
 
 ## Inserting docs
 

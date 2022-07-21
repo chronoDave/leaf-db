@@ -3,14 +3,14 @@ const test = require('tape');
 
 const { setup, invalidPersistent } = require('../_utils');
 
-test('[load] should not throw if data contains backslash', async t => {
+test('[open] should not throw if data contains backslash', async t => {
   const { db, file } = setup({
     data: [{ invalid: '\\' }],
     root: __dirname
   });
 
   try {
-    await db.load();
+    await db.open();
     t.pass('does not throw');
   } catch (err) {
     t.fail(err);
@@ -22,14 +22,14 @@ test('[load] should not throw if data contains backslash', async t => {
   t.end();
 });
 
-test('[load] show not throw if data contains quotation mark', async t => {
+test('[open] show not throw if data contains quotation mark', async t => {
   const { db, file } = setup({
     data: [{ invalid: '"' }],
     root: __dirname
   });
 
   try {
-    await db.load();
+    await db.open();
     t.pass('does not throw');
   } catch (err) {
     t.fail(err);
@@ -41,14 +41,14 @@ test('[load] show not throw if data contains quotation mark', async t => {
   t.end();
 });
 
-test('[load] should parse valid persistent data', async t => {
+test('[open] should parse valid persistent data', async t => {
   const data = [{ _id: '1' }, { _id: '2' }];
   const { db, file } = setup({
     data,
     root: __dirname
   });
 
-  const corrupted = await db.load();
+  const corrupted = await db.open();
   db.close();
 
   t.true(typeof db._memory._docs === 'object');
@@ -63,11 +63,11 @@ test('[load] should parse valid persistent data', async t => {
   t.end();
 });
 
-test('[load] should parse empty file', async t => {
+test('[open] should parse empty file', async t => {
   const data = [];
   const { db, file } = setup({ data, root: __dirname });
 
-  const corrupted = await db.load();
+  const corrupted = await db.open();
   db.close();
 
   t.true(typeof db._memory._docs === 'object');
@@ -79,13 +79,13 @@ test('[load] should parse empty file', async t => {
   t.end();
 });
 
-test('[load] should ignore corrupted data', async t => {
+test('[open] should ignore corrupted data', async t => {
   const valid = { _id: '2', valid: true };
   const data = [valid, ...invalidPersistent];
 
   const { db, file } = setup({ data, root: __dirname });
 
-  const corrupted = await db.load();
+  const corrupted = await db.open();
   db.close();
 
   t.true(typeof db._memory._docs === 'object');
@@ -97,12 +97,12 @@ test('[load] should ignore corrupted data', async t => {
   t.end();
 });
 
-test('[load] should ignore deleted data', async t => {
+test('[open] should ignore deleted data', async t => {
   const data = [{ _id: '2' }, { _id: '3', __deleted: true }];
 
   const { db, file } = setup({ data, root: __dirname });
 
-  const corrupted = await db.load();
+  const corrupted = await db.open();
   db.close();
 
   t.strictEqual(corrupted.length, 0);
@@ -113,7 +113,7 @@ test('[load] should ignore deleted data', async t => {
   t.end();
 });
 
-test('[load] should throw on corrupt data if strict is enabled', async t => {
+test('[open] should throw on corrupt data if strict is enabled', async t => {
   const valid = { _id: '2', valid: true };
   const data = [valid, ...invalidPersistent];
 
@@ -123,7 +123,7 @@ test('[load] should throw on corrupt data if strict is enabled', async t => {
   });
 
   try {
-    await db.load(true);
+    await db.open({ strict: true });
     t.fail('expected to throw');
   } catch (err) {
     t.pass('throws');
