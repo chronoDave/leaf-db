@@ -1,12 +1,12 @@
 import { INVALID_DOC, MEMORY_MODE } from './errors';
-import Storage, { StorageOptions } from './storage';
+import Storage from './storage';
 import { Doc } from './types';
 import { idGenerator } from './utils';
 import { isDoc } from './validation';
 
 export type MemoryOptions = {
   seed?: number
-  storage?: StorageOptions
+  storage?: Storage
 };
 
 export default class Memory<T extends Record<string, unknown>> {
@@ -16,10 +16,7 @@ export default class Memory<T extends Record<string, unknown>> {
 
   constructor(options?: MemoryOptions) {
     this._generateId = idGenerator(options?.seed);
-
-    if (options?.storage) {
-      this._storage = new Storage(options.storage);
-    }
+    this._storage = options?.storage;
   }
 
   async open(strict?: boolean) {

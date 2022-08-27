@@ -17,6 +17,7 @@ import { toArray } from './utils';
 import { modify, project } from './modifiers';
 import { INVALID_DOC, INVALID_QUERY, INVALID_UPDATE } from './errors';
 import Memory from './memory';
+import Storage from './storage';
 
 export default class LeafDB<T extends Record<string, unknown>> {
   private readonly _memory: Memory<T>;
@@ -59,12 +60,18 @@ export default class LeafDB<T extends Record<string, unknown>> {
     root?: string,
     seed?: number
   }) {
-    this._memory = new Memory({
-      seed: options?.seed,
-      storage: options?.root ? {
+    let storage: Storage | undefined;
+
+    if (options?.root) {
+      storage = new Storage({
         name: options?.name ?? 'leaf-db',
         root: options.root
-      } : undefined
+      });
+    }
+
+    this._memory = new Memory({
+      seed: options?.seed,
+      storage
     });
   }
 
