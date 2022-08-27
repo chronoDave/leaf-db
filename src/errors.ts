@@ -1,6 +1,6 @@
 export const MEMORY_MODE = (fn: string) => `Tried to call '${fn}()' in memory mode`;
 export const DUPLICATE_DOC = (doc: { _id: string }) => `Duplicate doc: ${doc._id}`;
-export const NOT_ABSOLUTE = (x: string) => `[${x}]: Path is not absolute`;
+export const NOT_ABSOLUTE = 'Path is not absolute';
 export const MISSING_FD = 'Cannot call operation if file is not opened';
 
 const INVALID = (param: string) => (value: unknown) => `Invalid ${param}: ${JSON.stringify(value)}`;

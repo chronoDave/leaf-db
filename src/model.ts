@@ -75,11 +75,11 @@ export default class LeafDB<T extends Record<string, unknown>> {
     });
   }
 
-  async open(options?: { strict?: boolean }) {
+  open(options?: { strict?: boolean }) {
     return this._memory.open(options?.strict);
   }
 
-  async close() {
+  close() {
     return this._memory.close();
   }
 

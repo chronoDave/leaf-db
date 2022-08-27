@@ -19,19 +19,21 @@ export default class Memory<T extends Record<string, unknown>> {
     this._storage = options?.storage;
   }
 
-  async open(strict?: boolean) {
+  open(strict?: boolean) {
     if (!this._storage) throw new Error(MEMORY_MODE('open'));
 
     const invalid: string[] = [];
-    await this._storage.open(raw => {
+    this._storage.open().forEach(raw => {
       try {
-        const doc = JSON.parse(raw);
-        if (!isDoc<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
+        if (raw.length > 0) {
+          const doc = JSON.parse(raw);
+          if (!isDoc<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
 
-        if (doc.__deleted) {
-          this.delete(doc._id);
-        } else {
-          this.set(doc);
+          if (doc.__deleted) {
+            this.delete(doc._id);
+          } else {
+            this.set(doc);
+          }
         }
       } catch (err) {
         if (strict) throw err;
@@ -42,7 +44,7 @@ export default class Memory<T extends Record<string, unknown>> {
     return invalid;
   }
 
-  async close() {
+  close() {
     return this._storage?.close();
   }
 

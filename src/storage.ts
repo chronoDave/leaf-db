@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 
 import { MISSING_FD, NOT_ABSOLUTE } from './errors';
-import { readLines } from './utils';
 
 export type StorageOptions = {
   root: string
@@ -11,20 +10,26 @@ export type StorageOptions = {
 
 export default class Storage {
   private readonly _file: string;
-  private readonly _temp: string;
   private _fd?: number;
 
+  private _readFile() {
+    const data = fs.readFileSync(this._file, { encoding: 'utf-8' })
+      .split('\n');
+
+    fs.rmSync(this._file);
+    this._fd = fs.openSync(this._file, 'a');
+
+    return data;
+  }
+
   constructor(options: StorageOptions) {
-    if (!path.isAbsolute(options.root)) throw new Error(NOT_ABSOLUTE('root'));
+    if (!path.isAbsolute(options.root)) throw new Error(NOT_ABSOLUTE);
 
-    const name = options.name || 'leaf-db';
-    const file = {
+    this._file = path.format({
       dir: options.root,
+      name: options.name || 'leaf-db',
       ext: '.txt'
-    };
-
-    this._file = path.format({ ...file, name });
-    this._temp = path.format({ ...file, name: `_${name}` });
+    });
   }
 
   append(raw: string) {
@@ -32,16 +37,12 @@ export default class Storage {
     fs.appendFileSync(this._fd, raw);
   }
 
-  async open(cb: (raw: string) => void) {
-    if (fs.existsSync(this._file)) {
-      fs.renameSync(this._file, this._temp);
-      this._fd = fs.openSync(this._file, 'a');
-      await readLines(this._temp, cb);
-      fs.unlinkSync(this._temp);
-    } else {
-      fs.mkdirSync(path.parse(this._file).dir, { recursive: true });
-      this._fd = fs.openSync(this._file, 'a');
-    }
+  open(): string[] {
+    if (fs.existsSync(this._file)) return this._readFile();
+
+    fs.mkdirSync(path.parse(this._file).dir, { recursive: true });
+    this._fd = fs.openSync(this._file, 'a');
+    return [];
   }
 
   close() {

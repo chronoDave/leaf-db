@@ -12,10 +12,10 @@ test('[drop] should drop data', async t => {
   t.end();
 });
 
-test('[drop] should drop data and persist if not in memory mode', async t => {
+test('[drop] should drop data and persist if not in memory mode', t => {
   const { db, file } = setup({ memory: mockMemory, root: __dirname });
 
-  await db.open();
+  db.open();
   db.drop();
   db.close();
   t.strictEqual(db._memory._docs.size, 0);

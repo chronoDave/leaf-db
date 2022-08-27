@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 
 const LeafDB = require('../build/model').default;
 
@@ -151,13 +150,11 @@ const mockObjectProduction = {
  */
 const setup = options => {
   let file = null;
-  let temp = null;
   const name = 'test';
 
   if (options?.root) {
     file = path.resolve(options.root, `${name}.txt`);
-    temp = path.resolve(options.root, `_${name}.txt`);
-    fs.writeFileSync(file, options?.data ? options.data.map(JSON.stringify).join(os.EOL) : '');
+    fs.writeFileSync(file, options?.data ? options.data.map(JSON.stringify).join('\n') : '');
   }
 
   const db = new LeafDB({
@@ -171,7 +168,7 @@ const setup = options => {
     Object.values(options.memory).map(value => db._memory._docs.set(value._id, value));
   }
 
-  return ({ temp, name, file, db });
+  return ({ name, file, db });
 };
 
 module.exports = {
