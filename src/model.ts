@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 import {
   Doc,
   KeysOf,
@@ -8,6 +10,7 @@ import {
 } from './types';
 import {
   isDoc,
+  isDraft,
   isModifier,
   isQuery,
   isQueryMatch,
@@ -15,7 +18,6 @@ import {
 } from './validation';
 import { modify, project } from './modifiers';
 import {
-  DUPLICATE_DOC,
   INVALID_DOC,
   INVALID_QUERY,
   INVALID_UPDATE,
@@ -23,7 +25,6 @@ import {
 } from './errors';
 import Memory from './memory';
 import Storage from './storage';
-import { createDoc } from './utils';
 
 export type LeafDBOptions = {
   storage?: string | [root: string, name?: string]
@@ -31,6 +32,13 @@ export type LeafDBOptions = {
 };
 
 export default class LeafDB<T extends Draft> {
+  static generateId() {
+    return [
+      Date.now().toString(16),
+      crypto.randomBytes(4).toString('hex')
+    ].join('');
+  }
+
   private readonly _memory: Memory<T>;
   private readonly _storage?: Storage;
   private readonly _strict: boolean;
@@ -54,7 +62,10 @@ export default class LeafDB<T extends Draft> {
         { ...update, _id: doc._id };
     }
 
-    this._memory.set(createDoc(doc));
+    this._memory.set({
+      ...newDoc,
+      _id: newDoc._id ?? LeafDB.generateId()
+    });
     this._storage?.append(JSON.stringify(doc));
 
     return newDoc;
@@ -110,13 +121,16 @@ export default class LeafDB<T extends Draft> {
     return this._storage?.close();
   }
 
-  async insertOne(draft: T) {
-    if (draft._id && this._memory.get(draft._id)) {
-      if (this._strict) return Promise.reject(DUPLICATE_DOC(draft._id));
+  async insertOne(newDoc: T) {
+    if (!isDraft(newDoc) || (typeof newDoc._id === 'string' && this._memory.get(newDoc._id))) {
+      if (this._strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }
 
-    return Promise.resolve(this._memory.set(createDoc(draft)));
+    return Promise.resolve(this._memory.set({
+      ...newDoc,
+      _id: typeof newDoc._id === 'string' ? newDoc._id : LeafDB.generateId()
+    }));
   }
 
   async insert(newDocs: T[]) {

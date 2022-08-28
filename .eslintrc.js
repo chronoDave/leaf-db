@@ -54,10 +54,6 @@ module.exports = {
     'no-confusing-arrow': 'off',
     'comma-dangle': 'off',
     'arrow-body-style': 'warn',
-    'no-param-reassign': ['error', {
-      props: true,
-      ignorePropertyModificationsFor: ['_draft']
-    }],
     'max-len': ['error', {
       code: 100,
       ignoreStrings: true,
