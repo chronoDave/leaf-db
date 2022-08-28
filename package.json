@@ -38,6 +38,7 @@
     "test": "npm run test:unit && npm run test:integration",
     "bench": "tsc && node test/bench.js",
     "prepublishOnly": "npm run build",
+    "test:storage": "tsc && tape test/unit/storage/*.spec.js",
     "test:memory": "tsc && tape test/unit/memory/*.spec.js",
     "test:model": "tsc && tape test/unit/model/*.spec.js",
     "test:modifiers": "tsc && tape test/unit/modifiers/*.spec.js",

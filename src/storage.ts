@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import { MISSING_FD, NOT_ABSOLUTE } from './errors';
+import { MISSING_FD } from './errors';
 
 export type StorageOptions = {
   root: string
@@ -12,19 +12,7 @@ export default class Storage {
   private readonly _file: string;
   private _fd?: number;
 
-  private _readFile() {
-    const data = fs.readFileSync(this._file, { encoding: 'utf-8' })
-      .split('\n');
-
-    fs.rmSync(this._file);
-    this._fd = fs.openSync(this._file, 'a');
-
-    return data;
-  }
-
   constructor(options: StorageOptions) {
-    if (!path.isAbsolute(options.root)) throw new Error(NOT_ABSOLUTE);
-
     this._file = path.format({
       dir: options.root,
       name: options.name || 'leaf-db',
@@ -32,25 +20,32 @@ export default class Storage {
     });
   }
 
-  append(raw: string) {
-    if (typeof this._fd !== 'number') throw new Error(MISSING_FD);
-    fs.appendFileSync(this._fd, raw);
-  }
-
   open(): string[] {
-    if (fs.existsSync(this._file)) return this._readFile();
+    let data: string[] = [];
 
-    fs.mkdirSync(path.parse(this._file).dir, { recursive: true });
+    if (fs.existsSync(this._file)) {
+      data = fs.readFileSync(this._file, { encoding: 'utf-8' })
+        .split('\n');
+    } else {
+      fs.mkdirSync(path.parse(this._file).dir, { recursive: true });
+    }
+
     this._fd = fs.openSync(this._file, 'a');
-    return [];
+    return data;
   }
 
   close() {
     if (typeof this._fd !== 'number') throw new Error(MISSING_FD);
     fs.closeSync(this._fd);
+    delete this._fd;
   }
 
-  clear() {
+  append(raw: string) {
+    if (typeof this._fd !== 'number') throw new Error(MISSING_FD);
+    fs.appendFileSync(this._fd, raw);
+  }
+
+  flush() {
     if (typeof this._fd !== 'number') throw new Error(MISSING_FD);
     fs.closeSync(this._fd);
     fs.rmSync(this._file);

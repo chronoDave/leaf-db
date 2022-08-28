@@ -1,21 +1,18 @@
 import { INVALID_DOC, MEMORY_MODE } from './errors';
 import Storage from './storage';
 import { Doc } from './types';
-import { idGenerator } from './utils';
 import { isDoc } from './validation';
 
 export type MemoryOptions = {
-  seed?: number
   storage?: Storage
 };
 
 export default class Memory<T extends Record<string, unknown>> {
-  private readonly _docs = new Map<string, Doc<T>>();
-  private readonly _generateId: () => string;
+  private readonly _docs: Map<string, Doc<T>>;
   private readonly _storage?: Storage;
 
   constructor(options?: MemoryOptions) {
-    this._generateId = idGenerator(options?.seed);
+    this._docs = new Map();
     this._storage = options?.storage;
   }
 
@@ -52,15 +49,9 @@ export default class Memory<T extends Record<string, unknown>> {
     return this._docs.get(_id) || null;
   }
 
-  set(newDoc: T | Doc<T>) {
-    const _id = typeof newDoc._id === 'string' ?
-      newDoc._id :
-      this._generateId();
-
-    const doc = { ...newDoc, _id };
-
-    this._docs.set(_id, doc);
-    this._storage?.append(JSON.stringify(newDoc));
+  set(doc: Doc<T>) {
+    this._docs.set(doc._id, doc);
+    this._storage?.append(JSON.stringify(doc));
 
     return doc;
   }
@@ -74,8 +65,8 @@ export default class Memory<T extends Record<string, unknown>> {
     return Array.from(this._docs.values());
   }
 
-  clear() {
+  flush() {
     this._docs.clear();
-    this._storage?.clear();
+    this._storage?.flush();
   }
 }

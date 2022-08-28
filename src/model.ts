@@ -13,7 +13,7 @@ import {
   isQueryMatch,
   isUpdate
 } from './validation';
-import { toArray } from './utils';
+import { idGenerator, toArray } from './utils';
 import { modify, project } from './modifiers';
 import { INVALID_DOC, INVALID_QUERY, INVALID_UPDATE } from './errors';
 import Memory from './memory';
@@ -21,6 +21,7 @@ import Storage from './storage';
 
 export default class LeafDB<T extends Record<string, unknown>> {
   private readonly _memory: Memory<T>;
+  private readonly _generator: () => string;
 
   private _get<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
     const doc = this._memory.get(_id);
@@ -33,7 +34,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
     return null;
   }
 
-  private _set(doc: T, update?: Update<T>) {
+  private _set(doc: T | Doc<T>, update?: Update<T>) {
     let newDoc = doc;
     if (update) {
       newDoc = isModifier(update) ?
@@ -41,7 +42,10 @@ export default class LeafDB<T extends Record<string, unknown>> {
         { ...update, _id: doc._id };
     }
 
-    this._memory.set(newDoc);
+    this._memory.set({
+      ...newDoc,
+      _id: typeof newDoc._id === 'string' ? newDoc._id : this._generator()
+    });
 
     return newDoc;
   }
@@ -60,6 +64,8 @@ export default class LeafDB<T extends Record<string, unknown>> {
     root?: string,
     seed?: number
   }) {
+    this._generator = idGenerator(options?.seed);
+
     let storage: Storage | undefined;
 
     if (options?.root) {
@@ -69,10 +75,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
       });
     }
 
-    this._memory = new Memory({
-      seed: options?.seed,
-      storage
-    });
+    this._memory = new Memory({ storage });
   }
 
   open(options?: { strict?: boolean }) {
@@ -90,7 +93,10 @@ export default class LeafDB<T extends Record<string, unknown>> {
       return null;
     }
 
-    return Promise.resolve(this._memory.set(newDoc));
+    return Promise.resolve(this._memory.set({
+      ...newDoc,
+      _id: typeof newDoc._id === 'string' ? newDoc._id : this._generator()
+    }));
   }
 
   /**
@@ -241,6 +247,6 @@ export default class LeafDB<T extends Record<string, unknown>> {
   }
 
   drop() {
-    this._memory.clear();
+    this._memory.flush();
   }
 }
