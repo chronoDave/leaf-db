@@ -3,25 +3,25 @@ const test = require('tape');
 
 const { setup, mockMemory } = require('../_utils');
 
-test('[drop] should drop data', async t => {
+test('[model.drop] drops data', async t => {
   const { db } = setup({ memory: mockMemory });
 
   db.drop();
-  t.strictEqual(db._memory._docs.size, 0);
+
+  t.strictEqual(db._memory._docs.size, 0, 'clears memory');
 
   t.end();
 });
 
-test('[drop] should drop data and persist if not in memory mode', t => {
+test('[model.drop] drops data and persists', t => {
   const { db, file } = setup({ memory: mockMemory, root: __dirname });
 
   db.open();
   db.drop();
   db.close();
-  t.strictEqual(db._memory._docs.size, 0);
 
-  const fileData = fs.readFileSync(file, 'utf-8').split('\n');
-  t.strictEqual(fileData.length, 1);
+  t.strictEqual(db._memory._docs.size, 0, 'clears memory');
+  t.strictEqual(fs.readFileSync(file, 'utf-8'), '', 'clears file');
 
   t.end();
 });

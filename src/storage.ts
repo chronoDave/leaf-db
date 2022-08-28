@@ -35,18 +35,18 @@ export default class Storage {
   }
 
   close() {
-    if (typeof this._fd !== 'number') throw new Error(MISSING_FD);
+    if (typeof this._fd !== 'number') throw new Error(MISSING_FD('close'));
     fs.closeSync(this._fd);
     delete this._fd;
   }
 
   append(raw: string) {
-    if (typeof this._fd !== 'number') throw new Error(MISSING_FD);
+    if (typeof this._fd !== 'number') throw new Error(MISSING_FD('append'));
     fs.appendFileSync(this._fd, raw);
   }
 
   flush() {
-    if (typeof this._fd !== 'number') throw new Error(MISSING_FD);
+    if (typeof this._fd !== 'number') throw new Error(MISSING_FD('flush'));
     fs.closeSync(this._fd);
     fs.rmSync(this._file);
     this._fd = fs.openSync(this._file, 'a');

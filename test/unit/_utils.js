@@ -65,9 +65,9 @@ const invalidNumberOperator = [
 ];
 
 const mockMemory = {
-  key_1: { _id: 'key_1', data: 'test', values: [1, 2, 3] },
+  key_1: { _id: 'key_1', data: 'test', values: [1, 2, 3], shared: true },
   key_2: { _id: 'key_2', data: 'not_test', values: [4, 5, 6] },
-  key_3: { _id: 'key_3', values: [4, 5, 6] },
+  key_3: { _id: 'key_3', values: [4, 5, 6], shared: true },
   key_4: { _id: 'key_4', data: { values: [1, 2, 3] } },
   key_5: { _id: 'key_5', data: { label: 'test', values: [{ label: 'test' }] } }
 };

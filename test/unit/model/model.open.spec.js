@@ -3,7 +3,7 @@ const test = require('tape');
 
 const { setup, invalidPersistent } = require('../_utils');
 
-test('[open] should not throw if data contains backslash', t => {
+test('[model.open] should not throw if data contains backslash', t => {
   const { db, file } = setup({
     data: [{ invalid: '\\' }],
     root: __dirname
@@ -22,7 +22,7 @@ test('[open] should not throw if data contains backslash', t => {
   t.end();
 });
 
-test('[open] show not throw if data contains quotation mark', t => {
+test('[model.open] should not throw if data contains quotation mark', t => {
   const { db, file } = setup({
     data: [{ invalid: '"' }],
     root: __dirname
@@ -41,7 +41,7 @@ test('[open] show not throw if data contains quotation mark', t => {
   t.end();
 });
 
-test('[open] should parse valid persistent data', t => {
+test('[model.open] parses valid persistent data', t => {
   const data = [{ _id: '1' }, { _id: '2' }];
   const { db, file } = setup({
     data,
@@ -51,11 +51,10 @@ test('[open] should parse valid persistent data', t => {
   const corrupted = db.open();
   db.close();
 
-  t.true(typeof db._memory._docs === 'object');
-  t.strictEqual(db._memory._docs.size, data.length);
-  t.strictEqual(corrupted.length, 0);
+  t.strictEqual(db._memory._docs.size, data.length, 'inserts docs');
+  t.strictEqual(corrupted.length, 0, 'validates');
   for (let i = 0; i < data.length; i += 1) {
-    t.deepEqual(db._memory._docs.get(data[i]._id), data[i]);
+    t.deepEqual(db._memory._docs.get(data[i]._id), data[i], 'parses docs');
   }
 
   fs.unlinkSync(file);
@@ -63,23 +62,22 @@ test('[open] should parse valid persistent data', t => {
   t.end();
 });
 
-test('[open] should parse empty file', t => {
+test('[model.open] parses empty file', t => {
   const data = [];
   const { db, file } = setup({ data, root: __dirname });
 
   const corrupted = db.open();
   db.close();
 
-  t.true(typeof db._memory._docs === 'object');
-  t.strictEqual(corrupted.length, 0);
-  t.strictEqual(db._memory._docs.size, 0);
+  t.strictEqual(corrupted.length, 0, 'validates');
+  t.strictEqual(db._memory._docs.size, 0, 'does not parse empty file');
 
   fs.unlinkSync(file);
 
   t.end();
 });
 
-test('[open] should ignore corrupted data', t => {
+test('[model.open] ignores corrupted data', t => {
   const valid = { _id: '2', valid: true };
   const data = [valid, ...invalidPersistent];
 
@@ -88,16 +86,15 @@ test('[open] should ignore corrupted data', t => {
   const corrupted = db.open();
   db.close();
 
-  t.true(typeof db._memory._docs === 'object');
-  t.strictEqual(corrupted.length, invalidPersistent.length);
-  t.strictEqual(db._memory._docs.size, 1);
+  t.strictEqual(corrupted.length, invalidPersistent.length, 'validates');
+  t.strictEqual(db._memory._docs.size, 1, 'ignores invalid data');
 
   fs.unlinkSync(file);
 
   t.end();
 });
 
-test('[open] should ignore deleted data', t => {
+test('[model.open] ignores deleted data', t => {
   const data = [{ _id: '2' }, { _id: '3', __deleted: true }];
 
   const { db, file } = setup({ data, root: __dirname });
@@ -105,15 +102,28 @@ test('[open] should ignore deleted data', t => {
   const corrupted = db.open();
   db.close();
 
-  t.strictEqual(corrupted.length, 0);
-  t.strictEqual(db._memory._docs.size, 1);
+  t.strictEqual(corrupted.length, 0, 'validates');
+  t.strictEqual(db._memory._docs.size, 1, 'ignores deleted data');
 
   fs.unlinkSync(file);
 
   t.end();
 });
 
-test('[open] should throw on corrupt data if strict is enabled', t => {
+test('[model.open] throws in memory mode', t => {
+  const { db } = setup();
+
+  try {
+    db.open();
+    t.fail('expected to throw');
+  } catch (err) {
+    t.pass('throws');
+  }
+
+  t.end();
+});
+
+test('[model.open] throws on corrupt data if strict is enabled', t => {
   const valid = { _id: '2', valid: true };
   const data = [valid, ...invalidPersistent];
 

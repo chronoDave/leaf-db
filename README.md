@@ -41,8 +41,8 @@ import LeafDB from 'leaf-db'; // ES6
 
 const db = new LeafDB();
 
-db.insert({ species: 'cat', name: 'whiskers' })
-  .then(inserted => console.log(`added ${inserted[0].name} to the database!`))
+db.insertOne({ species: 'cat', name: 'whiskers' })
+  .then(inserted => console.log(`added ${inserted.name} to the database!`))
   .catch(console.error)
 ```
 
@@ -57,8 +57,8 @@ interface Document extends Doc {
 }
 
 const db = new LeafDB<Document>();
-db.insert({ species: 'cat', name: 'whiskers' })
-  .then(inserted => console.log(`added ${inserted[0].name} to the database!`))
+db.insertOne({ species: 'cat', name: 'whiskers' })
+  .then(inserted => console.log(`added ${inserted.name} to the database!`))
   .catch(console.error)
 ```
 
@@ -91,11 +91,11 @@ db.insert({ species: 'cat', name: 'whiskers' })
 
 ```JS
 // Memory-only database
-const db = new Datastore()
+const db = new LeafDB()
 
 // Persistent database
-const db = new Datastore({ storage: process.cwd() })
-const db = new Datastore({ storage: [process.cwd(), 'db'] })
+const db = new LeafDB({ storage: process.cwd() })
+const db = new LeafDB({ storage: [process.cwd(), 'db'] })
 
 // Loading is not neccesary, but recommended
 // Not loading means the data from file isn't read,
@@ -111,7 +111,8 @@ Calling `open()` will return an array of corrupted raw data (string).
 
 ## Inserting docs
 
-`await db.insert(OneOrMore<NewDoc>) => Promise<Doc[]>`
+`await db.insertOne(NewDoc) => Promise<Doc>`
+`await db.insert(NewDoc[]) => Promise<Doc[]>`
 
 Inserts doc(s) into the database. `_id` is automatically generated if the _id does not exist.
 
@@ -134,7 +135,7 @@ const newDoc = {
 }
 
 try {
-  const doc = await db.insert(newDoc) // [newDoc]
+  const doc = await db.insertOne(newDoc) // newDoc
 } catch (err) {
   console.error(err)
 }
@@ -144,9 +145,8 @@ try {
 
 ### Basic query
 
-`await db.find(Query | string[], Projection) => Promise<Doc[]>`
-
-`await db.findById(string, Projection) => Promise<Doc>`
+`await db.findOne(string | Query, Projection) => Promise<Doc>`
+`await db.find(string[] | Query, Projection) => Promise<Doc[]>`
 
 Find doc(s) matching query. Operators and dot notation are supported and can be mixed together.
 
@@ -312,9 +312,8 @@ The `byId` queries accept a single `_id` string, or an array of `_id` strings.
 
 ## Updating docs
 
-`await db.update(Query | string[], Update | NewDoc) => Promise<Doc[]>`
-
-`await db.updateById(string, Update) => Promise<Doc>`
+`await db.updateOne(string | Query, Update | NewDoc) => Promise<Doc>`
+`await db.update(string[] | Query, Update | NewDoc) => Promise<Doc[]>`
 
 Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`. Returns the updated docs.
 
@@ -391,9 +390,8 @@ await db.update({}, { $set: { value: 3 } })
 
 ## Deleting docs
 
-`await db.delete(Query | string[]) => Promise<number>`
-
-`await db.deleteById(string) => Promise<number>`
+`await db.deleteOne(string | Query) => Promise<boolean>`
+`await db.delete(string[] | Query) => Promise<number>`
 
 Delete doc(s) matching query object.
 

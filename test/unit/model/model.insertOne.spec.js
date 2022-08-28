@@ -2,7 +2,7 @@ const test = require('tape');
 
 const { setup, invalidData, mockMemory } = require('../_utils');
 
-test('[insertOne] should throw on invalid data', async t => {
+test('[model.insertOne] throws on invalid data', async t => {
   const { db } = setup();
 
   for (let i = 0; i < invalidData.length; i += 1) {
@@ -17,7 +17,7 @@ test('[insertOne] should throw on invalid data', async t => {
   t.end();
 });
 
-test('[insertOne] should throw if doc already exists', async t => {
+test('[model.insertOne] throws if doc already exists', async t => {
   const payload = { _id: 'key_1' };
   const { db } = setup({ memory: mockMemory });
 
@@ -31,24 +31,23 @@ test('[insertOne] should throw if doc already exists', async t => {
   t.end();
 });
 
-test('[insertOne] should insert single doc', async t => {
+test('[model.insertOne] inserts doc', async t => {
   const payload = { _id: 'key_1' };
   const { db } = setup();
 
   const doc = await db.insertOne(payload);
 
-  t.deepEqual(doc, payload, 'should return doc');
-  t.strictEqual(db._memory._docs.size, 1, 'should have map data');
-  t.deepEqual(db._memory._docs.get(payload._id), payload, 'should set map data');
+  t.deepEqual(doc, payload, 'returns doc');
+  t.deepEqual(db._memory._docs.get(payload._id), payload, 'sets map data');
 
   t.end();
 });
 
-test('[insertOne] should add doc _id if it does not exist', async t => {
+test('[model.insertOne] adds doc _id if it does not exist', async t => {
   const { db } = setup();
 
   const doc = await db.insertOne({});
-  t.true(doc._id);
+  t.true(doc._id, 'appends _id');
 
   t.end();
 });

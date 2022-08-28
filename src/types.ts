@@ -1,6 +1,5 @@
 export type Join<T extends Array<string | number | Symbol>> = T[number];
 export type KeysOf<T extends Record<string, unknown>> = Array<keyof T>;
-export type OneOrMore<T> = T | T[];
 export type Projection<T extends Record<string, unknown>, P extends KeysOf<T>> = Pick<T, Join<P>>;
 
 export type Draft = {
