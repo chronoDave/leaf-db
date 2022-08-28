@@ -7,6 +7,7 @@ import {
   Projection
 } from './types';
 import {
+  isDoc,
   isDraft,
   isModifier,
   isQuery,
@@ -15,12 +16,18 @@ import {
 } from './validation';
 import { idGenerator, toArray } from './utils';
 import { modify, project } from './modifiers';
-import { INVALID_DOC, INVALID_QUERY, INVALID_UPDATE } from './errors';
+import {
+  INVALID_DOC,
+  INVALID_QUERY,
+  INVALID_UPDATE,
+  MEMORY_MODE
+} from './errors';
 import Memory from './memory';
 import Storage from './storage';
 
 export default class LeafDB<T extends Record<string, unknown>> {
   private readonly _memory: Memory<T>;
+  private readonly _storage?: Storage;
   private readonly _generator: () => string;
 
   private _get<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
@@ -46,12 +53,14 @@ export default class LeafDB<T extends Record<string, unknown>> {
       ...newDoc,
       _id: typeof newDoc._id === 'string' ? newDoc._id : this._generator()
     });
+    this._storage?.append(JSON.stringify(doc));
 
     return newDoc;
   }
 
   private _delete(_id: string) {
     this._memory.delete(_id);
+    this._storage?.append(JSON.stringify({ _id, __deleted: true }));
   }
 
   /**
@@ -65,25 +74,43 @@ export default class LeafDB<T extends Record<string, unknown>> {
     seed?: number
   }) {
     this._generator = idGenerator(options?.seed);
-
-    let storage: Storage | undefined;
+    this._memory = new Memory();
 
     if (options?.root) {
-      storage = new Storage({
+      this._storage = new Storage({
         name: options?.name ?? 'leaf-db',
         root: options.root
       });
     }
-
-    this._memory = new Memory({ storage });
   }
 
   open(options?: { strict?: boolean }) {
-    return this._memory.open(options?.strict);
+    if (!this._storage) throw new Error(MEMORY_MODE('open'));
+
+    const invalid: string[] = [];
+    this._storage.open().forEach(raw => {
+      try {
+        if (raw.length > 0) {
+          const doc = JSON.parse(raw);
+          if (!isDoc<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
+
+          if (doc.__deleted) {
+            this._delete(doc._id);
+          } else {
+            this._set(doc);
+          }
+        }
+      } catch (err) {
+        if (options?.strict) throw err;
+        invalid.push(raw);
+      }
+    });
+
+    return invalid;
   }
 
   close() {
-    return this._memory.close();
+    return this._storage?.close();
   }
 
   /** Insert single new doc, returns created doc */
@@ -248,5 +275,6 @@ export default class LeafDB<T extends Record<string, unknown>> {
 
   drop() {
     this._memory.flush();
+    this._storage?.flush();
   }
 }
