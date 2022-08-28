@@ -3,11 +3,11 @@ const test = require('tape');
 const { setup, invalidData, mockMemory } = require('../_utils');
 
 test('[model.insertOne] throws on invalid data', async t => {
-  const { db } = setup();
+  const { db } = setup({ strict: true });
 
   for (let i = 0; i < invalidData.length; i += 1) {
     try {
-      await db.insertOne(invalidData[i], { strict: true });
+      await db.insertOne(invalidData[i]);
       t.fail(`expected to throw: ${i}, ${invalidData[i]}`);
     } catch (err) {
       t.pass(`throws: ${i}`);
@@ -19,10 +19,10 @@ test('[model.insertOne] throws on invalid data', async t => {
 
 test('[model.insertOne] throws if doc already exists', async t => {
   const payload = { _id: 'key_1' };
-  const { db } = setup({ memory: mockMemory });
+  const { db } = setup({ memory: mockMemory, strict: true });
 
   try {
-    await db.insertOne(payload, { strict: true });
+    await db.insertOne(payload);
     t.fail('expected to throw on duplicate id');
   } catch (err) {
     t.pass('throws');

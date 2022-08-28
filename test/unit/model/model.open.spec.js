@@ -129,11 +129,12 @@ test('[model.open] throws on corrupt data if strict is enabled', t => {
 
   const { file, db } = setup({
     data,
-    root: __dirname
+    root: __dirname,
+    strict: true
   });
 
   try {
-    db.open({ strict: true });
+    db.open();
     t.fail('expected to throw');
   } catch (err) {
     t.pass('throws');

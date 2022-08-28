@@ -28,6 +28,7 @@ import Storage from './storage';
 
 export type LeafDBOptions = {
   storage?: string | [root: string, name?: string]
+  strict?: boolean
 };
 
 export default class LeafDB<T extends Draft> {
@@ -40,6 +41,7 @@ export default class LeafDB<T extends Draft> {
 
   private readonly _memory: Memory<T>;
   private readonly _storage?: Storage;
+  private readonly _strict: boolean;
 
   private _get<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
     const doc = this._memory.get(_id);
@@ -74,12 +76,9 @@ export default class LeafDB<T extends Draft> {
     this._storage?.append(JSON.stringify({ _id, __deleted: true }));
   }
 
-  /**
-   * @param options.name - Database name
-   * @param options.root - Database folder, if emtpy, will run in memory-mode
-   */
   constructor(options?: LeafDBOptions) {
     this._memory = new Memory();
+    this._strict = options?.strict ?? false;
 
     const root = Array.isArray(options?.storage) ?
       options?.storage[0] :
@@ -94,7 +93,7 @@ export default class LeafDB<T extends Draft> {
     }
   }
 
-  open(options?: { strict?: boolean }) {
+  open() {
     if (!this._storage) throw new Error(MEMORY_MODE('open'));
 
     return this._storage.open().reduce<string[]>((acc, cur) => {
@@ -109,7 +108,7 @@ export default class LeafDB<T extends Draft> {
           }
         }
       } catch (err) {
-        if (options?.strict) throw err;
+        if (this._strict) throw err;
         acc.push(cur);
       }
 
@@ -122,10 +121,9 @@ export default class LeafDB<T extends Draft> {
     return this._storage?.close();
   }
 
-  /** Insert single new doc, returns created doc */
-  async insertOne(newDoc: T, options?: { strict?: boolean }) {
+  async insertOne(newDoc: T) {
     if (!isDraft(newDoc) || (typeof newDoc._id === 'string' && this._memory.get(newDoc._id))) {
-      if (options?.strict) return Promise.reject(INVALID_DOC(newDoc));
+      if (this._strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }
 
@@ -135,13 +133,9 @@ export default class LeafDB<T extends Draft> {
     }));
   }
 
-  /**
-   * Insert a document or documents
-   * @param {boolean} strict - If `true`, rejects on first failed insert
-   * */
-  async insert(newDocs: T[], options?: { strict?: boolean }) {
+  async insert(newDocs: T[]) {
     return Promise
-      .all(newDocs.map(async newDoc => this.insertOne(newDoc, options)))
+      .all(newDocs.map(async newDoc => this.insertOne(newDoc)))
       .then(docs => docs.reduce<Doc<T>[]>((acc, doc) => {
         if (doc !== null) acc.push(doc);
         return acc;

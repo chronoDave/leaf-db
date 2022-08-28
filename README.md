@@ -88,10 +88,14 @@ db.insertOne({ species: 'cat', name: 'whiskers' })
  - `options.storage` - File storage
  - `options.storage[0]` - File root (must be absolute)
  - `options.storage[1]` - File name (optional, default `leaf-db`)
+ - `options.strict` - If true, throws instead of ignores errors
 
 ```JS
 // Memory-only database
 const db = new LeafDB()
+
+// Strict database
+const db = new LeafDB({ strict: true })
 
 // Persistent database
 const db = new LeafDB({ storage: process.cwd() })
