@@ -83,18 +83,20 @@ db.insert({ species: 'cat', name: 'whiskers' })
 
 ### Create / load
 
-`const db = new LeafDB({ name, root, strict })`
+`const db = new LeafDB({ storage })`
 
- - `options.name` - Database name
- - `options.root` - Database root path, will create in-memory if not provided
- - `options.strict` - Should database throw silent errors
+ - `options.storage` - File storage
+ - `options.storage[0]` - File root (must be absolute)
+ - `options.storage[1]` - File name (optional, default `leaf-db`)
 
 ```JS
 // Memory-only database
 const db = new Datastore()
 
 // Persistent database
-const db = new Datastore({ name: 'db', root: process.cwd() })
+const db = new Datastore({ storage: process.cwd() })
+const db = new Datastore({ storage: [process.cwd(), 'db'] })
+
 // Loading is not neccesary, but recommended
 // Not loading means the data from file isn't read,
 db.open()

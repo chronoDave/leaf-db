@@ -28,6 +28,10 @@ import {
 import Memory from './memory';
 import Storage from './storage';
 
+export type LeafDBOptions = {
+  storage?: string | [root: string, name?: string]
+};
+
 export default class LeafDB<T extends Draft> {
   static generateId() {
     return [
@@ -74,21 +78,21 @@ export default class LeafDB<T extends Draft> {
 
   /**
    * @param options.name - Database name
-   * @param options.root - Database folder, if emtpy, will run `leaf-db` in memory-mode
-   * @param options.seed - Seed used for random `_id` generation, defaults to a random seed
+   * @param options.root - Database folder, if emtpy, will run in memory-mode
    */
-  constructor(options?: {
-    name?: string,
-    root?: string,
-    seed?: number
-  }) {
+  constructor(options?: LeafDBOptions) {
     this._memory = new Memory();
 
-    if (options?.root) {
-      this._storage = new Storage({
-        name: options?.name ?? 'leaf-db',
-        root: options.root
-      });
+    const root = Array.isArray(options?.storage) ?
+      options?.storage[0] :
+      options?.storage;
+
+    if (root) {
+      const name = (Array.isArray(options?.storage) && options?.storage[1]) ?
+        options?.storage[1] :
+        'leaf-db';
+
+      this._storage = new Storage({ root, name });
     }
   }
 

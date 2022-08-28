@@ -158,9 +158,9 @@ const setup = options => {
   }
 
   const db = new LeafDB({
-    name,
-    root: options?.root ?? null,
-    strict: options?.strict ?? null
+    storage: options?.root ?
+      [options.root, name] :
+      undefined
   });
 
   if (options?.memory) {

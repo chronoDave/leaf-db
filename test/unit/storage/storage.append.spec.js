@@ -5,7 +5,7 @@ const Storage = require('../../build/storage').default;
 const { root, name, file } = require('./fixture');
 
 test('[storage.append] throws if not opened', t => {
-  const storage = new Storage({ root });
+  const storage = new Storage({ root, name });
 
   try {
     storage.append();

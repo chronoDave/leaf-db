@@ -5,7 +5,7 @@ import { MISSING_FD } from './errors';
 
 export type StorageOptions = {
   root: string
-  name?: string
+  name: string
 };
 
 export default class Storage {
@@ -15,7 +15,7 @@ export default class Storage {
   constructor(options: StorageOptions) {
     this._file = path.format({
       dir: options.root,
-      name: options.name || 'leaf-db',
+      name: options.name,
       ext: '.txt'
     });
   }
