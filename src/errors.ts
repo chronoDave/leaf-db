@@ -1,5 +1,5 @@
 export const MEMORY_MODE = (fn: string) => `Tried to call '${fn}()' in memory mode`;
-export const DUPLICATE_DOC = (doc: { _id: string }) => `Doc already exists: ${doc._id}`;
+export const DUPLICATE_DOC = (_id: string) => `Doc already exists: ${_id}`;
 export const NOT_ABSOLUTE = 'Path is not absolute';
 export const MISSING_FD = (fn: string) => `Cannot call '${fn}()' if file is not opened`;
 
