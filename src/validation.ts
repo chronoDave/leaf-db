@@ -3,6 +3,7 @@ import * as dot from '@chronocide/dot-obj';
 
 import {
   Doc,
+  Draft,
   Modifiers,
   Operators,
   Query,
@@ -32,13 +33,13 @@ export const hasKey = (entry: [string, unknown], key: string) =>
   entry[1] !== undefined;
 
 // Leaf-DB guards
-export const isDraft = <T extends Record<string, unknown>>(x: unknown): x is T =>
+export const isDraft = <T extends Draft>(x: unknown): x is T =>
   isObject(x) &&
   dot.every(x, entry => (
     !hasDot(entry) &&
     !hasTag(entry)
   ));
-export const isDoc = <T extends Record<string, unknown>>(x: unknown): x is Doc<T> =>
+export const isDoc = <T extends Draft>(x: unknown): x is Doc<T> =>
   isDraft(x) &&
   typeof x._id === 'string' &&
   x._id.length > 0;
@@ -106,7 +107,7 @@ export const hasModifier = <T extends keyof Modifiers>(
 };
 
 // Query
-export const isQueryMatch = <T extends Record<string, unknown>>(
+export const isQueryMatch = <T extends Draft>(
   doc: Doc<T>,
   query: Query
 ): boolean => {

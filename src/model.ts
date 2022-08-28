@@ -96,13 +96,12 @@ export default class LeafDB<T extends Draft> {
 
   open(options?: { strict?: boolean }) {
     if (!this._storage) throw new Error(MEMORY_MODE('open'));
-    const invalid: string[] = [];
-    this._storage.open().forEach(raw => {
-      try {
-        if (raw.length > 0) {
-          const doc = JSON.parse(raw);
-          if (!isDoc<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
 
+    return this._storage.open().reduce<string[]>((acc, cur) => {
+      try {
+        if (cur.length > 0) {
+          const doc = JSON.parse(cur);
+          if (!isDoc<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
           if (doc.__deleted) {
             this._delete(doc._id);
           } else {
@@ -111,11 +110,11 @@ export default class LeafDB<T extends Draft> {
         }
       } catch (err) {
         if (options?.strict) throw err;
-        invalid.push(raw);
+        acc.push(cur);
       }
-    });
 
-    return invalid;
+      return acc;
+    }, []);
   }
 
   close() {
