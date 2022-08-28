@@ -1,6 +1,6 @@
-import { Doc } from './types';
+import { Doc, Draft } from './types';
 
-export default class Memory<T extends Record<string, unknown>> {
+export default class Memory<T extends Draft> {
   private readonly _docs: Map<string, Doc<T>>;
 
   constructor() {

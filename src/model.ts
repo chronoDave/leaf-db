@@ -1,10 +1,13 @@
+import crypto from 'crypto';
+
 import {
   Doc,
   KeysOf,
   OneOrMore,
   Query,
   Update,
-  Projection
+  Projection,
+  Draft
 } from './types';
 import {
   isDoc,
@@ -14,7 +17,7 @@ import {
   isQueryMatch,
   isUpdate
 } from './validation';
-import { idGenerator, toArray } from './utils';
+import { toArray } from './utils';
 import { modify, project } from './modifiers';
 import {
   INVALID_DOC,
@@ -25,10 +28,16 @@ import {
 import Memory from './memory';
 import Storage from './storage';
 
-export default class LeafDB<T extends Record<string, unknown>> {
+export default class LeafDB<T extends Draft> {
+  static generateId() {
+    return [
+      Date.now().toString(16),
+      crypto.randomBytes(4).toString('hex')
+    ].join('');
+  }
+
   private readonly _memory: Memory<T>;
   private readonly _storage?: Storage;
-  private readonly _generator: () => string;
 
   private _get<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
     const doc = this._memory.get(_id);
@@ -51,7 +60,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
 
     this._memory.set({
       ...newDoc,
-      _id: typeof newDoc._id === 'string' ? newDoc._id : this._generator()
+      _id: newDoc._id ?? LeafDB.generateId()
     });
     this._storage?.append(JSON.stringify(doc));
 
@@ -73,7 +82,6 @@ export default class LeafDB<T extends Record<string, unknown>> {
     root?: string,
     seed?: number
   }) {
-    this._generator = idGenerator(options?.seed);
     this._memory = new Memory();
 
     if (options?.root) {
@@ -122,7 +130,7 @@ export default class LeafDB<T extends Record<string, unknown>> {
 
     return Promise.resolve(this._memory.set({
       ...newDoc,
-      _id: typeof newDoc._id === 'string' ? newDoc._id : this._generator()
+      _id: typeof newDoc._id === 'string' ? newDoc._id : LeafDB.generateId()
     }));
   }
 

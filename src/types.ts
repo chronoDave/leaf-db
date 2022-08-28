@@ -3,7 +3,12 @@ export type KeysOf<T extends Record<string, unknown>> = Array<keyof T>;
 export type OneOrMore<T> = T | T[];
 export type Projection<T extends Record<string, unknown>, P extends KeysOf<T>> = Pick<T, Join<P>>;
 
-export type Doc<T extends Record<string, unknown>> = T & {
+export type Draft = {
+  _id?: string
+  [key: string]: unknown
+};
+
+export type Doc<T extends Draft> = T & {
   readonly _id: string
 };
 
