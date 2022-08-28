@@ -8,6 +8,7 @@ export default [{
   external: [
     'fast-deep-equal',
     '@chronocide/dot-obj',
+    'immer',
     'rlr',
     'fs',
     'path',
