@@ -86,8 +86,8 @@ db.insertOne({ species: 'cat', name: 'whiskers' })
 `const db = new LeafDB({ storage })`
 
  - `options.storage` - File storage
- - `options.storage[0]` - File root (must be absolute)
- - `options.storage[1]` - File name (optional, default `leaf-db`)
+ - `options.storage.root` - File root (must be absolute)
+ - `options.storage.name` - File name (optional, default `leaf-db`)
  - `options.strict` - If true, throws instead of ignores errors
 
 ```JS
@@ -99,7 +99,7 @@ const db = new LeafDB({ strict: true })
 
 // Persistent database
 const db = new LeafDB({ storage: process.cwd() })
-const db = new LeafDB({ storage: [process.cwd(), 'db'] })
+const db = new LeafDB({ storage: { root: process.cwd(), name: 'db' } })
 
 // Loading is not neccesary, but recommended
 // Not loading means the data from file isn't read,

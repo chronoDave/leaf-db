@@ -160,7 +160,7 @@ const setup = options => {
   const db = new LeafDB({
     strict: options?.strict,
     storage: options?.root ?
-      [options.root, name] :
+      { root: options.root, name } :
       undefined
   });
 

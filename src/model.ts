@@ -27,7 +27,7 @@ import Memory from './memory';
 import Storage from './storage';
 
 export type LeafDBOptions = {
-  storage?: string | [root: string, name?: string]
+  storage?: string | { root: string, name?: string }
   strict?: boolean
 };
 
@@ -80,13 +80,13 @@ export default class LeafDB<T extends Draft> {
     this._memory = new Memory();
     this._strict = options?.strict ?? false;
 
-    const root = Array.isArray(options?.storage) ?
-      options?.storage[0] :
-      options?.storage;
+    const root = typeof options?.storage === 'string' ?
+      options?.storage :
+      options?.storage?.root;
 
     if (root) {
-      const name = (Array.isArray(options?.storage) && options?.storage[1]) ?
-        options?.storage[1] :
+      const name = (typeof options?.storage !== 'string') ?
+        (options?.storage?.name ?? 'leaf-db') :
         'leaf-db';
 
       this._storage = new Storage({ root, name });
