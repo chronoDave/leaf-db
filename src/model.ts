@@ -2,10 +2,8 @@ import crypto from 'crypto';
 
 import {
   Doc,
-  KeysOf,
   Query,
   Update,
-  Projection,
   Draft
 } from './types';
 import {
@@ -16,7 +14,7 @@ import {
   isQueryMatch,
   isUpdate
 } from './validation';
-import { modify, project } from './modifiers';
+import { modify } from './modifiers';
 import {
   INVALID_DOC,
   INVALID_QUERY,
@@ -45,14 +43,10 @@ export default class LeafDB<T extends Draft> {
   private readonly _storage?: Storage;
   private readonly _strict: boolean;
 
-  private _get<P extends KeysOf<Doc<T>>>(_id: string, query: Query, projection?: P) {
+  private _get(_id: string, query: Query) {
     const doc = this._memory.get(_id);
 
-    if (doc && isQueryMatch(doc, query)) {
-      if (projection) return project(doc, projection);
-      return doc;
-    }
-
+    if (doc && isQueryMatch(doc, query)) return doc;
     return null;
   }
 
@@ -144,36 +138,37 @@ export default class LeafDB<T extends Draft> {
       }, []));
   }
 
-  async findOne<P extends KeysOf<Doc<T>>>(query: string | Query, options?: { projection?: P }) {
+  async findOne(query: string | Query) {
     if (typeof query === 'string') {
       const doc = this._memory.get(query);
-
-      if (doc && options?.projection) return project(doc, options.projection);
       return Promise.resolve(doc);
     }
 
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
     for (let i = 0, ids = this._memory.all(); i < ids.length; i += 1) {
-      const doc = this._get(ids[i]._id, query, options?.projection);
+      const doc = this._get(ids[i]._id, query);
       if (doc) return Promise.resolve(doc);
     }
 
     return Promise.resolve(null);
   }
 
-  async find<P extends KeysOf<Doc<T>>>(query: string[] | Query, options?: { projection?: P }) {
+  async find(query: string[] | Query) {
     if (Array.isArray(query)) {
       const docs = query
-        .map(_id => this._memory.get(_id))
-        .filter(x => x);
+        .reduce<Doc<T>[]>((acc, cur) => {
+          const doc = this._memory.get(cur);
+          if (doc) acc.push(doc);
+          return acc;
+        }, []);
 
       return Promise.resolve(docs);
     }
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = this._memory.all().reduce<Projection<Doc<T>, P>[]>((acc, { _id }) => {
-      const doc = this._get(_id, query, options?.projection);
+    const docs = this._memory.all().reduce<Doc<T>[]>((acc, { _id }) => {
+      const doc = this._get(_id, query);
       if (doc) acc.push(doc);
       return acc;
     }, []);
@@ -181,32 +176,22 @@ export default class LeafDB<T extends Draft> {
     return Promise.resolve(docs);
   }
 
-  async updateOne<P extends KeysOf<Doc<T>>>(
-    query: string | Query,
-    update: Update<T>,
-    options?: { projection?: P }
-  ) {
+  async updateOne(query: string | Query, update: Update<T>) {
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(null);
 
     const newDoc = this._set(doc as Doc<T>, update);
-    if (options?.projection) return Promise.resolve(project(newDoc, options.projection));
     return Promise.resolve(newDoc);
   }
 
-  async update<P extends KeysOf<Doc<T>>>(
-    query: string[] | Query,
-    update: Update<T>,
-    options?: { projection?: P }
-  ) {
+  async update(query: string[] | Query, update: Update<T>) {
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
     const newDocs = this.find(query)
       .then(docs => docs.map(doc => {
         const newDoc = this._set(doc as Doc<T>, update);
-        if (options?.projection) return project(newDoc, options.projection);
         return newDoc;
       }));
 

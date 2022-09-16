@@ -39,14 +39,3 @@ test('[model.find] returns docs on query match (complex)', async t => {
 
   t.end();
 });
-
-test('[model.find] projects', async t => {
-  const { db } = setup({ memory: mockMemory });
-
-  const docs = await db.find({}, { projection: [] });
-  for (let i = 0; i < docs.length; i += 1) {
-    t.deepEqual(docs[i], {}, 'projects');
-  }
-
-  t.end();
-});

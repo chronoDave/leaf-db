@@ -58,14 +58,3 @@ test('[model.update] updates doc if match is found', async t => {
 
   t.end();
 });
-
-test('[model.update] projects', async t => {
-  const { db } = setup({ memory: mockMemory });
-
-  const docs = await db.update({ data: 'test' }, { test: 'test' }, { projection: [] });
-  for (let i = 0; i < docs.length; i += 1) {
-    t.deepEqual(docs[i], {}, 'projects');
-  }
-
-  t.end();
-});

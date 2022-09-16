@@ -72,7 +72,6 @@ db.insertOne({ species: 'cat', name: 'whiskers' })
    - [Basic query](#basic-query)
    - [Dot notation](#dot-notation)
    - [Operators](#operators)
-   - [Projection](#projection)
    - [Indexing](#indexing)
  - [Updating docs](#updating-docs)
    - [Modifiers](#modifiers)
@@ -149,8 +148,8 @@ try {
 
 ### Basic query
 
-`await db.findOne(string | Query, Projection) => Promise<Doc>`
-`await db.find(string[] | Query, Projection) => Promise<Doc[]>`
+`await db.findOne(string | Query) => Promise<Doc>`
+`await db.find(string[] | Query) => Promise<Doc[]>`
 
 Find doc(s) matching query. Operators and dot notation are supported and can be mixed together.
 
@@ -286,33 +285,6 @@ await db.find({ $or: [{ type: 'weak' }, { type: 'normal' }] })
 // [1, 2, 3, 4, 5]
 await db.find({ $or: [{ $includes: { variants: 'weak' } }, { _id: 5 }] })
 ```
-
-### Projection
-
-`leaf-db` supports projection. When using projection, only the specified fields will be returned. Empty objects can be returned if `projection` is `[]`, or when none of the fields provided exist on the found objects.
-
-<b>Example</b>
-
-```JS
-// Data
-// { _id: 1, type: 'normal', important: false, variants: ['weak', 'strong'] }
-// { _id: 2, type: 'normal', important: true, variants: ['weak', 'strong'] }
-// { _id: 3, type: 'strong', important: false, variants: ['weak', 'strong'] }
-// { _id: 4, type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
-// { _id: 5, properties: [{ variants: ['weak', 'normal' ] }, { type: 'strong' }] }
-
-// [{ _id: 1 }, { _id: 2 }]
-await db.find({ type: 'normal' }, ['_id'])
-
-// [{ type: 'normal' }, { type: 'normal' }, { type: 'strong' }, { type: 'weak' }, {}]
-await db.find({}, ['type'])
-```
-
-### Indexing
-
-`leaf-db` uses a hash table under the hood to store docs. All docs are indexed by `_id`, meaning using any `byId` query is considerably faster than its regular counterpart.
-
-The `byId` queries accept a single `_id` string, or an array of `_id` strings.
 
 ## Updating docs
 

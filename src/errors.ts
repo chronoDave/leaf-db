@@ -9,7 +9,6 @@ export const INVALID_QUERY = INVALID('query');
 export const INVALID_UPDATE = INVALID('update');
 export const INVALID_OPERATOR = INVALID('operator');
 export const INVALID_MODIFIER = INVALID('modifier');
-export const INVALID_PROJECTION = INVALID('projection');
 
 const NOT = (type: string) => (value: unknown) => `Invalid value '${JSON.stringify(value)} (${typeof value})', expected type '${type}'`;
 export const NOT_ARRAY = NOT('Array');

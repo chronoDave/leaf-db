@@ -46,13 +46,3 @@ test('[model.findOne] finds doc (complex)', async t => {
 
   t.end();
 });
-
-test('[model.findOne] projects', async t => {
-  const id = mockMemory.key_1._id;
-  const { db } = setup({ memory: mockMemory });
-
-  const doc = await db.findOne(id, { projection: [] });
-  t.deepEqual(doc, {}, 'projects');
-
-  t.end();
-});
