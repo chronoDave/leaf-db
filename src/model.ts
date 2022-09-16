@@ -26,6 +26,8 @@ import {
 import Memory from './memory';
 import Storage from './storage';
 
+export * from './types';
+
 export type LeafDBOptions = {
   storage?: string | { root: string, name?: string }
   strict?: boolean
