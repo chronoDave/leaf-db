@@ -3,10 +3,13 @@ export type Join<T extends Array<string | number | Symbol>> = T[number];
 export type Draft = {
   _id?: string
   [key: string]: unknown
+  [operator: `$${string}`]: never
+  [property: `__${string}`]: never
 };
 
 export type Doc<T extends Draft> = T & {
   readonly _id: string
+  readonly __deleted?: boolean
 };
 
 export type Operators = {

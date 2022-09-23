@@ -96,7 +96,7 @@ export default class LeafDB<T extends Draft> {
       try {
         if (cur.length > 0) {
           const doc = JSON.parse(cur);
-          if (!isDoc<T & { __deleted?: boolean }>(doc)) throw new Error(INVALID_DOC(doc));
+          if (!isDoc<T>(doc)) throw new Error(INVALID_DOC(doc));
           if (doc.__deleted) {
             this._delete(doc._id);
           } else {
