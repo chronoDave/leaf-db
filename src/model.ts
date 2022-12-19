@@ -43,29 +43,37 @@ export default class LeafDB<T extends Draft> {
   private readonly _storage?: Storage;
   private readonly _strict: boolean;
 
-  private _get(_id: string, query: Query) {
-    const doc = this._memory.get(_id);
+  // private _query(_id: string, query: Query) {
+  //   const doc = this._memory.get(_id);
 
-    if (doc && isQueryMatch(doc, query)) return doc;
-    return null;
+  //   if (doc && isQueryMatch(doc, query)) return doc;
+  //   return null;
+  // }
+
+  private _query(_id: string, query: Query) {
+    const doc = this._memory.get(_id);
+    if (!doc || doc.__deleted) return null;
+    return isQueryMatch(doc, query) ?
+      doc :
+      null;
   }
 
-  private _set(doc: T | Doc<T>, update?: Update<T>) {
-    let newDoc = doc;
-    if (update) {
-      newDoc = isModifier(update) ?
-        modify(doc, update) :
-        { ...update, _id: doc._id };
-    }
-
-    this._memory.set({
-      ...newDoc,
-      _id: newDoc._id ?? LeafDB.generateId()
-    });
+  private _set(doc: Doc<T>) {
+    this._memory.set(doc);
     this._storage?.append(JSON.stringify(doc));
 
-    return newDoc;
+    return doc;
   }
+
+  // private _set(doc: T | Doc<T>) {
+  //   this._memory.set({
+  //     ...doc,
+  //     _id: doc._id ?? LeafDB.generateId()
+  //   });
+  //   this._storage?.append(JSON.stringify(doc));
+
+  //   return doc;
+  // }
 
   private _delete(_id: string) {
     this._memory.delete(_id);
@@ -118,12 +126,12 @@ export default class LeafDB<T extends Draft> {
   }
 
   async insertOne(newDoc: T) {
-    if (!isDraft(newDoc) || (typeof newDoc._id === 'string' && this._memory.get(newDoc._id))) {
+    if (!isDraft(newDoc) || (typeof newDoc._id === 'string' && this._memory.has(newDoc._id))) {
       if (this._strict) return Promise.reject(INVALID_DOC(newDoc));
       return null;
     }
 
-    return Promise.resolve(this._memory.set({
+    return Promise.resolve(this._set({
       ...newDoc,
       _id: typeof newDoc._id === 'string' ? newDoc._id : LeafDB.generateId()
     }));
@@ -147,7 +155,7 @@ export default class LeafDB<T extends Draft> {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
     for (let i = 0, ids = this._memory.all(); i < ids.length; i += 1) {
-      const doc = this._get(ids[i]._id, query);
+      const doc = this._query(ids[i]._id, query);
       if (doc) return Promise.resolve(doc);
     }
 
@@ -168,7 +176,7 @@ export default class LeafDB<T extends Draft> {
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
     const docs = this._memory.all().reduce<Doc<T>[]>((acc, { _id }) => {
-      const doc = this._get(_id, query);
+      const doc = this._query(_id, query);
       if (doc) acc.push(doc);
       return acc;
     }, []);
@@ -182,18 +190,19 @@ export default class LeafDB<T extends Draft> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(null);
 
-    const newDoc = this._set(doc as Doc<T>, update);
-    return Promise.resolve(newDoc);
+    const newDoc = isModifier(update) ?
+      modify(doc, update) :
+      { ...update, _id: doc._id };
+    return Promise.resolve(this._set(newDoc));
   }
 
   async update(query: string[] | Query, update: Update<T>) {
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
     const newDocs = this.find(query)
-      .then(docs => docs.map(doc => {
-        const newDoc = this._set(doc as Doc<T>, update);
-        return newDoc;
-      }));
+      .then(docs => docs.map(doc => isModifier(update) ?
+        modify(doc, update) :
+        { ...update, _id: doc._id }));
 
     return Promise.resolve(newDocs);
   }

@@ -20,7 +20,7 @@ export default class Storage {
     });
   }
 
-  open(): string[] {
+  open() {
     let data: string[] = [];
 
     if (fs.existsSync(this._file)) {

@@ -17,6 +17,13 @@ export default class Memory<T extends Draft> {
     return doc;
   }
 
+  has(_id: string) {
+    if (!this._docs.has(_id)) return false;
+
+    const doc = this._docs.get(_id);
+    return !doc?.__deleted;
+  }
+
   delete(_id: string) {
     return this._docs.delete(_id);
   }
