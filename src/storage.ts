@@ -42,7 +42,7 @@ export default class Storage {
 
   append(raw: string) {
     if (typeof this._fd !== 'number') throw new Error(MISSING_FD('append'));
-    fs.appendFileSync(this._fd, raw);
+    fs.appendFileSync(this._fd, `${raw}\n`);
   }
 
   flush() {

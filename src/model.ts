@@ -43,13 +43,6 @@ export default class LeafDB<T extends Draft> {
   private readonly _storage?: Storage;
   private readonly _strict: boolean;
 
-  // private _query(_id: string, query: Query) {
-  //   const doc = this._memory.get(_id);
-
-  //   if (doc && isQueryMatch(doc, query)) return doc;
-  //   return null;
-  // }
-
   private _query(_id: string, query: Query) {
     const doc = this._memory.get(_id);
     if (!doc || doc.__deleted) return null;
@@ -64,16 +57,6 @@ export default class LeafDB<T extends Draft> {
 
     return doc;
   }
-
-  // private _set(doc: T | Doc<T>) {
-  //   this._memory.set({
-  //     ...doc,
-  //     _id: doc._id ?? LeafDB.generateId()
-  //   });
-  //   this._storage?.append(JSON.stringify(doc));
-
-  //   return doc;
-  // }
 
   private _delete(_id: string) {
     this._memory.delete(_id);

@@ -145,3 +145,22 @@ test('[model.open] throws on corrupt data if strict is enabled', t => {
 
   t.end();
 });
+
+test('[model.open] can read inserted data', async t => {
+  const data = [{ _id: '1' }, { _id: '2' }];
+
+  const { file, db } = setup({ root: __dirname });
+  db.open();
+  db.insert(data);
+  db.close();
+  const corrupted = db.open();
+
+  t.equal(corrupted.length, 0, 'reads all data');
+  const docs = await db.find({});
+  t.equal(docs.length, data.length, 'inserts all data');
+
+  db.close();
+  fs.unlinkSync(file);
+
+  t.end();
+});

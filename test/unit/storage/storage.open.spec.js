@@ -40,7 +40,7 @@ test('[storage.open] creates and opens file if file does not exist', t => {
 });
 
 test('[storage.open] splits data on newline', t => {
-  const arr = ['a', 'b', 'c'];
+  const arr = [JSON.stringify({ _id: 'a' }), JSON.stringify({ _id: '\nb' })];
   fs.writeFileSync(file, arr.join('\n'));
   const storage = new Storage({ root, name });
   const data = storage.open();
