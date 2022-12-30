@@ -171,8 +171,7 @@ test('[model.open] removes invalid data', async t => {
   const { file, db } = setup({ root: __dirname });
   db.open();
   db.insert(data);
-  db.close();
-  db.open();
+  db.delete([data[0]._id]);
   db.close();
   const corrupted = db.open();
 
