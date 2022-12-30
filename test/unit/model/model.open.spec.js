@@ -164,3 +164,24 @@ test('[model.open] can read inserted data', async t => {
 
   t.end();
 });
+
+test('[model.open] removes invalid data', async t => {
+  const data = [{ _id: '1' }, { _id: '2' }, { _id: '3', __deleted: true }];
+
+  const { file, db } = setup({ root: __dirname });
+  db.open();
+  db.insert(data);
+  db.close();
+  db.open();
+  db.close();
+  const corrupted = db.open();
+
+  t.equal(corrupted.length, 0, 'removes invalid data from file');
+  const docs = await db.find({});
+  t.equal(docs.length, data.length - 1, 'removes invalid data from memory');
+
+  db.close();
+  fs.unlinkSync(file);
+
+  t.end();
+});

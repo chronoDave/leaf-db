@@ -45,10 +45,11 @@ export default class Storage {
     fs.appendFileSync(this._fd, `${raw}\n`);
   }
 
-  flush() {
+  flush(raw?: string) {
     if (typeof this._fd !== 'number') throw new Error(MISSING_FD('flush'));
     fs.closeSync(this._fd);
     fs.rmSync(this._file);
+    if (raw) fs.writeFileSync(this._file, raw);
     this._fd = fs.openSync(this._file, 'a');
   }
 }

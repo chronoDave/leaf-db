@@ -83,24 +83,32 @@ export default class LeafDB<T extends Draft> {
   open() {
     if (!this._storage) throw new Error(MEMORY_MODE('open'));
 
-    return this._storage.open().reduce<string[]>((acc, cur) => {
-      try {
-        if (cur.length > 0) {
-          const doc = JSON.parse(cur);
-          if (!isDoc<T>(doc)) throw new Error(INVALID_DOC(doc));
-          if (doc.__deleted) {
-            this._delete(doc._id);
-          } else {
-            this._set(doc);
+    const corrupted = this._storage.open()
+      .reduce<string[]>((acc, cur) => {
+        try {
+          if (cur.length > 0) {
+            const doc = JSON.parse(cur);
+            if (!isDoc<T>(doc)) throw new Error(INVALID_DOC(doc));
+            if (doc.__deleted) {
+              this._delete(doc._id);
+            } else {
+              this._set(doc);
+            }
           }
+        } catch (err) {
+          if (this._strict) throw err;
+          acc.push(cur);
         }
-      } catch (err) {
-        if (this._strict) throw err;
-        acc.push(cur);
-      }
 
-      return acc;
-    }, []);
+        return acc;
+      }, []);
+
+    const raw = this._memory.all()
+      .map(doc => JSON.stringify(doc))
+      .join('\n');
+    this._storage.flush(raw);
+
+    return corrupted;
   }
 
   close() {
