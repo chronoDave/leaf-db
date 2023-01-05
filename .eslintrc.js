@@ -13,6 +13,8 @@ module.exports = {
     '@typescript-eslint/prefer-readonly': ['error'],
     '@typescript-eslint/prefer-reduce-type-parameter': ['error'],
     '@typescript-eslint/promise-function-async': ['error'],
+    '@typescript-eslint/ban-ts-comment': ['error', { 'ts-expect-error': 'allow-with-description' }],
+    '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
     '@typescript-eslint/strict-boolean-expressions': ['error', {
       allowNullableBoolean: true,
       allowNullableString: true

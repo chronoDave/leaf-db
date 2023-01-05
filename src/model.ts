@@ -84,7 +84,7 @@ export default class LeafDB<T extends Draft> {
     if (!this._storage) throw new Error(MEMORY_MODE('open'));
 
     const corrupted: string[] = [];
-    const docs: Doc<T>[] = [];
+    const docs: Array<Doc<T>> = [];
     const deleted: string[] = [];
 
     this._storage.open().forEach(raw => {
@@ -132,7 +132,7 @@ export default class LeafDB<T extends Draft> {
   async insert(newDocs: T[]) {
     return Promise
       .all(newDocs.map(async newDoc => this.insertOne(newDoc)))
-      .then(docs => docs.reduce<Doc<T>[]>((acc, doc) => {
+      .then(docs => docs.reduce<Array<Doc<T>>>((acc, doc) => {
         if (doc !== null) acc.push(doc);
         return acc;
       }, []));
@@ -157,7 +157,7 @@ export default class LeafDB<T extends Draft> {
   async find(query: string[] | Query) {
     if (Array.isArray(query)) {
       const docs = query
-        .reduce<Doc<T>[]>((acc, cur) => {
+        .reduce<Array<Doc<T>>>((acc, cur) => {
           const doc = this._memory.get(cur);
           if (doc) acc.push(doc);
           return acc;
@@ -167,7 +167,7 @@ export default class LeafDB<T extends Draft> {
     }
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = this._memory.all().reduce<Doc<T>[]>((acc, { _id }) => {
+    const docs = this._memory.all().reduce<Array<Doc<T>>>((acc, { _id }) => {
       const doc = this._query(_id, query);
       if (doc) acc.push(doc);
       return acc;
@@ -211,7 +211,6 @@ export default class LeafDB<T extends Draft> {
     const docs = await this.find(query);
     if (!Array.isArray(docs)) return Promise.resolve(0);
 
-    // @ts-ignore
     return docs.reduce<number>((acc, cur) => {
       this._delete(cur._id as string);
       return acc + 1;
