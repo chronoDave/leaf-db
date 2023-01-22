@@ -20,7 +20,7 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Unit Test
-        run: npm run test:unit
+        run: npm run test
       - name: Discord Webhook (Success)
         if: ${{success()}}
         run: |
