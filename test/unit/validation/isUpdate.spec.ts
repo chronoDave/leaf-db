@@ -1,11 +1,11 @@
-const test = require('tape');
+import test from 'tape';
 
-const { isUpdate } = require('../../build/validation');
-const { invalidUpdate } = require('../_utils');
+import { isUpdate } from '../../../src/validation';
+import { update } from './fixture';
 
 test('[isUpdate] should return false if update is invalid', t => {
-  for (let i = 0; i < invalidUpdate.length; i += 1) {
-    t.false(isUpdate(invalidUpdate[i]), JSON.stringify(invalidUpdate[i]));
+  for (let i = 0; i < update.length; i += 1) {
+    t.false(isUpdate(update[i]), JSON.stringify(update[i]));
   }
 
   t.end();

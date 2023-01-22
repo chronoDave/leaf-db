@@ -1,11 +1,11 @@
-const test = require('tape');
-const fs = require('fs');
+import test from 'tape';
+import fs from 'fs';
 
-const Storage = require('../../build/storage').default;
-const { file, name, root } = require('./fixture');
+import { file, name } from './fixture';
+import Storage from '../../../src/storage';
 
 test('[storage.flush] throws if not opened', t => {
-  const storage = new Storage({ root, name });
+  const storage = new Storage({ root: __dirname, name });
 
   try {
     storage.flush();
@@ -19,10 +19,11 @@ test('[storage.flush] throws if not opened', t => {
 
 test('[storage.flush] clears file', t => {
   fs.writeFileSync(file, 'this is some data');
-  const storage = new Storage({ root, name });
+  const storage = new Storage({ root: __dirname, name });
   storage.open();
 
   storage.flush();
+  // @ts-expect-error: Access private
   fs.closeSync(storage._fd);
 
   t.true(fs.existsSync(file), 'file exists');

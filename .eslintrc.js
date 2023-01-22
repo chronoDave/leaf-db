@@ -36,12 +36,6 @@ module.exports = {
       format: ['camelCase'],
       leadingUnderscore: 'require'
     }, {
-      // Enforce sensible boolean prefixes
-      selector: 'variable',
-      types: ['boolean'],
-      format: ['PascalCase'],
-      prefix: ['is', 'has']
-    }, {
       // Enforce PascalCase on types / interfaces
       selector: 'typeLike',
       format: ['PascalCase']

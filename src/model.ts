@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import pMap from 'p-map';
 
 import {
   Doc,
@@ -130,8 +131,7 @@ export default class LeafDB<T extends Draft> {
   }
 
   async insert(newDocs: T[]) {
-    return Promise
-      .all(newDocs.map(async newDoc => this.insertOne(newDoc)))
+    return pMap(newDocs, async newDoc => this.insertOne(newDoc), { concurrency: 64 })
       .then(docs => docs.reduce<Array<Doc<T>>>((acc, doc) => {
         if (doc !== null) acc.push(doc);
         return acc;

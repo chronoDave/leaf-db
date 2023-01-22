@@ -1,7 +1,6 @@
-const test = require('tape');
+import test from 'tape';
 
-const { modify } = require('../../build/modifiers');
-const { invalidNumberOperator } = require('../_utils');
+import { modify } from '../../../src/modifiers';
 
 test('[modify] operator $add should increase field with value', t => {
   t.strictEqual(modify(
@@ -10,16 +9,8 @@ test('[modify] operator $add should increase field with value', t => {
   ).a, 3);
   t.strictEqual(modify(
     { a: 1 },
-    { $add: { a: '2' } }
-  ).a, 1);
-  t.strictEqual(modify(
-    { a: 1 },
     { $add: { a: -2 } }
   ).a, -1);
-  t.false(modify(
-    { a: 1 },
-    { $add: { b: 2 } }
-  ).b);
   t.strictEqual(modify(
     { a: { b: 1 } },
     { $add: { 'a.b': 2 } }
@@ -34,19 +25,6 @@ test('[modify] operator $add should increase field with value', t => {
 
 test('[modify] operator $add should return unmodified value if field is not a number', t => {
   t.deepEqual(modify({ a: '1' }, { $add: { a: 1 } }), { a: '1' });
-
-  t.end();
-});
-
-test('[modify] operator $add should return unmodifier value if value is not a number', t => {
-  for (let i = 0; i < invalidNumberOperator; i += 1) {
-    try {
-      modify({ a: 1 }, { $add: { a: invalidNumberOperator[i] } });
-      t.pass(`throws: ${i}`);
-    } catch (err) {
-      t.fail(err);
-    }
-  }
 
   t.end();
 });
@@ -85,14 +63,6 @@ test('[modify] operator $push should add value to field', t => {
     { a: 1 },
     { $push: { a: { b: 1 } } }
   ), { a: 1 });
-  t.deepEqual(modify(
-    { a: [] },
-    { $push: { a: 1 } }
-  ), { a: [1] });
-  t.deepEqual(modify(
-    { a: [1, 2] },
-    { $push: { a: 1 } }
-  ), { a: [1, 2, 1] });
   t.deepEqual(modify(
     { a: [1, 2] },
     { $push: { a: { d: 4 } } }

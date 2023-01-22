@@ -33,20 +33,22 @@
   "scripts": {
     "lint": "eslint src",
     "build": "rollup -c",
-    "test:unit": "tsc && tape test/unit/**/*.spec.js",
+    "build:test": "node test/build.js",
+    "test:unit": "npm run build:test && tape test/build/**/*.spec.js",
     "test:integration": "npm run build && tape test/**/*.test.js",
     "test": "npm run test:unit && npm run test:integration",
     "bench": "tsc && node test/bench.js",
     "prepublishOnly": "npm run build",
-    "test:storage": "tsc && tape test/unit/storage/*.spec.js",
-    "test:memory": "tsc && tape test/unit/memory/*.spec.js",
-    "test:model": "tsc && tape test/unit/model/*.spec.js",
-    "test:modifiers": "tsc && tape test/unit/modifiers/*.spec.js",
-    "test:validation": "tsc && tape test/unit/validation/*.spec.js"
+    "test:storage": "npm run build:test && tape test/build/storage/*.spec.js",
+    "test:memory": "npm run build:test && tape test/build/memory/*.spec.js",
+    "test:model": "npm run build:test && tape test/build/model/*.spec.js",
+    "test:modifiers": "npm run build:test && tape test/build/modifiers/*.spec.js",
+    "test:validation": "npm run build:test && tape test/build/validation/*.spec.js"
   },
   "dependencies": {
     "@chronocide/dot-obj": "^1.3.1",
-    "fast-deep-equal": "^3.1.3"
+    "fast-deep-equal": "^3.1.3",
+    "p-map": "^5.5.0"
   },
   "devDependencies": {
     "@types/node": "^14.14.2",
@@ -58,6 +60,7 @@
     "eslint": "^7.5.0",
     "eslint-config-airbnb-typescript": "^12.0.0",
     "eslint-plugin-import": "^2.22.0",
+    "fast-glob": "^3.2.12",
     "rollup": "^2.47.0",
     "rollup-plugin-dts": "^3.0.1",
     "rollup-plugin-esbuild": "^4.2.3",

@@ -8,7 +8,7 @@ export default [{
   external: [
     'fast-deep-equal',
     '@chronocide/dot-obj',
-    'rlr',
+    'p-map',
     'fs',
     'path',
     'crypto'

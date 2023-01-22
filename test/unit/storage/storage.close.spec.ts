@@ -1,11 +1,11 @@
-const test = require('tape');
-const fs = require('fs');
+import test from 'tape';
+import fs from 'fs';
 
-const Storage = require('../../build/storage').default;
-const { file, name, root } = require('./fixture');
+import { file, name } from './fixture';
+import Storage from '../../../src/storage';
 
 test('[storage.close] throws if not opened', t => {
-  const storage = new Storage({ root, name });
+  const storage = new Storage({ root: __dirname, name });
 
   try {
     storage.close();
@@ -18,18 +18,19 @@ test('[storage.close] throws if not opened', t => {
 });
 
 test('[storage.close] closes file', t => {
-  const storage = new Storage({ root, name });
+  const storage = new Storage({ root: __dirname, name });
   storage.open();
 
   storage.close();
 
+  // @ts-expect-error: Access private
   t.false(storage._fd, 'unsets fd');
   try {
     const fd = fs.openSync(file, 'r+');
     t.pass('unlocks file');
     fs.closeSync(fd);
   } catch (err) {
-    t.fail(err);
+    t.fail((err as Error).message);
   }
 
   fs.rmSync(file);

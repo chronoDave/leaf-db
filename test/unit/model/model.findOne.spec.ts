@@ -1,9 +1,9 @@
-const test = require('tape');
+import test from 'tape';
 
-const { setup, mockMemory } = require('../_utils');
+import setup, { memory } from './fixture';
 
 test('[model.findOne] returns null if no match is found', async t => {
-  const { db } = setup({ memory: mockMemory });
+  const { db } = setup({ memory });
 
   const doc = await db.findOne('e');
   t.false(doc, 'null');
@@ -12,7 +12,7 @@ test('[model.findOne] returns null if no match is found', async t => {
 });
 
 test('[model.findOne] finds doc (id)', async t => {
-  const { db } = setup({ memory: mockMemory });
+  const { db } = setup({ memory });
 
   const doc = await db.findOne('key_1');
   t.true(doc, 'found doc');
@@ -21,7 +21,7 @@ test('[model.findOne] finds doc (id)', async t => {
 });
 
 test('[model.findOne] finds doc (simple)', async t => {
-  const { db } = setup({ memory: mockMemory });
+  const { db } = setup({ memory });
 
   const doc = await db.findOne({ shared: true });
   t.true(doc, 'found doc');
@@ -30,7 +30,7 @@ test('[model.findOne] finds doc (simple)', async t => {
 });
 
 test('[model.findOne] finds doc (nested)', async t => {
-  const { db } = setup({ memory: mockMemory });
+  const { db } = setup({ memory });
 
   const doc = await db.findOne({ 'data.label': 'test' });
   t.true(doc, 'found doc');
@@ -39,7 +39,7 @@ test('[model.findOne] finds doc (nested)', async t => {
 });
 
 test('[model.findOne] finds doc (complex)', async t => {
-  const { db } = setup({ memory: mockMemory });
+  const { db } = setup({ memory });
 
   const doc = await db.findOne({ $includes: { 'data.values': 1 } });
   t.true(doc, 'found doc');

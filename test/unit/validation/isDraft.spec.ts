@@ -1,7 +1,7 @@
-const test = require('tape');
+import test from 'tape';
 
-const { isDraft } = require('../../build/validation');
-const { mockObjectProduction } = require('../_utils');
+import { production } from './fixture';
+import { isDraft } from '../../../src/validation';
 
 test('[isDraft] should return false if doc is invalid', t => {
   t.false(isDraft({ $field: 2 }), 'operator');
@@ -15,7 +15,7 @@ test('[isDraft] should return false if doc is invalid', t => {
 });
 
 test('[isDraft] should return true is doc is valid', t => {
-  t.true(isDraft(mockObjectProduction));
+  t.true(isDraft(production));
   t.true(isDraft({}));
   t.true(isDraft({ a: null }));
   t.true(isDraft({ a: [null] }));

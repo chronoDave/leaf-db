@@ -1,7 +1,7 @@
-const fs = require('fs');
-const test = require('tape');
+import fs from 'fs';
+import test from 'tape';
 
-const { setup } = require('../_utils');
+import setup from './fixture';
 
 test('[model.close] throws in memory mode', t => {
   const { db } = setup();
@@ -26,7 +26,7 @@ test('[model.close] closes storage', t => {
     t.pass('unlocks file');
     fs.closeSync(fd);
   } catch (err) {
-    t.fail(err);
+    t.fail((err as Error).message);
   }
 
   fs.rmSync(file);

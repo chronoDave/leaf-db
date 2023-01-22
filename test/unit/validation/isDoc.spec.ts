@@ -1,6 +1,6 @@
-const test = require('tape');
+import test from 'tape';
 
-const { isDoc } = require('../../build/validation');
+import { isDoc } from '../../../src/validation';
 
 test('[isDoc] should return false if doc is invalid', t => {
   t.false(isDoc({ _id: undefined }), '_id undefined');

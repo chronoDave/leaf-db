@@ -1,11 +1,11 @@
-const test = require('tape');
+import test from 'tape';
 
-const { isQuery } = require('../../build/validation');
-const { invalidQuery } = require('../_utils');
+import { isQuery } from '../../../src/validation';
+import { query } from './fixture';
 
 test('[isQuery] should return false if query is invalid', t => {
-  for (let i = 0; i < invalidQuery.length; i += 1) {
-    t.false(isQuery(invalidQuery[i]), i);
+  for (let i = 0; i < query.length; i += 1) {
+    t.false(isQuery(query[i]), `${i}`);
   }
 
   t.end();
