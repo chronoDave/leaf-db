@@ -12,7 +12,7 @@ test('[model.updateOne] returns null if no match is found', async t => {
 });
 
 test('[model.updateOne] replaces doc if match is found (id)', async t => {
-  const _id = 'key_1';
+  const _id = '1';
   const { db } = setup({ memory });
 
   const doc = await db.updateOne(_id, {});
@@ -27,7 +27,7 @@ test('[model.updateOne] replaces doc if match is found (id)', async t => {
 test('[model.updateOne] replaces doc if match is found (simple)', async t => {
   const { db } = setup({ memory });
 
-  const doc = await db.updateOne({ shared: true }, {});
+  const doc = await db.updateOne({ nametype: 'Valid' }, {});
 
   t.true(doc, 'replaced doc');
 
@@ -37,7 +37,7 @@ test('[model.updateOne] replaces doc if match is found (simple)', async t => {
 test('[model.updateOne] replaces doc if match is found (nested)', async t => {
   const { db } = setup({ memory });
 
-  const doc = await db.updateOne({ 'data.label': 'test' }, {});
+  const doc = await db.updateOne({ 'geolocation.type': 'Point' }, {});
 
   t.true(doc, 'replaced doc');
 
@@ -47,7 +47,7 @@ test('[model.updateOne] replaces doc if match is found (nested)', async t => {
 test('[model.updateOne] replaces doc if match is found (complex)', async t => {
   const { db } = setup({ memory });
 
-  const doc = await db.updateOne({ $includes: { 'data.values': 1 } }, {});
+  const doc = await db.updateOne({ $includes: { 'geolocation.coordinates': 56.18333 } }, {});
 
   t.true(doc, 'replaced doc');
 
@@ -55,7 +55,7 @@ test('[model.updateOne] replaces doc if match is found (complex)', async t => {
 });
 
 test('[model.updateOne] updates doc if match is found', async t => {
-  const id = 'key_1';
+  const id = '1';
   const newValue = { testValue: 1 };
   const { db } = setup({ memory });
 

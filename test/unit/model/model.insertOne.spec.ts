@@ -3,7 +3,7 @@ import test from 'tape';
 import setup, { memory } from './fixture';
 
 test('[model.insertOne] throws if doc already exists', async t => {
-  const payload = { _id: 'key_1' };
+  const payload = { _id: '1' };
   const { db } = setup({ memory, strict: true });
 
   try {

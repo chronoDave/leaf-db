@@ -359,7 +359,7 @@ await db.update({} }, { $push: { count: 'orange' } })
 await db.update({ $keys: ['count'] }, { $set: { count: 'count' } })
 // { _id: 1, value: 3 }
 // { _id: 2, value: 3 }
-// { _id: 3, count: 3, value: 3 }
+// { _id: 3, count: 'count', value: 3 }
 // Keys will be created if it does not exist
 await db.update({}, { $set: { value: 3 } })
 ```

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 import LeafDB from '../../../src/model';
+import datasetMeteorites from '../../assets/nasa_earth-meteorite-landings';
 
 export type Options = {
   root: string
@@ -35,13 +36,8 @@ export default (options?: Partial<Options>) => {
   return ({ name, file, db });
 };
 
-export const memory = {
-  key_1: { _id: 'key_1', data: 'test', values: [1, 2, 3], shared: true },
-  key_2: { _id: 'key_2', data: 'not_test', values: [4, 5, 6] },
-  key_3: { _id: 'key_3', values: [4, 5, 6], shared: true },
-  key_4: { _id: 'key_4', data: { values: [1, 2, 3] } },
-  key_5: { _id: 'key_5', data: { label: 'test', values: [{ label: 'test' }] } }
-};
+export const memory = Object.fromEntries(datasetMeteorites.map(x => [x._id, x]));
+export const data = datasetMeteorites;
 
 export const production = {
   _id: '1',
