@@ -1,8 +1,15 @@
+export type Json =
+  string |
+  number |
+  boolean |
+  null |
+  Json[] |
+  { [key: string]: Json };
+
 export type Join<T extends Array<string | number | Symbol>> = T[number];
 
-export type Draft = {
-  _id?: string
-  [key: string]: unknown
+export type Draft = { _id?: string } & {
+  [key: string]: Json
   [operator: `$${string}`]: never
   [property: `__${string}`]: never
 };

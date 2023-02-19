@@ -173,7 +173,7 @@ test('[isQueryMatch] operator $keys should return false if field does not exist'
 test('[isQueryMatch] operator $includes should return true if object contains value', t => {
   t.true(isQueryMatch(complex, { $includes: { b: 2 } }));
   t.true(isQueryMatch(complex, { $includes: { b: null } }));
-  t.true(isQueryMatch(complex, { $includes: { c: { d: 'String', e: { f: null } } } }));
+  t.true(isQueryMatch(complex, { $includes: { c: { d: 'String', e: { f: null }, g: true, h: 'string', i: { j: [4, null] } } } }));
   t.true(isQueryMatch(complex, { $includes: { 'c.1.i.j': 4 } }));
 
   t.end();

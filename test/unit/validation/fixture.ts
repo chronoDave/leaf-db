@@ -58,21 +58,27 @@ export const complex = {
   _id: '1',
   a: 1,
   b: [2, null, 3],
-  c: [
-    {
-      d: 'String',
-      e: {
-        f: null
-      }
+  c: [{
+    d: 'String',
+    e: {
+      f: null
     },
-    {
-      g: true,
-      h: 'string',
-      i: {
-        j: [4, null]
-      }
+    g: true,
+    h: 'string',
+    i: {
+      j: [4, null]
     }
-  ]
+  }, {
+    d: 'String',
+    e: {
+      f: null
+    },
+    g: true,
+    h: 'string',
+    i: {
+      j: [4, null]
+    }
+  }]
 };
 
 export const update = [
