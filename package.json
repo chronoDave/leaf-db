@@ -34,7 +34,6 @@
     "lint": "eslint src",
     "build": "rollup -c",
     "build:test": "node test/build.js",
-    "bench": "tsc && node test/bench.js",
     "prepublishOnly": "npm run build",
     "test": "npm run build:test && tape test/build/**/*.spec.js",
     "test:storage": "npm run build:test && tape test/build/storage/*.spec.js",
