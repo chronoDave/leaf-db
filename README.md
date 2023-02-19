@@ -36,8 +36,7 @@ _Note: This package requires Node >=14.5.0_
 **JS**
 
 ```JS
-import LeafDB from 'leaf-db'; // ES6
-// const LeafDB = require('leaf-db').default // ES5
+import LeafDB from 'leaf-db';
 
 const db = new LeafDB();
 
@@ -49,11 +48,11 @@ db.insertOne({ species: 'cat', name: 'whiskers' })
 **TS**
 
 ```TS
-import LeafDB, { Doc } from 'leaf-db';
+import LeafDB from 'leaf-db';
 
-interface Document extends Doc {
+interface Document {
   species: string,
-  name?: string
+  name: string | null
 }
 
 const db = new LeafDB<Document>();
@@ -67,6 +66,7 @@ db.insertOne({ species: 'cat', name: 'whiskers' })
  - [Database](#database)
    - [Create / load](#create-load)
    - [Corruption](#corruption)
+ - [Document](#document)
  - [Inserting docs](#inserting-docs)
  - [Finding docs](#finding-docs)
    - [Basic query](#basic-query)
@@ -82,12 +82,12 @@ db.insertOne({ species: 'cat', name: 'whiskers' })
 
 ### Create / load
 
-`const db = new LeafDB({ storage })`
+`const db = new LeafDB(options)`
 
- - `options.storage` - File storage
- - `options.storage.root` - File root (must be absolute)
- - `options.storage.name` - File name (optional, default `leaf-db`)
- - `options.strict` - If true, throws instead of ignores errors
+ - `options.storage` (string). Storage file path. Must be absolute.
+ - `options.storage.root` (string). Storage file path. Must be absolute.
+ - `options.storage.name` (default: `leaf-db`). Storage file name.
+ - `options.strict` (default: `false`). If true, throws instead of ignores errors
 
 ```JS
 // Memory-only database
@@ -112,6 +112,39 @@ db.close()
 
 Calling `open()` will return an array of corrupted raw data (string).
 
+## Document
+
+Leaf-DB stores data as [JSON](https://en.wikipedia.org/wiki/JSON) objects.
+
+```JSON
+{
+  "name": "Titan",
+  "age": 4,
+  "colour": "chocolate",
+  "loved": true,
+  "activies": ["walking", "fetch"]
+}
+```
+
+### Field Names
+
+Field names must be strings and have the following restrictions:
+
+- The field name `_id` is the primary key of a document and cannot be mutated once created. It must be unique and be of type `String`.
+- Field names **cannot** start with the dollar sign (`$`) character.
+- Field names **cannot** contain a dot (`.`) character.
+
+### Field Values
+
+Leaf-DB only supports field values supported by the JSON spec, which includes:
+
+ - `Number`
+ - `String`
+ - `Boolean`
+ - `Array`
+ - `Object`
+ - `null`
+
 ## Inserting docs
 
 `await db.insertOne(NewDoc) => Promise<Doc>`
@@ -122,8 +155,6 @@ Inserts doc(s) into the database. `_id` is automatically generated if the _id do
 Fields cannot start with `$` (modifier field) or contain `.` (dot-queries). Values cannot be `undefined`.
 
 `insert()` will reject on the first invalid doc if `strict` is enabled, otherwise invalid docs are ignored.
-
-Insertion takes place _after_ all docs are validated, meaning no data will be inserted if `insert()` rejects.
 
 `leaf-db` does not keep track of when docs are inserted, updated or deleted.
 
