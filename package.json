@@ -34,7 +34,7 @@
     "lint": "tsc --noEmit && eslint src",
     "build": "rollup -c",
     "build:test": "node test/build.js",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run test && npm run build",
     "test": "npm run build:test && tape test/build/**/*.spec.js",
     "test:storage": "npm run build:test && tape test/build/storage/*.spec.js",
     "test:memory": "npm run build:test && tape test/build/memory/*.spec.js",
