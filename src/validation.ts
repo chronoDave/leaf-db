@@ -16,7 +16,7 @@ export const isObject = (x: unknown): x is object =>
   x !== null &&
   !Array.isArray(x) &&
   typeof x === 'object';
-export const isObjectEmtpy = (x: object) =>
+export const isObjectEmpty = (x: object) =>
   Object.keys(x).length === 0;
 export const isTag = (x: string) =>
   x[0] === '$';
@@ -95,8 +95,7 @@ export const hasModifier = <T extends keyof Modifiers>(
   switch (modifier) {
     case '$push':
     case '$set':
-      if (!isObject(x)) return false;
-      return true;
+      return isObject(x);
     case '$add':
       if (!isObject(x)) return false;
       if (dot.some(x, entry => typeof entry[1] !== 'number')) return false;
@@ -111,7 +110,7 @@ export const isQueryMatch = <T extends Draft>(
   doc: Doc<T>,
   query: Query
 ): boolean => {
-  if (isObjectEmtpy(query)) return true;
+  if (isObjectEmpty(query)) return true;
 
   const isMatchMath = (
     match: (x: number, y: number) => boolean
