@@ -29,8 +29,6 @@
 $ npm i leaf-db
 ```
 
-_Note: This package requires Node >=14.5.0_
-
 ## Getting Started
 
 **JS**
