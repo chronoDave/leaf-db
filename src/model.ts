@@ -86,18 +86,13 @@ export default class LeafDB<T extends Draft> {
 
     const corrupted: string[] = [];
     const docs: Array<Doc<T>> = [];
-    const deleted: string[] = [];
 
     this._storage.open().forEach(raw => {
       try {
         if (raw.length > 0) {
           const doc = JSON.parse(raw);
           if (!isDoc<T>(doc)) throw new Error(INVALID_DOC(doc));
-          if (doc.__deleted) {
-            deleted.push(doc._id);
-          } else {
-            docs.push(doc);
-          }
+          if (!doc.__deleted) docs.push(doc);
         }
       } catch (err) {
         if (this._strict) throw err;
@@ -106,9 +101,7 @@ export default class LeafDB<T extends Draft> {
     });
 
     this._storage.flush();
-    docs
-      .filter(doc => !deleted.includes(doc._id))
-      .forEach(doc => this._set(doc));
+    docs.forEach(doc => this._set(doc));
 
     return corrupted;
   }
