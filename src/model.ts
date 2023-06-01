@@ -196,7 +196,7 @@ export default class LeafDB<T extends Draft> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(false);
 
-    this._delete(doc._id as string);
+    this._delete(doc._id);
     return Promise.resolve(true);
   }
 
@@ -205,7 +205,7 @@ export default class LeafDB<T extends Draft> {
     if (!Array.isArray(docs)) return Promise.resolve(0);
 
     return docs.reduce<number>((acc, cur) => {
-      this._delete(cur._id as string);
+      this._delete(cur._id);
       return acc + 1;
     }, 0);
   }
