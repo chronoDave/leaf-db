@@ -382,8 +382,8 @@ await db.update({}, { $add: { count: -3 } })
 
 // $push
 // { _id: 3, fruits: ['banana'] }
-await db.update({} }, { $push: { count: 'orange' } })
-// { _id: 3 , fuits: ['banana', 'orange'] }
+await db.update({} }, { $push: { fruits: 'orange' } })
+// { _id: 3 , fruits: ['banana', 'orange'] }
 
 // $set
 // { _id: 3, count: 'count' }
