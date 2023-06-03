@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import pMap from 'p-map';
 
 import {
   Doc,
@@ -111,24 +110,24 @@ export default class LeafDB<T extends Draft> {
     return this._storage?.close();
   }
 
-  async insertOne(newDoc: T) {
+  insertOne(newDoc: T) {
     if (!isDraft(newDoc) || (typeof newDoc._id === 'string' && this._memory.has(newDoc._id))) {
-      if (this._strict) return Promise.reject(INVALID_DOC(newDoc));
+      if (this._strict) throw new Error(INVALID_DOC(newDoc));
       return null;
     }
 
-    return Promise.resolve(this._set({
+    return this._set({
       ...newDoc,
       _id: typeof newDoc._id === 'string' ? newDoc._id : LeafDB.generateId()
-    }));
+    });
   }
 
-  async insert(newDocs: T[]) {
-    return pMap(newDocs, async newDoc => this.insertOne(newDoc), { concurrency: 64 })
-      .then(docs => docs.reduce<Array<Doc<T>>>((acc, doc) => {
-        if (doc !== null) acc.push(doc);
-        return acc;
-      }, []));
+  insert(newDocs: T[]) {
+    return newDocs.reduce<Array<Doc<T>>>((acc, cur) => {
+      const doc = this.insertOne(cur);
+      if (doc !== null) acc.push(doc);
+      return acc;
+    }, []);
   }
 
   async findOne(query: string | Query) {
