@@ -18,7 +18,7 @@ export const isObject = (x: unknown): x is object =>
   typeof x === 'object';
 export const isObjectEmpty = (x: object) =>
   Object.keys(x).length === 0;
-export const isTag = (x: string) =>
+export const isTag = (x: string): x is `$${string}` =>
   x[0] === '$';
 
 // Primitive validators
