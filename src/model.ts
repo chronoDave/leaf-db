@@ -8,7 +8,6 @@ import {
 } from './types';
 import {
   isDoc,
-  isDraft,
   isModifier,
   isQuery,
   isQueryMatch,
@@ -16,6 +15,8 @@ import {
 } from './validation';
 import { modify } from './modifiers';
 import {
+  DUPLICATE_DOC,
+  DUPLICATE_DOCS,
   INVALID_DOC,
   INVALID_QUERY,
   INVALID_UPDATE,
@@ -110,22 +111,17 @@ export default class LeafDB<T extends Draft> {
     return this._storage?.close();
   }
 
-  insertOne(newDoc: T) {
-    if (!isDraft(newDoc) || (typeof newDoc._id === 'string' && this._memory.has(newDoc._id))) {
-      if (this._strict) throw new Error(INVALID_DOC(newDoc));
-      return null;
+  insert(drafts: T[]) {
+    if (this._strict) {
+      if (drafts.length !== new Set(drafts).size) throw new Error(DUPLICATE_DOCS);
+      const doc = drafts.find(draft => this._memory.has(draft._id));
+      if (doc) throw new Error(DUPLICATE_DOC(doc as Doc<T>));
     }
 
-    return this._set({
-      ...newDoc,
-      _id: typeof newDoc._id === 'string' ? newDoc._id : LeafDB.generateId()
-    });
-  }
+    return drafts.reduce<Array<Doc<T>>>((acc, cur) => {
+      const _id = cur._id ?? LeafDB.generateId();
+      if (!this._memory.has(_id)) acc.push(this._set({ ...cur, _id }));
 
-  insert(newDocs: T[]) {
-    return newDocs.reduce<Array<Doc<T>>>((acc, cur) => {
-      const doc = this.insertOne(cur);
-      if (doc !== null) acc.push(doc);
       return acc;
     }, []);
   }

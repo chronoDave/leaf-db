@@ -31,20 +31,6 @@ $ npm i leaf-db
 
 ## Getting Started
 
-**JS**
-
-```JS
-import LeafDB from 'leaf-db';
-
-const db = new LeafDB();
-
-db.insertOne({ species: 'cat', name: 'whiskers' })
-  .then(inserted => console.log(`added ${inserted.name} to the database!`))
-  .catch(console.error)
-```
-
-**TS**
-
 ```TS
 import LeafDB from 'leaf-db';
 
@@ -54,9 +40,10 @@ interface Document {
 }
 
 const db = new LeafDB<Document>();
-db.insertOne({ species: 'cat', name: 'whiskers' })
-  .then(inserted => console.log(`added ${inserted.name} to the database!`))
-  .catch(console.error)
+const cat = db.insert([
+  { species: 'cat', name: 'whiskers' },
+  { species: 'bird', name: 'tulin' }
+]);
 ```
 
 ## API
@@ -100,11 +87,8 @@ const db = new LeafDB({ strict: true })
 const db = new LeafDB({ storage: process.cwd() })
 const db = new LeafDB({ storage: { root: process.cwd(), name: 'db' } })
 
-// Loading is not neccesary, but recommended
-// Not loading means the data from file isn't read,
-db.open()
+const data = db.open();
 
-// Closing database
 db.close()
 ```
 
@@ -147,32 +131,27 @@ Leaf-DB only supports field values supported by the JSON spec, which includes:
 
 ## Inserting docs
 
-`await db.insertOne(NewDoc) => Promise<Doc>`
-`await db.insert(NewDoc[]) => Promise<Doc[]>`
+`db.insert(Draft[]) => Doc[]`
 
-Inserts doc(s) into the database. `_id` is automatically generated if the _id does not exist.
+Inserts drafts into the database. `_id` is automatically generated if the _id does not exist.
 
 Fields cannot start with `$` (modifier field) or contain `.` (dot-queries). Values cannot be `undefined`.
 
-`insert()` will reject on the first invalid doc if `strict` is enabled, otherwise invalid docs are ignored.
+`insert()` will reject on the first invalid draft if `strict` is enabled, otherwise invalid drafts are ignored.
 
-`leaf-db` does not keep track of when docs are inserted, updated or deleted.
+`leaf-db` does not keep track of when drafts are inserted, updated or deleted.
 
 <b>Example</b>
 
 ```JS
-const newDoc = {
+const draft = {
   crud: 'create',
   data: [{
     field: 1
   }]
 }
 
-try {
-  const doc = await db.insertOne(newDoc) // newDoc
-} catch (err) {
-  console.error(err)
-}
+const doc = db.insert([draft]);
 ```
 
 ## Finding docs
@@ -190,6 +169,10 @@ Find doc(s) matching query. Operators and dot notation are supported and can be 
 // { _id: 2, type: 'normal', important: true, variants: ['weak', 'strong'] }
 // { _id: 3, type: 'strong', important: false, variants: ['weak', 'strong'] }
 // { _id: 4, type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3 } }
+
+// Find docs by _id
+// [1]
+await db.find({ _id: 1 });
 
 // Find docs matching type 'normal'
 // [1, 2, 3] (Doc _id's)

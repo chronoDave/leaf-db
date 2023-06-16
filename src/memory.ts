@@ -17,8 +17,8 @@ export default class Memory<T extends Draft> {
     return doc;
   }
 
-  has(_id: string) {
-    if (!this._docs.has(_id)) return false;
+  has(_id?: string) {
+    if (!_id || !this._docs.has(_id)) return false;
     return !this._docs.get(_id)?.__deleted;
   }
 
