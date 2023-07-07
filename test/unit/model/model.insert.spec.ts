@@ -13,6 +13,18 @@ test('[model.insert] inserts docs', t => {
   t.end();
 });
 
+test('[model.insert] inserts docs in memory', async t => {
+  const { db } = setup();
+
+  db.insert(data);
+  const docs = await db.find({});
+  t.true(Array.isArray(docs), 'is array');
+  t.strictEqual(docs.length, data.length, 'inserts docs');
+  t.deepEqual(docs[0], data[0], 'is doc');
+
+  t.end();
+});
+
 test('[model.insert] does not insert duplicate docs', t => {
   const { db } = setup();
 

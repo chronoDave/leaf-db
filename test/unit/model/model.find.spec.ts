@@ -2,6 +2,16 @@ import test from 'tape';
 
 import setup, { memory } from './fixture';
 
+test('[model.find] returns docs on empty query', async t => {
+  const { db } = setup({ memory });
+
+  const docs = await db.find({});
+  t.true(Array.isArray(docs), 'is array');
+  t.strictEqual(docs.length, Object.keys(memory).length, 'finds docs');
+
+  t.end();
+});
+
 test('[model.find] returns docs on query match (ids)', async t => {
   const { db } = setup({ memory });
 
