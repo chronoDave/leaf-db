@@ -44,14 +44,6 @@ export default class LeafDB<T extends Draft> {
   private readonly _storage?: Storage;
   private readonly _strict: boolean;
 
-  private _query(_id: string, query: Query) {
-    const doc = this._memory.get(_id);
-    if (!doc || doc.__deleted) return null;
-    return isQueryMatch(doc, query) ?
-      doc :
-      null;
-  }
-
   private _set(doc: Doc<T>) {
     this._memory.set(doc);
     this._storage?.append(JSON.stringify(doc));
@@ -134,9 +126,9 @@ export default class LeafDB<T extends Draft> {
 
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    for (let i = 0, ids = this._memory.all(); i < ids.length; i += 1) {
-      const doc = this._query(ids[i]._id, query);
-      if (doc) return Promise.resolve(doc);
+    for (let i = 0, docs = this._memory.all(); i < docs.length; i += 1) {
+      const doc = docs[i];
+      if (!doc.__deleted && isQueryMatch(doc, query)) return Promise.resolve(doc);
     }
 
     return Promise.resolve(null);
@@ -155,9 +147,8 @@ export default class LeafDB<T extends Draft> {
     }
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = this._memory.all().reduce<Array<Doc<T>>>((acc, { _id }) => {
-      const doc = this._query(_id, query);
-      if (doc) acc.push(doc);
+    const docs = this._memory.all().reduce<Array<Doc<T>>>((acc, doc) => {
+      if (!doc.__deleted && isQueryMatch(doc, query)) acc.push(doc);
       return acc;
     }, []);
 
