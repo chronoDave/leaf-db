@@ -48,6 +48,7 @@ module.exports = {
     'operator-linebreak': ['error', 'after'],
     'linebreak-style': 'off',
     'no-confusing-arrow': 'off',
+    'no-restricted-syntax': 'off',
     'comma-dangle': 'off',
     'arrow-body-style': 'warn',
     'max-len': ['error', {

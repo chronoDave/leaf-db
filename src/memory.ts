@@ -26,8 +26,8 @@ export default class Memory<T extends Draft> {
     return this._docs.delete(_id);
   }
 
-  all() {
-    return Array.from(this._docs.values());
+  docs() {
+    return this._docs.values();
   }
 
   flush() {

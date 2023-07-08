@@ -126,8 +126,7 @@ export default class LeafDB<T extends Draft> {
 
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    for (let i = 0, docs = this._memory.all(); i < docs.length; i += 1) {
-      const doc = docs[i];
+    for (const doc of this._memory.docs()) {
       if (!doc.__deleted && isQueryMatch(doc, query)) return Promise.resolve(doc);
     }
 
@@ -147,10 +146,10 @@ export default class LeafDB<T extends Draft> {
     }
     if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
 
-    const docs = this._memory.all().reduce<Array<Doc<T>>>((acc, doc) => {
-      if (!doc.__deleted && isQueryMatch(doc, query)) acc.push(doc);
-      return acc;
-    }, []);
+    const docs: Array<Doc<T>> = [];
+    for (const doc of this._memory.docs()) {
+      if (!doc.__deleted && isQueryMatch(doc, query)) docs.push(doc);
+    }
 
     return Promise.resolve(docs);
   }
