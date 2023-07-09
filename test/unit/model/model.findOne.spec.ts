@@ -32,7 +32,7 @@ test('[model.findOne] finds doc (simple)', async t => {
 test('[model.findOne] finds doc (nested)', async t => {
   const { db } = setup({ memory });
 
-  const doc = await db.findOne({ 'geolocation.type': 'Point' });
+  const doc = await db.findOne({ geolocation: { type: 'Point' } });
   t.true(doc, 'found doc');
 
   t.end();
@@ -41,7 +41,7 @@ test('[model.findOne] finds doc (nested)', async t => {
 test('[model.findOne] finds doc (complex)', async t => {
   const { db } = setup({ memory });
 
-  const doc = await db.findOne({ $includes: { 'geolocation.coordinates': 111.53333 } });
+  const doc = await db.findOne({ geolocation: { coordinates: { $has: 111.53333 } } });
   t.true(doc, 'found doc');
 
   t.end();

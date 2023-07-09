@@ -23,7 +23,7 @@ test('[model.delete] deletes docs if matches are found (simple)', async t => {
 test('[model.delete] deletes docs if matches are found (nested)', async t => {
   const { db } = setup({ memory });
 
-  const docs = await db.delete({ 'geolocation.type': 'Point' });
+  const docs = await db.delete({ geolocation: { type: 'Point' } });
   t.strictEqual(docs, 988, 'deletes docs');
 
   t.end();
@@ -32,7 +32,7 @@ test('[model.delete] deletes docs if matches are found (nested)', async t => {
 test('[model.delete] deletes docs if matches are found (complex)', async t => {
   const { db } = setup({ memory });
 
-  const docs = await db.delete({ $includes: { 'geolocation.coordinates': 10.23333 } });
+  const docs = await db.delete({ geolocation: { coordinates: { $has: 10.23333 } } });
   t.strictEqual(docs, 1, 'deletes docs');
 
   t.end();

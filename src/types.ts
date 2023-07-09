@@ -1,3 +1,5 @@
+export type Struct = { [key: string]: Json };
+
 export type Json =
   string |
   number |
@@ -20,16 +22,19 @@ export type Doc<T extends Draft> = T & {
 };
 
 export type Operators = {
-  $gt: Record<string, number>
-  $gte: Record<string, number>
-  $lt: Record<string, number>
-  $lte: Record<string, number>
-  $string: Record<string, string>
-  $stringStrict: Record<string, string>
-  $includes: Record<string, unknown>
-  $not: Record<string, unknown>
-  $keys: string[]
-  $or: Query[]
+  // Number
+  $gt: number
+  $gte: number
+  $lt: number
+  $lte: number
+  // Text
+  $text: string
+  $regex: RegExp
+  // Array
+  $has: Json
+  $size: number
+  // Logic
+  $not: Json
 };
 
 export type Modifiers = {
@@ -38,5 +43,10 @@ export type Modifiers = {
   $add: Record<string, number>
 };
 
-export type Query = Record<string, unknown> & Partial<Operators>;
-export type Update<T> = T | Partial<Modifiers>;
+export type Query<T extends Struct> = Partial<{
+  [K in keyof T]: T[K] extends Struct ?
+    Query<T[K]> :
+    T[K] | Partial<Operators>
+}>;
+
+export type Update<T extends Draft> = T | Partial<Modifiers>;

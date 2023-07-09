@@ -23,7 +23,7 @@ test('[model.deleteOne] deletes doc (simple)', async t => {
 test('[model.deleteOne] deletes doc (nested)', async t => {
   const { db } = setup({ memory });
 
-  const deleted = await db.deleteOne({ 'geolocation.type': 'Point' });
+  const deleted = await db.deleteOne({ geolocation: { type: 'Point' } });
   t.true(deleted, 'deletes doc');
 
   t.end();
@@ -32,7 +32,7 @@ test('[model.deleteOne] deletes doc (nested)', async t => {
 test('[model.deleteOne] deletes doc (complex)', async t => {
   const { db } = setup({ memory });
 
-  const deleted = await db.deleteOne({ $includes: { 'geolocation.coordinates': 56.18333 } });
+  const deleted = await db.deleteOne({ geolocation: { coordinates: { $has: 56.18333 } } });
   t.true(deleted, 'deletes doc');
 
   t.end();

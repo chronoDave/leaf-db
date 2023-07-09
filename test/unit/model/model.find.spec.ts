@@ -35,7 +35,7 @@ test('[model.find] returns docs on query match (simple)', async t => {
 test('[model.find] returns docs on query match (nested)', async t => {
   const { db } = setup({ memory });
 
-  const docs = await db.find({ 'geolocation.type': 'Point' });
+  const docs = await db.find({ geolocation: { type: 'Point' } });
   t.strictEqual(docs.length, 988, 'finds docs');
 
   t.end();
@@ -44,7 +44,7 @@ test('[model.find] returns docs on query match (nested)', async t => {
 test('[model.find] returns docs on query match (complex)', async t => {
   const { db } = setup({ memory });
 
-  const docs = await db.find({ $includes: { 'geolocation.coordinates': 56.18333 } });
+  const docs = await db.find({ geolocation: { coordinates: { $has: 56.18333 } } });
   t.strictEqual(docs.length, 1, 'finds docs');
 
   t.end();

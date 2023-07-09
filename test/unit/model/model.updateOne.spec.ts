@@ -37,7 +37,7 @@ test('[model.updateOne] replaces doc if match is found (simple)', async t => {
 test('[model.updateOne] replaces doc if match is found (nested)', async t => {
   const { db } = setup({ memory });
 
-  const doc = await db.updateOne({ 'geolocation.type': 'Point' }, {});
+  const doc = await db.updateOne({ geolocation: { type: 'Point' } }, {});
 
   t.true(doc, 'replaced doc');
 
@@ -47,7 +47,7 @@ test('[model.updateOne] replaces doc if match is found (nested)', async t => {
 test('[model.updateOne] replaces doc if match is found (complex)', async t => {
   const { db } = setup({ memory });
 
-  const doc = await db.updateOne({ $includes: { 'geolocation.coordinates': 56.18333 } }, {});
+  const doc = await db.updateOne({ geolocation: { coordinates: { $has: 56.18333 } } }, {});
 
   t.true(doc, 'replaced doc');
 
