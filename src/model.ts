@@ -118,7 +118,7 @@ export default class LeafDB<T extends Draft> {
     }, []);
   }
 
-  async findOne(query: string | Query) {
+  async findOne(query: string | Query<Doc<T>>) {
     if (typeof query === 'string') {
       const doc = this._memory.get(query);
       return Promise.resolve(doc);
@@ -133,7 +133,7 @@ export default class LeafDB<T extends Draft> {
     return Promise.resolve(null);
   }
 
-  async find(query: string[] | Query) {
+  async find(query: string[] | Query<Doc<T>>) {
     if (Array.isArray(query)) {
       const docs = query
         .reduce<Array<Doc<T>>>((acc, cur) => {
@@ -154,7 +154,7 @@ export default class LeafDB<T extends Draft> {
     return Promise.resolve(docs);
   }
 
-  async updateOne(query: string | Query, update: Update<T>) {
+  async updateOne(query: string | Query<Doc<T>>, update: Update<T>) {
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
     const doc = await this.findOne(query);
@@ -166,7 +166,7 @@ export default class LeafDB<T extends Draft> {
     return Promise.resolve(this._set(newDoc));
   }
 
-  async update(query: string[] | Query, update: Update<T>) {
+  async update(query: string[] | Query<Doc<T>>, update: Update<T>) {
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
     const newDocs = this.find(query)
@@ -177,7 +177,7 @@ export default class LeafDB<T extends Draft> {
     return Promise.resolve(newDocs);
   }
 
-  async deleteOne(query: string | Query): Promise<boolean> {
+  async deleteOne(query: string | Query<Doc<T>>): Promise<boolean> {
     const doc = await this.findOne(query);
     if (!doc) return Promise.resolve(false);
 
@@ -185,7 +185,7 @@ export default class LeafDB<T extends Draft> {
     return Promise.resolve(true);
   }
 
-  async delete(query: string[] | Query): Promise<number> {
+  async delete(query: string[] | Query<Doc<T>>): Promise<number> {
     const docs = await this.find(query);
     if (!Array.isArray(docs)) return Promise.resolve(0);
 
