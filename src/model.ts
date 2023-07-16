@@ -8,12 +8,7 @@ import {
 } from './types';
 import { isDoc, isModifier, isQueryMatch } from './validation';
 import { modify } from './modifiers';
-import {
-  DUPLICATE_DOC,
-  DUPLICATE_DOCS,
-  INVALID_DOC,
-  MEMORY_MODE
-} from './errors';
+import { DUPLICATE_DOC, INVALID_DOC, MEMORY_MODE } from './errors';
 import Memory from './memory';
 import Storage from './storage';
 
@@ -21,7 +16,6 @@ export * from './types';
 
 export type LeafDBOptions = {
   storage?: string | { root: string, name?: string }
-  strict?: boolean
 };
 
 export default class LeafDB<T extends Draft> {
@@ -34,7 +28,6 @@ export default class LeafDB<T extends Draft> {
 
   private readonly _memory: Memory<T>;
   private readonly _storage?: Storage;
-  private readonly _strict: boolean;
 
   private _set(doc: Doc<T>) {
     this._memory.set(doc);
@@ -50,7 +43,6 @@ export default class LeafDB<T extends Draft> {
 
   constructor(options?: LeafDBOptions) {
     this._memory = new Memory();
-    this._strict = options?.strict ?? false;
 
     const root = typeof options?.storage === 'string' ?
       options?.storage :
@@ -68,7 +60,7 @@ export default class LeafDB<T extends Draft> {
   open() {
     if (!this._storage) throw new Error(MEMORY_MODE('open'));
 
-    const corrupted: string[] = [];
+    const corrupted: Array<{ raw: string, err: unknown }> = [];
     const docs: Array<Doc<T>> = [];
 
     this._storage.open().forEach(raw => {
@@ -79,8 +71,7 @@ export default class LeafDB<T extends Draft> {
           if (!doc.__deleted) docs.push(doc);
         }
       } catch (err) {
-        if (this._strict) throw err;
-        corrupted.push(raw);
+        corrupted.push({ raw, err });
       }
     });
 
@@ -96,18 +87,20 @@ export default class LeafDB<T extends Draft> {
   }
 
   insert(drafts: T[]) {
-    if (this._strict) {
-      if (drafts.length !== new Set(drafts).size) throw new Error(DUPLICATE_DOCS);
-      const doc = drafts.find(draft => this._memory.has(draft._id));
-      if (doc) throw new Error(DUPLICATE_DOC(doc as Doc<T>));
-    }
+    const docs: Array<Doc<T>> = [];
+    drafts.forEach(draft => {
+      if (isDoc(draft)) {
+        if (
+          this._memory.has(draft._id) ||
+          docs.some(doc => doc._id === draft._id)
+        ) throw new Error(DUPLICATE_DOC(draft));
+        docs.push(draft);
+      } else {
+        docs.push(({ _id: LeafDB.generateId(), ...draft }));
+      }
+    });
 
-    return drafts.reduce<Array<Doc<T>>>((acc, cur) => {
-      const _id = cur._id ?? LeafDB.generateId();
-      if (!this._memory.has(_id)) acc.push(this._set({ ...cur, _id }));
-
-      return acc;
-    }, []);
+    return docs.map(doc => this._set(doc));
   }
 
   find(...queries: Array<Query<Doc<T>>>) {

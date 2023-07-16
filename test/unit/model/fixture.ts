@@ -23,7 +23,6 @@ export type DataModel = {
 export type Options = {
   root: string
   name: string
-  strict: boolean
   data: any[]
   memory: Record<string, object>
 };
@@ -38,7 +37,6 @@ export default (options?: Partial<Options>) => {
   }
 
   const db = new LeafDB({
-    strict: options?.strict,
     storage: options?.root ?
       { root: options.root, name } :
       undefined

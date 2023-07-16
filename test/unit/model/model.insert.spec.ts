@@ -13,11 +13,11 @@ test('[model.insert] inserts docs', t => {
   t.end();
 });
 
-test('[model.insert] inserts docs in memory', async t => {
+test('[model.insert] inserts docs in memory', t => {
   const { db } = setup();
 
   db.insert(data);
-  const docs = await db.find({});
+  const docs = db.find({});
   t.true(Array.isArray(docs), 'is array');
   t.strictEqual(docs.length, data.length, 'inserts docs');
   t.deepEqual(docs[0], data[0], 'is doc');
@@ -28,8 +28,25 @@ test('[model.insert] inserts docs in memory', async t => {
 test('[model.insert] does not insert duplicate docs', t => {
   const { db } = setup();
 
-  const docs = db.insert([...data, ...data]);
-  t.equal(docs.length, data.length, 'does not insert duplicates');
+  try {
+    db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]);
+    t.fail('should not insert duplicate docs');
+  } catch (err) {
+    t.pass('does not insert duplicates docs');
+  }
+
+  t.end();
+});
+
+test('[model.insert] does not insert docs if any doc is invalid', t => {
+  const { db } = setup();
+
+  try {
+    db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]);
+    t.fail('expected to throw');
+  } catch (err) {
+    t.equal(db.find({}).length, 0, 'does not insert any docs');
+  }
 
   t.end();
 });
@@ -41,19 +58,6 @@ test('[model.insert] inserts duplicate drafts', t => {
   const docs = db.insert(drafts);
 
   t.equal(drafts.length, docs.length, 'inserts duplicate drafts');
-
-  t.end();
-});
-
-test('[model.insert] if strict, throws duplicate docs', t => {
-  const { db } = setup({ strict: true });
-
-  try {
-    db.insert([...data, ...data]);
-    t.fail('does not throw');
-  } catch (err) {
-    t.pass('throws');
-  }
 
   t.end();
 });

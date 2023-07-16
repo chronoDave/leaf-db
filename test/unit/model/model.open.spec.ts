@@ -129,40 +129,17 @@ test('[model.open] throws in memory mode', t => {
   t.end();
 });
 
-test('[model.open] throws on corrupt data if strict is enabled', t => {
-  const valid = { _id: '2', valid: true };
-  const data = [valid, ...invalid];
-
-  const { file, db } = setup({
-    data,
-    root: __dirname,
-    strict: true
-  });
-
-  try {
-    db.open();
-    t.fail('expected to throw');
-  } catch (err) {
-    t.pass('throws');
-  }
-
-  db.close();
-  fs.unlinkSync(file);
-
-  t.end();
-});
-
 test('[model.open] can read inserted data', async t => {
   const data = [{ _id: '1' }, { _id: '2' }];
 
   const { file, db } = setup({ root: __dirname });
   db.open();
-  await db.insert(data);
+  db.insert(data);
   db.close();
   const corrupted = db.open();
 
   t.equal(corrupted.length, 0, 'reads all data');
-  const docs = await db.find({});
+  const docs = db.find({});
   t.equal(docs.length, data.length, 'inserts all data');
 
   db.close();
@@ -176,13 +153,13 @@ test('[model.open] removes invalid data', async t => {
 
   const { file, db } = setup({ root: __dirname });
   db.open();
-  await db.insert(data);
+  db.insert(data);
   db.drop();
   db.close();
   const corrupted = db.open();
 
   t.equal(corrupted.length, 0, 'removes invalid data from file');
-  const docs = await db.find({});
+  const docs = db.find({});
   t.equal(docs.length, 0, 'removes invalid data from memory');
 
   db.close();
