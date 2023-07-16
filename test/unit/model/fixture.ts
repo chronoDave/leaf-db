@@ -4,6 +4,22 @@ import path from 'path';
 import LeafDB from '../../../src/model';
 import datasetMeteorites from '../../assets/nasa_earth-meteorite-landings';
 
+export type DataModel = {
+  name: string
+  id: string
+  nametype: string
+  recclass: string
+  mass: string
+  fall: string
+  year: string
+  reclat: string
+  reclong: string
+  geolocation: {
+    type: string,
+    coordinates: [number, number]
+  }
+};
+
 export type Options = {
   root: string
   name: string
@@ -37,21 +53,7 @@ export default (options?: Partial<Options>) => {
 };
 
 export const memory = Object.fromEntries(datasetMeteorites.map(x => [x._id, x]));
-export const data = datasetMeteorites as unknown as Array<{
-  name: string
-  id: string
-  nametype: string
-  recclass: string
-  mass: string
-  fall: string
-  year: string
-  reclat: string
-  reclong: string
-  geolocation: {
-    type: string,
-    coordinates: [number, number]
-  }
-}>;
+export const data = datasetMeteorites as unknown as DataModel[];
 
 export const production = {
   _id: '1',

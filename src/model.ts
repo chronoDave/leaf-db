@@ -9,7 +9,6 @@ import {
 import {
   isDoc,
   isModifier,
-  isQuery,
   isQueryMatch,
   isUpdate
 } from './validation';
@@ -18,7 +17,6 @@ import {
   DUPLICATE_DOC,
   DUPLICATE_DOCS,
   INVALID_DOC,
-  INVALID_QUERY,
   INVALID_UPDATE,
   MEMORY_MODE
 } from './errors';
@@ -118,58 +116,22 @@ export default class LeafDB<T extends Draft> {
     }, []);
   }
 
-  async findOne(query: string | Query<Doc<T>>) {
-    if (typeof query === 'string') {
-      const doc = this._memory.get(query);
-      return Promise.resolve(doc);
-    }
-
-    if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
-
-    for (const doc of this._memory.docs()) {
-      if (!doc.__deleted && isQueryMatch(doc, query)) return Promise.resolve(doc);
-    }
-
-    return Promise.resolve(null);
-  }
-
-  async find(query: string[] | Query<Doc<T>>) {
-    if (Array.isArray(query)) {
-      const docs = query
-        .reduce<Array<Doc<T>>>((acc, cur) => {
-          const doc = this._memory.get(cur);
-          if (doc) acc.push(doc);
-          return acc;
-        }, []);
-
-      return Promise.resolve(docs);
-    }
-    if (!isQuery(query)) return Promise.reject(INVALID_QUERY(query));
-
+  async find(...queries: Array<Query<Doc<T>>>) {
     const docs: Array<Doc<T>> = [];
     for (const doc of this._memory.docs()) {
-      if (!doc.__deleted && isQueryMatch(doc, query)) docs.push(doc);
+      if (
+        !doc.__deleted &&
+        queries.some(query => isQueryMatch(doc, query))
+      ) docs.push(doc);
     }
 
     return Promise.resolve(docs);
   }
 
-  async updateOne(query: string | Query<Doc<T>>, update: Update<T>) {
+  async update(update: Update<T>, ...queries: Array<Query<Doc<T>>>) {
     if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
 
-    const doc = await this.findOne(query);
-    if (!doc) return Promise.resolve(null);
-
-    const newDoc = isModifier(update) ?
-      modify(doc, update) :
-      { ...update, _id: doc._id };
-    return Promise.resolve(this._set(newDoc));
-  }
-
-  async update(query: string[] | Query<Doc<T>>, update: Update<T>) {
-    if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
-
-    const newDocs = this.find(query)
+    const newDocs = this.find(...queries)
       .then(docs => docs.map(doc => isModifier(update) ?
         modify(doc, update) :
         { ...update, _id: doc._id }));
@@ -177,16 +139,8 @@ export default class LeafDB<T extends Draft> {
     return Promise.resolve(newDocs);
   }
 
-  async deleteOne(query: string | Query<Doc<T>>): Promise<boolean> {
-    const doc = await this.findOne(query);
-    if (!doc) return Promise.resolve(false);
-
-    this._delete(doc._id);
-    return Promise.resolve(true);
-  }
-
-  async delete(query: string[] | Query<Doc<T>>): Promise<number> {
-    const docs = await this.find(query);
+  async delete(...queries: Array<Query<Doc<T>>>): Promise<number> {
+    const docs = await this.find(...queries);
     if (!Array.isArray(docs)) return Promise.resolve(0);
 
     return docs.reduce<number>((acc, cur) => {

@@ -156,8 +156,8 @@ const doc = db.insert([draft]);
 
 ### Basic query
 
-`await db.findOne(string | Query) => Promise<Doc>`
-`await db.find(string[] | Query) => Promise<Doc[]>`
+`await db.findOne(...Query[]) => Promise<Doc>`
+`await db.find(...Query[]) => Promise<Doc[]>`
 
 Find doc(s) matching query. Operators are supported and can be mixed together with object properties.
 
@@ -176,24 +176,28 @@ await db.find({ _id: '1' });
 // [1, 2, 3] (Doc _id's)
 await db.find({ type: 'normal' })
 
-// Find all docs matching type 'normal' and important 'true'
+// Find docs matching type 'normal' and important 'true'
 // [2], all fields must match
 await db.find({ type: 'normal', important: 'true' })
 
-// Find all docs with variants 'weak'
+// Find docs with variants 'weak'
 // [4], note how only 4 matches, even though all entries contain weak
 // Array content and order must mach
 await db.find({ variant: ['weak'] })
 
-// Find all docs with variants 'strong', 'weak', in that order
+// Find docs with variants 'strong', 'weak', in that order
 // []
 await db.find({ variant: ['strong', 'weak'] })
 
-// Find all docs with parent '3'
+// Find docs with parent '3'
 // [], all keys must be present
 await db.find({ properties: { parent: '3' } })
 // [4], key order does not matter
 await db.find({ properties: { parent: '3', type: 'weak' } })
+
+// Find docs that either have parent '4' or important 'false'
+// [1, 3]
+await db.find({ properties: { parent: '4' } }, { important: false });
 ```
 
 ### Operators
