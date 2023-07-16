@@ -6,18 +6,12 @@ import {
   Update,
   Draft
 } from './types';
-import {
-  isDoc,
-  isModifier,
-  isQueryMatch,
-  isUpdate
-} from './validation';
+import { isDoc, isModifier, isQueryMatch } from './validation';
 import { modify } from './modifiers';
 import {
   DUPLICATE_DOC,
   DUPLICATE_DOCS,
   INVALID_DOC,
-  INVALID_UPDATE,
   MEMORY_MODE
 } from './errors';
 import Memory from './memory';
@@ -116,7 +110,7 @@ export default class LeafDB<T extends Draft> {
     }, []);
   }
 
-  async find(...queries: Array<Query<Doc<T>>>) {
+  find(...queries: Array<Query<Doc<T>>>) {
     const docs: Array<Doc<T>> = [];
     for (const doc of this._memory.docs()) {
       if (
@@ -125,25 +119,18 @@ export default class LeafDB<T extends Draft> {
       ) docs.push(doc);
     }
 
-    return Promise.resolve(docs);
+    return docs;
   }
 
-  async update(update: Update<T>, ...queries: Array<Query<Doc<T>>>) {
-    if (!isUpdate(update)) return Promise.reject(INVALID_UPDATE(update));
-
-    const newDocs = this.find(...queries)
-      .then(docs => docs.map(doc => isModifier(update) ?
+  update(update: Update<T>, ...queries: Array<Query<Doc<T>>>) {
+    return this.find(...queries)
+      .map(doc => isModifier(update) ?
         modify(doc, update) :
-        { ...update, _id: doc._id }));
-
-    return Promise.resolve(newDocs);
+        { ...update, _id: doc._id });
   }
 
-  async delete(...queries: Array<Query<Doc<T>>>): Promise<number> {
-    const docs = await this.find(...queries);
-    if (!Array.isArray(docs)) return Promise.resolve(0);
-
-    return docs.reduce<number>((acc, cur) => {
+  delete(...queries: Array<Query<Doc<T>>>) {
+    return this.find(...queries).reduce<number>((acc, cur) => {
       this._delete(cur._id);
       return acc + 1;
     }, 0);

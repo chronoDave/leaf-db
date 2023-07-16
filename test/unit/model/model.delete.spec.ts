@@ -2,46 +2,46 @@ import test from 'tape';
 
 import setup, { memory } from './fixture';
 
-test('[model.delete] deletes docs if matches are found (simple)', async t => {
+test('[model.delete] deletes docs if matches are found (simple)', t => {
   const { db } = setup({ memory });
 
-  const docs = await db.delete({ mass: '720' });
+  const docs = db.delete({ mass: '720' });
   t.strictEqual(docs, 2, 'deletes docs (simple)');
 
   t.end();
 });
 
-test('[model.delete] deletes docs if matches are found (nested)', async t => {
+test('[model.delete] deletes docs if matches are found (nested)', t => {
   const { db } = setup({ memory });
 
-  const docs = await db.delete({ geolocation: { type: 'Point' } });
+  const docs = db.delete({ geolocation: { type: 'Point' } });
   t.strictEqual(docs, 988, 'deletes docs (nested)');
 
   t.end();
 });
 
-test('[model.delete] deletes docs if matches are found (complex)', async t => {
+test('[model.delete] deletes docs if matches are found (complex)', t => {
   const { db } = setup({ memory });
 
-  const docs = await db.delete({ geolocation: { coordinates: { $has: 10.23333 } } });
+  const docs = db.delete({ geolocation: { coordinates: { $has: 10.23333 } } });
   t.strictEqual(docs, 1, 'deletes docs (complex)');
 
   t.end();
 });
 
-test('[model.delete] returns 0 if no match is found', async t => {
+test('[model.delete] returns 0 if no match is found', t => {
   const { db } = setup({ memory });
 
-  const docs = await db.delete({ _id: '-1' });
+  const docs = db.delete({ _id: '-1' });
   t.strictEqual(docs, 0, 'does not delete docs');
 
   t.end();
 });
 
-test('[model.delete] deletes docs if any query matches', async t => {
+test('[model.delete] deletes docs if any query matches', t => {
   const { db } = setup({ memory });
 
-  const docs = await db.delete(
+  const docs = db.delete(
     { _id: '-1' },
     { geolocation: { coordinates: { $has: 10.23333 } } }
   );
