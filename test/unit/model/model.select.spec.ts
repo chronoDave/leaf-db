@@ -1,9 +1,10 @@
 import test from 'tape';
 
+import type { Doc } from './fixture';
 import setup, { memory } from './fixture';
 
 test('[model.select] returns docs on empty query', t => {
-  const { db } = setup({ memory });
+  const { db } = setup<Doc>({ memory });
 
   const docs = db.select({});
   t.true(Array.isArray(docs), 'is array');
@@ -13,7 +14,7 @@ test('[model.select] returns docs on empty query', t => {
 });
 
 test('[model.select] returns docs on query match (simple)', t => {
-  const { db } = setup({ memory });
+  const { db } = setup<Doc>({ memory });
 
   const docs = db.select({ nametype: 'Valid' });
   t.strictEqual(docs.length, 1000, 'finds docs (simple)');
@@ -22,7 +23,7 @@ test('[model.select] returns docs on query match (simple)', t => {
 });
 
 test('[model.select] returns docs on query match (nested)', t => {
-  const { db } = setup({ memory });
+  const { db } = setup<Doc>({ memory });
 
   const docs = db.select({ geolocation: { type: 'Point' } });
   t.strictEqual(docs.length, 988, 'finds docs (nested)');
@@ -31,7 +32,7 @@ test('[model.select] returns docs on query match (nested)', t => {
 });
 
 test('[model.select] returns docs on query match (complex)', t => {
-  const { db } = setup({ memory });
+  const { db } = setup<Doc>({ memory });
 
   const docs = db.select({ geolocation: { coordinates: { $has: 56.18333 } } });
   t.strictEqual(docs.length, 1, 'finds docs (complex)');
@@ -40,7 +41,7 @@ test('[model.select] returns docs on query match (complex)', t => {
 });
 
 test('[model.select] returns empty array if query does not match', t => {
-  const { db } = setup({ memory });
+  const { db } = setup<Doc>({ memory });
 
   const docs = db.select({ geolocation: { coordinates: { $has: -1 } } });
   t.strictEqual(docs.length, 0, 'does not find docs (no match)');
@@ -49,7 +50,7 @@ test('[model.select] returns empty array if query does not match', t => {
 });
 
 test('[model.select] returns docs if any query matches', t => {
-  const { db } = setup({ memory });
+  const { db } = setup<Doc>({ memory });
 
   const docs = db.select(
     { geolocation: { coordinates: { $has: -1 } } },

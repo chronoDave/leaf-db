@@ -1,17 +1,15 @@
-import * as dot from '@chronocide/dot-obj';
 import deepEqual from 'fast-deep-equal';
 
 import {
   Doc,
   Draft,
-  Modifiers,
-  Struct,
   Json,
+  JsonObject,
   Query
 } from './types';
 
 // Guards
-export const isObject = (x: unknown): x is Struct =>
+export const isObject = (x: unknown): x is JsonObject =>
   x !== null &&
   !Array.isArray(x) &&
   typeof x === 'object';
@@ -22,6 +20,10 @@ export const isTag = (x: string): x is `$${string}` =>
 export const hasTag = ([key, value]: [string, unknown]) =>
   isTag(key) &&
   value !== undefined;
+export const hasTagDeep = ([key, value]: [string, unknown]): boolean =>
+  value !== null && typeof value === 'object' ?
+    Object.entries(value).some(hasTagDeep) :
+    hasTag([key, value]);
 export const hasKey = (entry: [string, unknown], key: string) =>
   entry[0] === key &&
   entry[1] !== undefined;
@@ -29,35 +31,14 @@ export const hasKey = (entry: [string, unknown], key: string) =>
 // Guards
 export const isDraft = <T extends Draft>(x: unknown): x is T =>
   isObject(x) &&
-  dot.every(x, entry => !hasTag(entry));
+  !Object.entries(x).some(hasTagDeep);
 export const isDoc = <T extends Draft>(x: unknown): x is Doc<T> =>
   isDraft(x) &&
   typeof x._id === 'string' &&
   x._id.length > 0;
-export const isModifier = (x: unknown): x is Partial<Modifiers> =>
-  isObject(x) &&
-  Object.keys(x).length > 0 &&
-  dot.every(x, entry => !hasKey(entry, '_id')) &&
-  Object.entries(x).every(hasTag);
-
-// Validators
-export const hasModifier = <T extends keyof Modifiers>(
-  modifier: T,
-  x: unknown
-): x is Modifiers[T] => {
-  if (['$push', '$set'].includes(modifier)) return isObject(x);
-
-  if (modifier === '$add') {
-    if (!isObject(x)) return false;
-    if (dot.some(x, entry => typeof entry[1] !== 'number')) return false;
-    return true;
-  }
-
-  return false;
-};
 
 // Query
-export const isQueryMatch = <T extends Struct>(
+export const isQueryMatch = <T extends JsonObject>(
   doc: T | Json,
   query: Query<T>
 ): boolean => {

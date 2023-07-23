@@ -1,13 +1,13 @@
 import crypto from 'crypto';
+import merge from 'lodash.merge';
 
 import {
   Doc,
   Query,
-  Update,
-  Draft
+  Draft,
+  Update
 } from './types';
-import { isDoc, isModifier, isQueryMatch } from './validation';
-import { modify } from './modifiers';
+import { isDoc, isQueryMatch } from './validation';
 import { DUPLICATE_DOC, INVALID_DOC, MEMORY_MODE } from './errors';
 import Memory from './memory';
 import Storage from './storage';
@@ -115,11 +115,12 @@ export default class LeafDB<T extends Draft> {
     return docs;
   }
 
-  update(update: Update<T>, ...queries: Array<Query<Doc<T>>>) {
+  update(update: Update<Doc<T>>, ...queries: Array<Query<Doc<T>>>) {
     return this.select(...queries)
-      .map(doc => isModifier(update) ?
-        modify(doc, update) :
-        { ...update, _id: doc._id });
+      .map(doc => {
+        this._delete(doc._id);
+        return this._set(merge(doc, update));
+      });
   }
 
   delete(...queries: Array<Query<Doc<T>>>) {

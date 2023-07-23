@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 
-import LeafDB from '../../../src/model';
+import LeafDB, { Draft } from '../../../src/model';
 import datasetMeteorites from '../../assets/nasa_earth-meteorite-landings';
 
-export type DataModel = {
+export type Doc = {
   name: string
   id: string
   nametype: string
@@ -27,7 +27,7 @@ export type Options = {
   memory: Record<string, object>
 };
 
-export default (options?: Partial<Options>) => {
+export default <T extends Draft = {}>(options?: Partial<Options>) => {
   let file: string = '';
   const name = options?.name ?? 'test';
 
@@ -36,7 +36,7 @@ export default (options?: Partial<Options>) => {
     fs.writeFileSync(file, options?.data ? options.data.map(x => JSON.stringify(x)).join('\n') : '');
   }
 
-  const db = new LeafDB({
+  const db = new LeafDB<T>({
     storage: options?.root ?
       { root: options.root, name } :
       undefined
@@ -51,7 +51,7 @@ export default (options?: Partial<Options>) => {
 };
 
 export const memory = Object.fromEntries(datasetMeteorites.map(x => [x._id, x]));
-export const data = datasetMeteorites as unknown as DataModel[];
+export const data = datasetMeteorites as unknown as Doc[];
 
 export const production = {
   _id: '1',

@@ -1,5 +1,7 @@
-export type Struct = { [key: string]: Json };
+// Helpers
+export type Join<T extends Array<string | number | Symbol>> = T[number];
 
+// Base
 export type Json =
   string |
   number |
@@ -8,19 +10,9 @@ export type Json =
   Json[] |
   { [key: string]: Json };
 
-export type Join<T extends Array<string | number | Symbol>> = T[number];
+export type JsonObject = { [key: string]: Json };
 
-export type Draft = { _id?: string } & {
-  [key: string]: Json
-  [operator: `$${string}`]: never
-  [property: `__${string}`]: never
-};
-
-export type Doc<T extends Draft> = T & {
-  readonly _id: string
-  readonly __deleted?: boolean
-};
-
+// Leaf-DB
 export type Operators = {
   // Number
   $gt: number
@@ -37,16 +29,25 @@ export type Operators = {
   $not: Json
 };
 
-export type Modifiers = {
-  $push: Record<string, Record<string, unknown>>
-  $set: Record<string, Record<string, unknown>>
-  $add: Record<string, number>
+export type Draft = { _id?: string } & {
+  [key: string]: Json
+  [key: `$${string}`]: never
+  [key: `__${string}`]: never
 };
 
-export type Query<T extends Struct> = Partial<{
-  [K in keyof T]: T[K] extends Struct ?
+export type Doc<T extends Draft> = T & {
+  readonly _id: string
+  readonly __deleted?: boolean
+};
+
+export type Query<T> = Partial<{
+  [K in keyof T]: T[K] extends JsonObject ?
     Query<T[K]> :
     T[K] | Partial<Operators>
 }>;
 
-export type Update<T extends Draft> = T | Partial<Modifiers>;
+export type Update<T> = Partial<{
+  [K in keyof T]?: T[K] extends object ?
+    Update<T[K]> :
+    T[K]
+}>;
