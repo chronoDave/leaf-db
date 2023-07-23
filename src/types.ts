@@ -50,4 +50,8 @@ export type Update<T> = Partial<{
   [K in keyof T]?: T[K] extends object ?
     Update<T[K]> :
     T[K]
+} & {
+  _id: never
+  [key: `$${string}`]: never
+  [key: `__${string}`]: never
 }>;

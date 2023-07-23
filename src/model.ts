@@ -116,6 +116,8 @@ export default class LeafDB<T extends Draft> {
   }
 
   update(update: Update<Doc<T>>, ...queries: Array<Query<Doc<T>>>) {
+    if ('_id' in update) throw new Error('Invalid update, cannot contain key `_id`');
+
     return this.select(...queries)
       .map(doc => {
         this._delete(doc._id);

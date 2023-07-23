@@ -59,3 +59,17 @@ test('[model.update] replaces docs if any query matches', t => {
 
   t.end();
 });
+
+test('[model.update] throws if update contains _id', t => {
+  const { db } = setup<Doc>({ memory });
+
+  try {
+    // @ts-expect-error: Test
+    db.update({ _id: '3' }, {});
+    t.fail('expected to throw');
+  } catch (err) {
+    t.pass('throws');
+  }
+
+  t.end();
+});
