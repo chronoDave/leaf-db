@@ -73,14 +73,10 @@ const pets = db.insert([
  - `options.storage` (string). Storage file path. Must be absolute.
  - `options.storage.root` (string). Storage file path. Must be absolute.
  - `options.storage.name` (default: `leaf-db`). Storage file name.
- - `options.strict` (default: `false`). If true, throws instead of ignores errors
 
 ```JS
 // Memory-only database
 const db = new LeafDB()
-
-// Strict database
-const db = new LeafDB({ strict: true })
 
 // Persistent database
 const db = new LeafDB({ storage: process.cwd() })
@@ -135,8 +131,6 @@ Inserts drafts into the database. `_id` is automatically generated if the _id do
 
 Fields cannot start with `$` (modifier field). Values cannot be `undefined`.
 
-`insert()` will reject on the first invalid draft if `strict` is enabled, otherwise invalid drafts are ignored.
-
 `leaf-db` does not keep track of when drafts are inserted, updated or deleted.
 
 <b>Example</b>
@@ -156,8 +150,7 @@ const doc = db.insert([draft]);
 
 ### Basic query
 
-`await db.findOne(...Query[]) => Promise<Doc>`
-`await db.find(...Query[]) => Promise<Doc[]>`
+`db.select(...Query[]) => Doc[]`
 
 Find doc(s) matching query. Operators are supported and can be mixed together with object properties.
 
@@ -170,34 +163,34 @@ Find doc(s) matching query. Operators are supported and can be mixed together wi
 
 // Find docs by _id
 // [1]
-await db.find({ _id: '1' });
+db.select({ _id: '1' });
 
 // Find docs matching type 'normal'
 // [1, 2, 3] (Doc _id's)
-await db.find({ type: 'normal' })
+db.select({ type: 'normal' })
 
 // Find docs matching type 'normal' and important 'true'
 // [2], all fields must match
-await db.find({ type: 'normal', important: 'true' })
+db.select({ type: 'normal', important: 'true' })
 
 // Find docs with variants 'weak'
 // [4], note how only 4 matches, even though all entries contain weak
 // Array content and order must mach
-await db.find({ variant: ['weak'] })
+db.select({ variant: ['weak'] })
 
 // Find docs with variants 'strong', 'weak', in that order
 // []
-await db.find({ variant: ['strong', 'weak'] })
+db.select({ variant: ['strong', 'weak'] })
 
 // Find docs with parent '3'
 // [], all keys must be present
-await db.find({ properties: { parent: '3' } })
+db.select({ properties: { parent: '3' } })
 // [4], key order does not matter
-await db.find({ properties: { parent: '3', type: 'weak' } })
+db.select({ properties: { parent: '3', type: 'weak' } })
 
 // Find docs that either have parent '4' or important 'false'
 // [1, 3]
-await db.find({ properties: { parent: '4' } }, { important: false });
+db.select({ properties: { parent: '4' } }, { important: false });
 ```
 
 ### Operators
@@ -233,35 +226,34 @@ Operators can be used to create advanced queries. The following operators are su
 
 // $gt / $gte / $lt / $lte
 // [4]
-await db.find({ properties: { parent: { $gt: 2 } } })
+db.select({ properties: { parent: { $gt: 2 } } })
 // [], all fields must match
-await db.find({ _id: '1', properties: { parent: { $gt: 2 } } })
+db.select({ _id: '1', properties: { parent: { $gt: 2 } } })
 
 // $not
 // [2, 3, 4, 5]
-await db.find({ _id: { $not: '1' } })
+db.select({ _id: { $not: '1' } })
 
 // $text
 // [1, 2]
-await db.find({ type: { $text: 'mal' } })
+db.select({ type: { $text: 'mal' } })
 // [1, 2]
-await db.find({ type: { $text: 'MAL' } })
+db.select({ type: { $text: 'MAL' } })
 
 // $regex
 // []
-await db.find({ type: { $regex: /MAL/ } })
+db.select({ type: { $regex: /MAL/ } })
 
 // $has
 // [1, 2, 3, 4]
-await db.find({ variants: { $includes: 'weak' } })
+db.select({ variants: { $includes: 'weak' } })
 // [0] field is not an array
-await db.find({ type: { $includes: 'weak' } })
+db.select({ type: { $includes: 'weak' } })
 ```
 
 ## Updating docs
 
-`await db.updateOne(string | Query, Update | NewDoc) => Promise<Doc>`
-`await db.update(string[] | Query, Update | NewDoc) => Promise<Doc[]>`
+`db.update(string[] | Query, Update | NewDoc) => Doc[]`
 
 Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`. Returns the updated docs.
 
@@ -279,21 +271,21 @@ If no modifiers are provided, `update()` will override the found doc(s) with `up
 // { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
 
 // Set all docs to {}
-await db.update()
+db.update()
 
 // Set matching docs to { type: 'strong' }
 // { _id: '1', type: 'strong' }
 // { _id: '2', type: 'strong' }
 // { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
 // { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
-await db.update({ type: 'normal' }, { type: 'strong' })
+db.update({ type: 'normal' }, { type: 'strong' })
 
 // _id fields will not be overwritten
 // { _id: '1', type: 'strong' }
 // { _id: '2', type: 'strong' }
 // { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
 // { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
-await db.update({ type: 'normal' }, { type: 'strong', _id: '1' })
+db.update({ type: 'normal' }, { type: 'strong', _id: '1' })
 ```
 
 ### Modifiers
@@ -314,28 +306,27 @@ Modifiers can be used to set specific values
 
 // $add
 // { _id: '3', count: 9 }
-await db.update({} }, { $add: { count: 3 } })
+db.update({} }, { $add: { count: 3 } })
 // { _id: '3', count: 3 }
-await db.update({}, { $add: { count: -3 } })
+db.update({}, { $add: { count: -3 } })
 
 // $push
 // { _id: '3', fruits: ['banana'] }
-await db.update({} }, { $push: { fruits: 'orange' } })
+db.update({} }, { $push: { fruits: 'orange' } })
 // { _id: '3' , fruits: ['banana', 'orange'] }
 
 // $set
 // { _id: '3', count: 'count' }
-await db.update({ count: 0 }, { $set: { count: 'count' } })
+db.update({ count: 0 }, { $set: { count: 'count' } })
 // { _id: '1', value: 3, count: 'count' }
 // { _id: '2', value: 3, count: 'count' }
 // Keys will be created if it does not exist
-await db.update({}, { $set: { value: 3 } })
+db.update({}, { $set: { value: 3 } })
 ```
 
 ## Deleting docs
 
-`await db.deleteOne(string | Query) => Promise<boolean>`
-`await db.delete(string[] | Query) => Promise<number>`
+`db.delete(string[] | Query) => number`
 
 Delete doc(s) matching query object.
 
@@ -350,15 +341,15 @@ Delete doc(s) matching query object.
 
 // Delete all data
 // []
-await db.delete()
+db.delete()
 
 // Delete first match
 // [1, 3, 4]
-await db.delete({ _id: '2' })
+db.delete({ _id: '2' })
 
 // Delete all matches
 // [3, 4]
-await db.delete({ type: 'normal' })
+db.delete({ type: 'normal' })
 ```
 
 ### Drop

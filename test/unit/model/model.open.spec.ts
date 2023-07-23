@@ -139,7 +139,7 @@ test('[model.open] can read inserted data', async t => {
   const corrupted = db.open();
 
   t.equal(corrupted.length, 0, 'reads all data');
-  const docs = db.find({});
+  const docs = db.select({});
   t.equal(docs.length, data.length, 'inserts all data');
 
   db.close();
@@ -159,7 +159,7 @@ test('[model.open] removes invalid data', async t => {
   const corrupted = db.open();
 
   t.equal(corrupted.length, 0, 'removes invalid data from file');
-  const docs = db.find({});
+  const docs = db.select({});
   t.equal(docs.length, 0, 'removes invalid data from memory');
 
   db.close();

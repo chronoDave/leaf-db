@@ -17,7 +17,7 @@ test('[model.insert] inserts docs in memory', t => {
   const { db } = setup();
 
   db.insert(data);
-  const docs = db.find({});
+  const docs = db.select({});
   t.true(Array.isArray(docs), 'is array');
   t.strictEqual(docs.length, data.length, 'inserts docs');
   t.deepEqual(docs[0], data[0], 'is doc');
@@ -45,7 +45,7 @@ test('[model.insert] does not insert docs if any doc is invalid', t => {
     db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]);
     t.fail('expected to throw');
   } catch (err) {
-    t.equal(db.find({}).length, 0, 'does not insert any docs');
+    t.equal(db.select({}).length, 0, 'does not insert any docs');
   }
 
   t.end();

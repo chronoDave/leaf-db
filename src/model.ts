@@ -103,7 +103,7 @@ export default class LeafDB<T extends Draft> {
     return docs.map(doc => this._set(doc));
   }
 
-  find(...queries: Array<Query<Doc<T>>>) {
+  select(...queries: Array<Query<Doc<T>>>) {
     const docs: Array<Doc<T>> = [];
     for (const doc of this._memory.docs()) {
       if (
@@ -116,14 +116,14 @@ export default class LeafDB<T extends Draft> {
   }
 
   update(update: Update<T>, ...queries: Array<Query<Doc<T>>>) {
-    return this.find(...queries)
+    return this.select(...queries)
       .map(doc => isModifier(update) ?
         modify(doc, update) :
         { ...update, _id: doc._id });
   }
 
   delete(...queries: Array<Query<Doc<T>>>) {
-    return this.find(...queries).reduce<number>((acc, cur) => {
+    return this.select(...queries).reduce<number>((acc, cur) => {
       this._delete(cur._id);
       return acc + 1;
     }, 0);
