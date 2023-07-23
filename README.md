@@ -2,7 +2,7 @@
   <img src="/assets/icon.svg" width="128" alt="leaf-db">
 
   <h1>leaf-db</h1>
-  <p><b>leaf-db</b> is a modern, promise-based, strongly-typed, embeddable database for <a href="https://nodejs.org/en/">node.js</a>.</p>
+  <p><b>leaf-db</b> is a simple <a href="https://en.wikipedia.org/wiki/NoSQL">NoSQL</a> embeddable database for <a href="https://nodejs.org/en/">Node.js</a>.</p>
 </div>
 
 <div align="center">
@@ -25,9 +25,15 @@
 
 ## Install
 
-```
+```sh
 $ npm i leaf-db
 ```
+
+## Features
+
+- **Strong-typed** documents and queries.
+- **Easy to embed** as it does not require an HTTP server to run.
+- Uses **JSON** documents.
 
 ## Getting Started
 
@@ -35,25 +41,28 @@ $ npm i leaf-db
 import LeafDB, { Draft } from 'leaf-db';
 
 interface Document extends Draft {
-  species: string,
-  name: string | null
+  race: string
+  name: string
 }
 
 const db = new LeafDB<Document>();
-const pets = db.insert([
-  { species: 'cat', name: 'whiskers' },
-  { species: 'bird', name: 'tulin' }
+db.insert([
+  { race: 'Zora', name: 'Mipha' },
+  { race: 'Rito', name: 'Tulin' }
 ]);
+
+const characters = db.select({});
 ```
 
 ## API
 
 - [Database](#database)
   - [Create / load](#create-load)
+  - [Open / close](#open-close)
   - [Corruption](#corruption)
 - [Document](#document)
-  - [Field names](#field-names)
-  - [Field values](#field-values)
+  - [Keys](#keys)
+  - [Values](#values)
 - [Inserting docs](#inserting-docs)
 - [Finding docs](#finding-docs)
   - [Basic query](#basic-query)
@@ -74,16 +83,22 @@ const pets = db.insert([
  - `options.storage.root` (string). Storage file path. Must be absolute.
  - `options.storage.name` (default: `leaf-db`). Storage file name.
 
-```JS
+```TS
 // Memory-only database
 const db = new LeafDB()
 
 // Persistent database
 const db = new LeafDB({ storage: process.cwd() })
 const db = new LeafDB({ storage: { root: process.cwd(), name: 'db' } })
+```
 
+### Open / close
+
+```TS
+// Open database
 const data = db.open();
 
+// Close database
 db.close()
 ```
 
@@ -105,14 +120,14 @@ Leaf-DB stores data as [JSON](https://en.wikipedia.org/wiki/JSON) objects.
 }
 ```
 
-### Field Names
+### Keys
 
-Field names must be strings and have the following restrictions:
+Keys must be strings and have the following restrictions:
 
 - The field name `_id` is the primary key of a document and cannot be mutated once created. It must be unique and be of type `string`.
 - Field names **cannot** start with the dollar sign (`$`) character.
 
-### Field Values
+### Values
 
 Leaf-DB only supports field values supported by the JSON spec:
 
@@ -213,6 +228,7 @@ Operators can be used to create advanced queries. The following operators are su
 <b>Array operators</b>
 
  - `$has` - Does array contain value
+ - `$size` - Is array equal to size
 
 <b>Example</b>
 
@@ -249,15 +265,17 @@ db.select({ type: { $regex: /MAL/ } })
 db.select({ variants: { $includes: 'weak' } })
 // [0] field is not an array
 db.select({ type: { $includes: 'weak' } })
+
+// $size
+// [1, 2, 3, 5]
+db.select({ variants: { $size: 2 } })
 ```
 
 ## Updating docs
 
-`db.update(string[] | Query, Update | NewDoc) => Doc[]`
+`db.update(Update, ...Query[]) => Doc[]`
 
-Find doc(s) matching query object. `update()` supports modifiers, but fields and modifiers cannot be mixed together. `update` cannot create invalid field names, such as fields containing dots or fields starting with `$`. Returns the updated docs.
-
-If no modifiers are provided, `update()` will override the found doc(s) with `update`
+Find doc(s) matching query object. `Update` is a subsection of `Doc` and `update()` will merge into `Doc`.
 
 `_id` fields cannot be overwritten. Trying to do so will throw an error.
 
@@ -270,63 +288,17 @@ If no modifiers are provided, `update()` will override the found doc(s) with `up
 // { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
 // { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
 
-// Set all docs to {}
-db.update()
-
 // Set matching docs to { type: 'strong' }
-// { _id: '1', type: 'strong' }
-// { _id: '2', type: 'strong' }
+// { _id: '1', type: 'strong', important: false, variants: ['weak', 'strong'] }
+// { _id: '2', type: 'strong', important: true, variants: ['weak', 'strong'] }
 // { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
 // { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
 db.update({ type: 'normal' }, { type: 'strong' })
-
-// _id fields will not be overwritten
-// { _id: '1', type: 'strong' }
-// { _id: '2', type: 'strong' }
-// { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
-// { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
-db.update({ type: 'normal' }, { type: 'strong', _id: '1' })
-```
-
-### Modifiers
-
-Modifiers can be used to set specific values
-
- - `$add` - Add value (number)
- - `$push` - Add value (array)
- - `$set` - Set value
-
-<b>Example</b>
-
-```JS
-// Data
-// { _id: '1', count: 0 }
-// { _id: '2', count: 0 }
-// { _id: '3', count: 3 }
-
-// $add
-// { _id: '3', count: 9 }
-db.update({} }, { $add: { count: 3 } })
-// { _id: '3', count: 3 }
-db.update({}, { $add: { count: -3 } })
-
-// $push
-// { _id: '3', fruits: ['banana'] }
-db.update({} }, { $push: { fruits: 'orange' } })
-// { _id: '3' , fruits: ['banana', 'orange'] }
-
-// $set
-// { _id: '3', count: 'count' }
-db.update({ count: 0 }, { $set: { count: 'count' } })
-// { _id: '1', value: 3, count: 'count' }
-// { _id: '2', value: 3, count: 'count' }
-// Keys will be created if it does not exist
-db.update({}, { $set: { value: 3 } })
 ```
 
 ## Deleting docs
 
-`db.delete(string[] | Query) => number`
+`db.delete(...Query[]) => number`
 
 Delete doc(s) matching query object.
 
@@ -341,7 +313,7 @@ Delete doc(s) matching query object.
 
 // Delete all data
 // []
-db.delete()
+db.delete({})
 
 // Delete first match
 // [1, 3, 4]
@@ -364,5 +336,5 @@ Clears both memory and database file.
 
 ## Acknowledgements
  
- - This project is heavily inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb).
+ - This project is inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb).
  - <div>Icon made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
