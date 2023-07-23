@@ -1,10 +1,10 @@
-import esbuild from 'rollup-plugin-esbuild';
-import dts from 'rollup-plugin-dts';
+const esbuild = require('rollup-plugin-esbuild').default;
+const dts = require('rollup-plugin-dts').default;
 
 const input = 'src/model.ts';
 const outputFile = type => `dist/leafdb.${type}`;
 
-export default [{
+module.exports = [{
   external: [
     'fast-deep-equal',
     'lodash.merge',
