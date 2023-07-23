@@ -61,6 +61,6 @@
     "rollup-plugin-dts": "^3.0.1",
     "rollup-plugin-esbuild": "^4.2.3",
     "tape": "^5.0.1",
-    "typescript": "^4.0.3"
+    "typescript": "^5.1.6"
   }
 }

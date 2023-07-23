@@ -7,8 +7,7 @@ const outputFile = type => `dist/leafdb.${type}`;
 export default [{
   external: [
     'fast-deep-equal',
-    '@chronocide/dot-obj',
-    'p-map',
+    'lodash.merge',
     'fs',
     'path',
     'crypto'
