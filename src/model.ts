@@ -19,7 +19,7 @@ export type LeafDBOptions = {
 };
 
 export default class LeafDB<T extends Draft> {
-  static generateId() {
+  static id() {
     return [
       Date.now().toString(16),
       crypto.randomBytes(4).toString('hex')
@@ -96,7 +96,7 @@ export default class LeafDB<T extends Draft> {
         ) throw new Error(DUPLICATE_DOC(draft));
         docs.push(draft);
       } else {
-        docs.push(({ _id: LeafDB.generateId(), ...draft }));
+        docs.push(({ _id: LeafDB.id(), ...draft }));
       }
     });
 

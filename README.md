@@ -41,6 +41,7 @@
   - [Queries](#queries)
     - [Operators](#operators)
 - [API](#api)
+  - [`id()`](#open)
   - [`open()`](#open)
   - [`close()`](#close)
   - [`insert()`](#insert)
@@ -189,6 +190,16 @@ const a = { age: { $gt: 3 } }
 - [`$not`](#not) - Does not equal literal
 
 ## API
+
+### `id()`
+
+Generate a new, unique id.
+
+```TS
+import LeafDB from 'leaf-db';
+
+const id = LeafDB.id();
+```
 
 ### `open()`
 
