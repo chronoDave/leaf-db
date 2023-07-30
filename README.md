@@ -23,318 +23,264 @@
   </a>
 </div>
 
-## Install
-
-```sh
-$ npm i leaf-db
-```
-
 ## Features
 
 - **Strong-typed** documents and queries.
 - **Easy to embed** as it does not require an HTTP server to run.
 - Uses **JSON** documents.
 
+## Table of Contents
+
+- [Getting started](#getting-started)
+- [Concepts](#concepts)
+  - [Document](#document)
+    - [Keys](#keys)
+    - [Values](#values)
+  - [Persistence](#persistence)
+  - [Corruption](#corruption)
+  - [Queries](#queries)
+    - [Operators](#operators)
+- [API](#api)
+  - [`open()`](#open)
+  - [`close()`](#close)
+  - [`insert()`](#insert)
+  - [`select()`](#select)
+  - [`update()`](#update)
+  - [`delete()`](#delete)
+  - [`drop()`](#drop)
+
 ## Getting Started
+
+### Installation
+
+```sh
+npm i leaf-db
+```
+
+### Example
+
+Create a database using file storage with strong-typed documents:
 
 ```TS
 import LeafDB, { Draft } from 'leaf-db';
 
 interface Document extends Draft {
-  race: string
+  title: string
   name: string
 }
 
-const db = new LeafDB<Document>();
+// Use process.cwd() + 'db' as database root
+const db = new LeafDB<Document>('db');
+db.open();
 db.insert([
-  { race: 'Zora', name: 'Mipha' },
-  { race: 'Rito', name: 'Tulin' }
+  { title: 'Lady', name: 'Mipha' },
+  { title: 'Young Rito Warrior', name: 'Tulin' }
 ]);
 
-const characters = db.select({});
+// [{ _id: <string>, title: 'Lady', name: 'Mipha' }]
+const characters = db.select({ title: 'Lady' });
 ```
 
-## API
+## Concepts
 
-- [Database](#database)
-  - [Create / load](#create-load)
-  - [Open / close](#open-close)
-  - [Corruption](#corruption)
-- [Document](#document)
-  - [Keys](#keys)
-  - [Values](#values)
-- [Inserting docs](#inserting-docs)
-- [Finding docs](#finding-docs)
-  - [Basic query](#basic-query)
-  - [Operators](#operators)
-  - [Indexing](#indexing)
-- [Updating docs](#updating-docs)
-  - [Modifiers](#modifiers)
-- [Deleting docs](#deleting-docs)
-- [Dropping database](#drop)
+### Document
 
-## Database
+Leaf-db stores data as [JSON](https://www.json.org/json-en.html) documents.
 
-### Create / load
+#### Keys
 
-`const db = new LeafDB(options)`
+Document keys must be of type `string` and cannot start with `$`.
 
- - `options.storage` (string). Storage file path. Must be absolute.
- - `options.storage.root` (string). Storage file path. Must be absolute.
- - `options.storage.name` (default: `leaf-db`). Storage file name.
+Every document is required to have an `_id` field. Leaf-db automatically creates an `_id` if the field does not exist on insertion. Keys have the following restrictions:
 
-```TS
-// Memory-only database
-const db = new LeafDB()
+- `_id` cannot be mutated once created.
+- `_id` must be unique.
 
-// Persistent database
-const db = new LeafDB({ storage: process.cwd() })
-const db = new LeafDB({ storage: { root: process.cwd(), name: 'db' } })
-```
+### Values
 
-### Open / close
+Leaf-db only supports JSON values, which are:
+
+- `object`
+- `array`
+- `string`
+- `number`
+- `true`
+- `false`
+- `null`
+
+### Persistence
+
+Leaf-db stores the database in memory by default. To make use of persistence, simply provide a path in the constructor and open the database.
 
 ```TS
-// Open database
-const data = db.open();
+import LeafDB from 'leaf-db';
 
-// Close database
-db.close()
+/**
+ * Create a new database under process.cwd()
+ * This will create `db.txt` in process.cwd() 
+ */
+const db = new LeafDB('db');
+db.open();
 ```
 
 ### Corruption
 
-Calling `open()` will return an array of corrupted raw data (string).
+When opening a database from storage, leaf-db will return any documents that are corrupt. These documents will be deleted once opened.
 
-## Document
+```TS
+import LeafDB from 'leaf-db';
 
-Leaf-DB stores data as [JSON](https://en.wikipedia.org/wiki/JSON) objects.
-
-```JSON
-{
-  "name": "Titan",
-  "age": 4,
-  "colour": "chocolate",
-  "loved": true,
-  "activies": ["walking", "fetch"]
-}
-```
-
-### Keys
-
-Keys must be strings and have the following restrictions:
-
-- The field name `_id` is the primary key of a document and cannot be mutated once created. It must be unique and be of type `string`.
-- Field names **cannot** start with the dollar sign (`$`) character.
-
-### Values
-
-Leaf-DB only supports field values supported by the JSON spec:
-
- - `number`
- - `string`
- - `boolean`
- - `Array`
- - `Object`
- - `null`
-
-## Inserting docs
-
-`db.insert(Draft[]) => Doc[]`
-
-Inserts drafts into the database. `_id` is automatically generated if the _id does not exist.
-
-Fields cannot start with `$` (modifier field). Values cannot be `undefined`.
-
-`leaf-db` does not keep track of when drafts are inserted, updated or deleted.
-
-<b>Example</b>
-
-```JS
-const draft = {
-  crud: 'create',
-  data: [{
-    field: 1
-  }]
-}
-
-const doc = db.insert([draft]);
-```
-
-## Finding docs
-
-### Basic query
-
-`db.select(...Query[]) => Doc[]`
-
-Find doc(s) matching query. Operators are supported and can be mixed together with object properties.
-
-```JS
-// Data
-// { _id: '1', type: 'normal', important: false, variants: ['weak', 'strong'] }
-// { _id: '2', type: 'normal', important: true, variants: ['weak', 'strong'] }
-// { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
-// { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3 } }
-
-// Find docs by _id
-// [1]
-db.select({ _id: '1' });
-
-// Find docs matching type 'normal'
-// [1, 2, 3] (Doc _id's)
-db.select({ type: 'normal' })
-
-// Find docs matching type 'normal' and important 'true'
-// [2], all fields must match
-db.select({ type: 'normal', important: 'true' })
-
-// Find docs with variants 'weak'
-// [4], note how only 4 matches, even though all entries contain weak
-// Array content and order must mach
-db.select({ variant: ['weak'] })
-
-// Find docs with variants 'strong', 'weak', in that order
+const db = new LeafDB('db');
 // []
-db.select({ variant: ['strong', 'weak'] })
-
-// Find docs with parent '3'
-// [], all keys must be present
-db.select({ properties: { parent: '3' } })
-// [4], key order does not matter
-db.select({ properties: { parent: '3', type: 'weak' } })
-
-// Find docs that either have parent '4' or important 'false'
-// [1, 3]
-db.select({ properties: { parent: '4' } }, { important: false });
+const corrupt = db.open();
 ```
 
-### Operators
+### Queries
 
-Operators can be used to create advanced queries. The following operators are supported:
+Leaf-db supports both literal values and [operators](#operators). Example:
 
-<b>Logic operators</b>
+```TS
+/**
+ * Literal query where value must equal the query value
+ * { name: 'tulin' } // No match
+ * { name: 'Mipha' } // No match
+ */
+const a = { name: 'Tulin' };
 
- - `$gt` - Is greater than
- - `$gte` - Is greater or equal than
- - `$lt` - Is less than
- - `$lte` - Is less or equal than
- - `$not` - Is not equal
-
-<b>String operators</b>
-
- - `$text` - Does string include string (case insensitive)
- - `$regex` - Does string match RegExp
-
-<b>Array operators</b>
-
- - `$has` - Does array contain value
- - `$size` - Is array equal to size
-
-<b>Example</b>
-
-```JS
-// Data
-// { _id: '1', type: 'normal', important: false, variants: ['weak', 'strong'] }
-// { _id: '2', type: 'normal', important: true, variants: ['weak', 'strong'] }
-// { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
-// { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
-// { _id: '5', properties: [{ variants: ['weak', 'normal' ] }, { type: 'strong' }] }
-
-// $gt / $gte / $lt / $lte
-// [4]
-db.select({ properties: { parent: { $gt: 2 } } })
-// [], all fields must match
-db.select({ _id: '1', properties: { parent: { $gt: 2 } } })
-
-// $not
-// [2, 3, 4, 5]
-db.select({ _id: { $not: '1' } })
-
-// $text
-// [1, 2]
-db.select({ type: { $text: 'mal' } })
-// [1, 2]
-db.select({ type: { $text: 'MAL' } })
-
-// $regex
-// []
-db.select({ type: { $regex: /MAL/ } })
-
-// $has
-// [1, 2, 3, 4]
-db.select({ variants: { $includes: 'weak' } })
-// [0] field is not an array
-db.select({ type: { $includes: 'weak' } })
-
-// $size
-// [1, 2, 3, 5]
-db.select({ variants: { $size: 2 } })
+/**
+ * Objects and arrays must be equal for it to match:
+ * { eras: [] } // No match
+ * { eras: ['era of the wilds'] } // No match
+ * { eras: ['Era of the Wilds', 'Sky Era'] } // No match
+ */
+const b = { eras: ['Era of the Wilds'] }
 ```
 
-## Updating docs
+#### Operators
 
-`db.update(Update, ...Query[]) => Doc[]`
+Operators allow for more complex queries. Operators must always be used in combination with values. For example:
 
-Find doc(s) matching query object. `Update` is a subsection of `Doc` and `update()` will merge into `Doc`.
-
-`_id` fields cannot be overwritten. Trying to do so will throw an error.
-
-<b>Example</b>
-
-```JS
-// Data
-// { _id: '1', type: 'normal', important: false, variants: ['weak', 'strong'] }
-// { _id: '2', type: 'normal', important: true, variants: ['weak', 'strong'] }
-// { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
-// { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
-
-// Set matching docs to { type: 'strong' }
-// { _id: '1', type: 'strong', important: false, variants: ['weak', 'strong'] }
-// { _id: '2', type: 'strong', important: true, variants: ['weak', 'strong'] }
-// { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
-// { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
-db.update({ type: 'normal' }, { type: 'strong' })
+```TS
+/**
+ * Operator query where values must be greater than number
+ */
+const a = { age: { $gt: 3 } }
 ```
 
-## Deleting docs
+<b>Number operators</b>:
 
-`db.delete(...Query[]) => number`
+- [`$gt`](#gt) - Is greater than
+- [`$gte`](#gte) - Is greater or equal than
+- [`$lt`](#lt) - Is less than
+- [`$lte`](#lte) - Is less or equal than
 
-Delete doc(s) matching query object.
+<b>String operators</b>:
 
-<b>Example</b>
+- [`$text`](#text) - Includes string (case insensitive)
+- [`$regex`](#regex) - Matches RegExp
 
-```JS
-// Data in database
-// { _id: '1', type: 'normal', important: false, variants: ['weak', 'strong'] }
-// { _id: '2', type: 'normal', important: true, variants: ['weak', 'strong'] }
-// { _id: '3', type: 'strong', important: false, variants: ['weak', 'strong'] }
-// { _id: '4', type: 'weak', variants: ['weak'], properties: { type: 'weak', parent: 3, variants: ['strong'] } }
+<b>Array operators</b>:
 
-// Delete all data
-// []
-db.delete({})
+- [`$has`](#has) - Has value
+- [`$size`](#size) - Equal to size
 
-// Delete first match
-// [1, 3, 4]
-db.delete({ _id: '2' })
+<b>Logic operators</b>:
 
-// Delete all matches
-// [3, 4]
-db.delete({ type: 'normal' })
+- [`$not`](#not) - Does not equal literal
+
+## API
+
+### `open()`
+
+Open persistent storage.
+
+```TS
+import LeafDB from 'leaf-db';
+
+const db = new LeafDB('db');
+
+// Draft[]
+const corrupted = db.open();
 ```
 
-### Drop
+### `close()`
 
-`drop() => void`
+Close persistent storage.
 
-Clears both memory and database file.
+```TS
+import LeafDB from 'leaf-db';
 
-## Donating
+const db = new LeafDB('db');
+db.open();
+db.close();
+```
 
-[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y41E23T)
+### `insert()`
+
+Insert document(s) into the database. Will throw an error if duplicate `_id`'s are found.
+
+```TS
+import LeafDB from 'leaf-db';
+
+const db = new LeafDB('db');
+
+// [{ _id: <string>, name: 'Tulin' }, { _id: <string>, name: 'Mipha' }]
+const docs = db.insert([{ name: 'Tulin', }, { name: 'Mipha' }]);
+```
+
+### `select()`
+
+Find document(s) based on [query](#queries). Multiple queries can be used.
+
+```TS
+import LeafDB from 'leaf-db';
+
+const db = new LeafDB('db');
+
+// Return docs where `name` is equal to `Mipha`
+const docs = db.select({ name: 'Mipha' });
+// Return docs where `name` is equal to `Mipha` or where `name` is equal to `Tulin`
+const docs = db.select({ name: 'Mipha' }, { name: 'Tulin' });
+```
+
+### `update()`
+
+Update document(s) based on [query](#queries). Multiple queries can be used. Updated document cannot change shape.
+
+```TS
+import LeafDB from 'leaf-db';
+
+const db = new LeafDB('db');
+
+// Update docs where `name` is equal to `Tulin` and replace `name` with `Mipha`
+const docs = db.update({ name: 'Mipha' }, { name: 'Tulin' });
+```
+
+### `delete()`
+
+Delete document(s) based on [query](#queries).
+
+```TS
+import LeafDB from 'leaf-db';
+
+const db = new LeafDB('db');
+
+// Delete docs where `name` is equal to `Mipha`
+const docs = db.delete({ name: 'Mipha' });
+```
+
+### `drop()`
+
+Delete all documents in the database.
+
+```TS
+import LeafDB from 'leaf-db';
+
+const db = new LeafDB('db');
+db.drop();
+```
 
 ## Acknowledgements
  
- - This project is inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb).
- - <div>Icon made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+- <div>Icon made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+- This project is inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb).
