@@ -6,6 +6,7 @@
     "noImplicitAny": true,
     "moduleResolution": "node",
     "strictNullChecks": true,
+    "allowJs": true,
     "downlevelIteration": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
