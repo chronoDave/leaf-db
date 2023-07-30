@@ -15,12 +15,13 @@
   "keywords": [
     "database",
     "embedded",
-    "persistent",
+    "persistence",
     "javascript",
     "typescript",
     "nodejs",
     "es6",
-    "promises"
+    "nosql",
+    "fs"
   ],
   "files": [
     "dist/**/*"
