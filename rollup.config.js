@@ -7,7 +7,7 @@ const outputFile = type => `dist/leafdb.${type}`;
 module.exports = [{
   external: [
     'fast-deep-equal',
-    'lodash.merge',
+    'rambda',
     'fs',
     'path',
     'crypto'

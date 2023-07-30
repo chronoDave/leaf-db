@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import merge from 'lodash.merge';
+import { merge } from 'rambda';
 
 import {
   Doc,
