@@ -1,5 +1,10 @@
 // Helpers
 export type Join<T extends Array<string | number | Symbol>> = T[number];
+export type DeepPartial<T> = Partial<{
+  [K in keyof T]?: T[K] extends object ?
+    Update<T[K]> :
+    T[K]
+}>;
 
 // Base
 export type Json =
@@ -46,12 +51,4 @@ export type Query<T> = Partial<{
     T[K] | Partial<Operators>
 }>;
 
-export type Update<T> = Partial<{
-  [K in keyof T]?: T[K] extends object ?
-    Update<T[K]> :
-    T[K]
-} & {
-  _id: never
-  [key: `$${string}`]: never
-  [key: `__${string}`]: never
-}>;
+export type Update<T> = Omit<DeepPartial<T>, '__deleted' | '_id'>;
