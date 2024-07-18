@@ -46,6 +46,7 @@
   - [`close()`](#close)
   - [`insert()`](#insert)
   - [`select()`](#select)
+  - [`selectById()`][#select-by-id]
   - [`update()`](#update)
   - [`delete()`](#delete)
   - [`drop()`](#drop)
@@ -252,6 +253,21 @@ const db = new LeafDB('db');
 const docs = db.select({ name: 'Mipha' });
 // Return docs where `name` is equal to `Mipha` or where `name` is equal to `Tulin`
 const docs = db.select({ name: 'Mipha' }, { name: 'Tulin' });
+```
+
+### `selectById()`
+
+Find document(s) based on `_id`. Multiple ids can be used.
+
+```TS
+import LeafDB from 'leaf-db';
+
+const db = new LeafDB('db');
+
+// Return docs where `_id` is equal to `Mipha`
+const docs = db.selectById('Mipha');
+// Return docs where `_id` is equal to `Mipha` or where `_id` is equal to `Tulin`
+const docs = db.selectById('Mipha', 'Tulin');
 ```
 
 ### `update()`

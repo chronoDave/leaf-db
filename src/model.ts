@@ -115,6 +115,14 @@ export default class LeafDB<T extends Draft> {
     return docs;
   }
 
+  selectById(...ids: string[]) {
+    return ids.reduce<Array<Doc<T>>>((acc, cur) => {
+      const doc = this._memory.get(cur);
+      if (doc) acc.push(doc);
+      return acc;
+    }, []);
+  }
+
   update(update: Update<Doc<T>>, ...queries: Array<Query<Doc<T>>>) {
     if ('_id' in update) throw new Error('Invalid update, cannot contain key `_id`');
 
