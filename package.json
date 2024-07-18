@@ -1,6 +1,6 @@
 {
   "name": "leaf-db",
-  "version": "10.0.3",
+  "version": "10.1.0",
   "description": "Small file-based database for node.js",
   "sideEffects": false,
   "main": "dist/leafdb.cjs",
