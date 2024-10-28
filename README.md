@@ -46,7 +46,7 @@
   - [`close()`](#close)
   - [`insert()`](#insert)
   - [`select()`](#select)
-  - [`selectById()`][#select-by-id]
+  - [`selectById()`](#select-by-id)
   - [`update()`](#update)
   - [`delete()`](#delete)
   - [`drop()`](#drop)
