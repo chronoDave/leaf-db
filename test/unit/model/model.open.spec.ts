@@ -100,17 +100,18 @@ test('[model.open] ignores corrupted data', t => {
 });
 
 test('[model.open] ignores deleted data', t => {
-  const data = [{ _id: '2' }, { _id: '3', __deleted: true }];
+  const { db, file } = setup<{ data: string }>({ root: __dirname });
 
-  const { db, file } = setup({ data, root: __dirname });
-
-  const corrupted = db.open();
+  db.open();
+  db.insert([{ data: 'a' }, { data: 'b' }]);
+  const docs = db.delete({ data: 'a' }, { data: 'b' });
+  t.strictEqual(docs, 2, 'delete docs (any match)');
   db.close();
+  db.open();
 
-  t.strictEqual(corrupted.length, 0, 'validates');
-  // @ts-expect-error: Access private
-  t.strictEqual(db._memory._docs.size, 1, 'ignores deleted data');
+  t.strictEqual(db.select({}).length, 0, 'ignores deleted data');
 
+  db.close();
   fs.unlinkSync(file);
 
   t.end();

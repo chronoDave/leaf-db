@@ -68,15 +68,26 @@ export default class LeafDB<T extends Draft> {
         if (raw.length > 0) {
           const doc = JSON.parse(raw);
           if (!isDoc<T>(doc)) throw new Error(INVALID_DOC(doc));
-          if (!doc.__deleted) docs.push(doc);
+          docs.push(doc);
         }
       } catch (err) {
         corrupted.push({ raw, err });
       }
     });
 
+    docs
+      .filter(x => x.__deleted)
+      .map(x => x._id)
+      .forEach(doc => {
+        const i = docs.findIndex(x => x._id === doc);
+
+        if (i >= 0) docs.splice(i, 1);
+      });
+
     this._storage.flush();
-    docs.forEach(doc => this._set(doc));
+    docs
+      .filter(doc => !doc.__deleted)
+      .forEach(doc => this._set(doc));
 
     return corrupted;
   }
