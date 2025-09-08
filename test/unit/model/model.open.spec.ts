@@ -7,7 +7,7 @@ import setup, { invalid } from './fixture';
 test('[model.open] should not throw if data contains backslash', () => {
   const { db, file } = setup({
     data: [{ invalid: '\\' }],
-    root: __dirname
+    root: import.meta.dirname
   });
 
   assert.doesNotThrow(() => db.open());
@@ -19,7 +19,7 @@ test('[model.open] should not throw if data contains backslash', () => {
 test('[model.open] should not throw if data contains quotation mark', () => {
   const { db, file } = setup({
     data: [{ invalid: '"' }],
-    root: __dirname
+    root: import.meta.dirname
   });
 
   assert.doesNotThrow(() => db.open());
@@ -32,7 +32,7 @@ test('[model.open] parses valid persistent data', () => {
   const data = [{ _id: '1' }, { _id: '2' }];
   const { db, file } = setup({
     data,
-    root: __dirname
+    root: import.meta.dirname
   });
 
   const corrupted = db.open();
@@ -51,7 +51,7 @@ test('[model.open] parses valid persistent data', () => {
 
 test('[model.open] parses empty file', () => {
   const data: any[] = [];
-  const { db, file } = setup({ data, root: __dirname });
+  const { db, file } = setup({ data, root: import.meta.dirname });
 
   const corrupted = db.open();
   db.close();
@@ -67,7 +67,7 @@ test('[model.open] ignores corrupted data', () => {
   const valid = { _id: '2', valid: true };
   const data = [valid, ...invalid];
 
-  const { db, file } = setup({ data, root: __dirname });
+  const { db, file } = setup({ data, root: import.meta.dirname });
 
   const corrupted = db.open();
   db.close();
@@ -80,7 +80,7 @@ test('[model.open] ignores corrupted data', () => {
 });
 
 test('[model.open] ignores deleted data', () => {
-  const { db, file } = setup<{ data: string }>({ root: __dirname });
+  const { db, file } = setup<{ data: string }>({ root: import.meta.dirname });
 
   db.open();
   db.insert([{ data: 'a' }, { data: 'b' }]);
@@ -104,7 +104,7 @@ test('[model.open] throws in memory mode', () => {
 test('[model.open] can read inserted data', async () => {
   const data = [{ _id: '1' }, { _id: '2' }];
 
-  const { file, db } = setup({ root: __dirname });
+  const { file, db } = setup({ root: import.meta.dirname });
   db.open();
   db.insert(data);
   db.close();
@@ -121,7 +121,7 @@ test('[model.open] can read inserted data', async () => {
 test('[model.open] removes invalid data', async () => {
   const data = [{ _id: '1' }, { _id: '2' }, { _id: '3' }];
 
-  const { file, db } = setup({ root: __dirname });
+  const { file, db } = setup({ root: import.meta.dirname });
   db.open();
   db.insert(data);
   db.drop();

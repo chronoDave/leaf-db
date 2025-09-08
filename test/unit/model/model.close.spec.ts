@@ -11,7 +11,7 @@ test('[model.close] throws in memory mode', () => {
 });
 
 test('[model.close] closes storage', () => {
-  const { db, file } = setup({ root: __dirname });
+  const { db, file } = setup({ root: import.meta.dirname });
   db.open();
 
   assert.doesNotThrow(() => db.close());

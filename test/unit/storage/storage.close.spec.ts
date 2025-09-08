@@ -6,13 +6,13 @@ import { file, name } from './fixture';
 import Storage from '../../../src/storage';
 
 test('[storage.close] throws if not opened', () => {
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
 
   assert.throws(() => storage.close());
 });
 
 test('[storage.close] closes file', () => {
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
   storage.open();
 
   storage.close();

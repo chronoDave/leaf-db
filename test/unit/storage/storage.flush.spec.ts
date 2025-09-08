@@ -6,14 +6,14 @@ import { file, name } from './fixture';
 import Storage from '../../../src/storage';
 
 test('[storage.flush] throws if not opened', () => {
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
 
   assert.throws(() => storage.flush());
 });
 
 test('[storage.flush] clears file', () => {
   fs.writeFileSync(file, 'this is some data');
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
   storage.open();
 
   storage.flush();

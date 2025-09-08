@@ -1,4 +1,4 @@
-module.exports = [{
+export default [{
   name: 'Aachen',
   id: '1',
   nametype: 'Valid',

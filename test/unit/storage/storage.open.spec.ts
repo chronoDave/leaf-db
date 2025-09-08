@@ -10,7 +10,7 @@ test('[storage.open] reads and opens file if file exists', () => {
 
   fs.writeFileSync(file, text);
 
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
   const data = storage.open();
 
   // @ts-expect-error: Access private
@@ -25,7 +25,7 @@ test('[storage.open] reads and opens file if file exists', () => {
 });
 
 test('[storage.open] creates and opens file if file does not exist', () => {
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
   const data = storage.open();
 
   // @ts-expect-error: Access private
@@ -43,7 +43,7 @@ test('[storage.open] creates and opens file if file does not exist', () => {
 test('[storage.open] splits data on newline', () => {
   const arr = [JSON.stringify({ _id: 'a' }), JSON.stringify({ _id: '\nb' })];
   fs.writeFileSync(file, arr.join('\n'));
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
   const data = storage.open();
 
   // @ts-expect-error: Access private

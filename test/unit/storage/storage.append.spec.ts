@@ -6,14 +6,14 @@ import Storage from '../../../src/storage';
 import { name, file } from './fixture';
 
 test('[storage.append] throws if not opened', () => {
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
 
   assert.throws(() => storage.append(''));
 });
 
 test('[storage.append] appens data', () => {
   const data = 'this is test data';
-  const storage = new Storage({ root: __dirname, name });
+  const storage = new Storage({ root: import.meta.dirname, name });
   storage.open();
 
   storage.append(data);

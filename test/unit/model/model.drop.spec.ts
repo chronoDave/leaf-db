@@ -14,7 +14,7 @@ test('[model.drop] drops data', async () => {
 });
 
 test('[model.drop] drops data and persists', () => {
-  const { db, file } = setup({ memory, root: __dirname });
+  const { db, file } = setup({ memory, root: import.meta.dirname });
 
   db.open();
   db.drop();
