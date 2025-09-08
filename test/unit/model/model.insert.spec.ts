@@ -1,8 +1,7 @@
-import fs from 'fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import setup, { data } from './fixture';
+import setup, { data } from './fixture.ts';
 
 test('[model.insert] inserts docs', () => {
   const { db } = setup();

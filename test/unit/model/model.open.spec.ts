@@ -2,7 +2,7 @@ import fs from 'fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import setup, { invalid } from './fixture';
+import setup, { invalid } from './fixture.ts';
 
 test('[model.open] should not throw if data contains backslash', () => {
   const { db, file } = setup({
@@ -101,7 +101,7 @@ test('[model.open] throws in memory mode', () => {
   assert.throws(() => db.open());
 });
 
-test('[model.open] can read inserted data', async () => {
+test('[model.open] can read inserted data', () => {
   const data = [{ _id: '1' }, { _id: '2' }];
 
   const { file, db } = setup({ root: import.meta.dirname });
@@ -118,7 +118,7 @@ test('[model.open] can read inserted data', async () => {
   fs.unlinkSync(file);
 });
 
-test('[model.open] removes invalid data', async () => {
+test('[model.open] removes invalid data', () => {
   const data = [{ _id: '1' }, { _id: '2' }, { _id: '3' }];
 
   const { file, db } = setup({ root: import.meta.dirname });

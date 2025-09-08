@@ -1,8 +1,9 @@
+import type { Doc } from './fixture.ts';
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { Doc } from './fixture';
-import setup, { memory } from './fixture';
+import setup, { memory } from './fixture.ts';
 
 test('[model.delete] deletes docs if matches are found (simple)', () => {
   const { db } = setup<Doc>({ memory });

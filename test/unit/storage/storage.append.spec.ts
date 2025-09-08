@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
 
-import Storage from '../../../src/storage';
-import { name, file } from './fixture';
+import Storage from '../../../src/lib/storage.ts';
+import { name, file } from './fixture.ts';
 
 test('[storage.append] throws if not opened', () => {
   const storage = new Storage({ root: import.meta.dirname, name });

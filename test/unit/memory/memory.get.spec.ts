@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import Memory from '../../../src/memory';
-import { data } from './fixture';
+import Memory from '../../../src/lib/memory.ts';
+import { data } from './fixture.ts';
 
 test('[memory.get] should return document', () => {
   const memory = new Memory();

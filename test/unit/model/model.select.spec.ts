@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { Doc } from './fixture';
-import setup, { memory } from './fixture';
+import type { Doc } from './fixture.ts';
+import setup, { memory } from './fixture.ts';
 
 test('[model.select] returns docs on empty query', () => {
   const { db } = setup<Doc>({ memory });

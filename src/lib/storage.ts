@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import { MISSING_FD } from './errors';
+import { MISSING_FD } from './errors.ts';
 
 export type StorageOptions = {
   root: string;

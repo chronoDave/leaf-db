@@ -1,19 +1,22 @@
 import type {
+  Update
+} from './lib/types.ts';
+import type {
   Doc,
   Query,
-  Draft,
-  Update
-} from './types';
+  Draft
+} from './lib/is.ts';
 
 import crypto from 'crypto';
 import { merge } from 'rambda';
 
-import { isDoc, isQueryMatch } from './validation';
-import { DUPLICATE_DOC, INVALID_DOC, MEMORY_MODE } from './errors';
-import Memory from './memory';
-import Storage from './storage';
+import * as is from './lib/is.ts';
+import { DUPLICATE_DOC, INVALID_DOC, MEMORY_MODE } from './lib/errors.ts';
+import Memory from './lib/memory.ts';
+import Storage from './lib/storage.ts';
 
-export type * from './types';
+export type * from './lib/types.ts';
+export type * from './lib/is.ts';
 
 export type LeafDBOptions = {
   storage?: string | { root: string; name?: string };
@@ -68,7 +71,7 @@ export default class LeafDB<T extends Draft> {
       try {
         if (raw.length > 0) {
           const doc = JSON.parse(raw);
-          if (!isDoc<T>(doc)) throw new Error(INVALID_DOC(doc));
+          if (!is.doc<T>(doc)) throw new Error(INVALID_DOC(doc));
           docs.push(doc);
         }
       } catch (err) {
@@ -101,7 +104,7 @@ export default class LeafDB<T extends Draft> {
   insert(drafts: T[]) {
     const docs: Array<Doc<T>> = [];
     drafts.forEach(draft => {
-      if (isDoc(draft)) {
+      if (is.doc(draft)) {
         if (
           this._memory.has(draft._id) ||
           docs.some(doc => doc._id === draft._id)
@@ -120,7 +123,7 @@ export default class LeafDB<T extends Draft> {
     for (const doc of this._memory.docs()) {
       if (
         !doc.__deleted &&
-        queries.some(query => isQueryMatch(doc, query))
+        queries.some(query => is.queryMatch(doc, query))
       ) docs.push(doc);
     }
 

@@ -35,7 +35,7 @@
     "test:memory": "npm run build:test && node --test test/build/memory/*.spec.js",
     "test:model": "npm run build:test && node --test test/build/model/*.spec.js",
     "test:modifiers": "npm run build:test && node --test test/build/modifiers/*.spec.js",
-    "test:validation": "npm run build:test && node --test test/build/validation/*.spec.js",
+    "test:validation": "node --no-warnings --experimental-strip-types --test src/lib/is.spec.ts",
     "preversion": "npm run lint && npm run test",
     "version": "npm run build",
     "postversion": "git push && git push --tags && npm publish"

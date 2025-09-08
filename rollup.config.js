@@ -5,7 +5,7 @@ import dts from 'rollup-plugin-dts';
 await fsp.rm('dist', { recursive: true, force: true });
 
 export default [{
-  input: 'src/model.ts',
+  input: 'src/leafdb.ts',
   plugins: [esbuild({ target: 'esnext' })],
   external: [
     'fast-deep-equal',
@@ -19,7 +19,7 @@ export default [{
     format: 'es'
   }]
 }, {
-  input: 'src/model.ts',
+  input: 'src/leafdb.ts',
   plugins: [dts()],
   output: {
     file: 'dist/leafdb.d.ts',

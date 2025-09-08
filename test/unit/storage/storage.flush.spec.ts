@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
 
-import { file, name } from './fixture';
-import Storage from '../../../src/storage';
+import { file, name } from './fixture.ts';
+import Storage from '../../../src/lib/storage.ts';
 
 test('[storage.flush] throws if not opened', () => {
   const storage = new Storage({ root: import.meta.dirname, name });

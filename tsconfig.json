@@ -1,17 +1,21 @@
 {
   "compilerOptions": {
-    "target": "es6",
+    "target": "esnext",
     "lib": ["esnext"],
+    "module": "node16",
+    "moduleResolution": "node16",
+
     "strict": true,
     "noImplicitAny": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "strictNullChecks": true,
-    "allowJs": true,
-    "downlevelIteration": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
+  
     "declaration": true,
-    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
     "outDir": "./test/build"
   },
   "include": [

@@ -1,44 +1,68 @@
-import type {
-  Doc,
-  Draft,
-  Json,
-  JsonObject,
-  Query
-} from './types';
-
 import deepEqual from 'fast-deep-equal';
 
-// Guards
-export const isObject = (x: unknown): x is JsonObject =>
+import * as has from './has.ts';
+
+export const tag = (x: string): x is `$${string}` =>
+  x.startsWith('$');
+
+export type Json =
+  string |
+  number |
+  boolean |
+  null |
+  Json[] |
+  { [key: string]: Json };
+
+export type JsonObject = Record<string, Json>;
+
+export const object = (x: unknown): x is JsonObject =>
   x !== null &&
   !Array.isArray(x) &&
   typeof x === 'object';
-export const isTag = (x: string): x is `$${string}` =>
-  x.startsWith('$');
 
-// Validators
-export const hasTag = ([key, value]: [string, unknown]) =>
-  isTag(key) &&
-  value !== undefined;
-export const hasTagDeep = ([key, value]: [string, unknown]): boolean =>
-  value !== null && typeof value === 'object' ?
-    Object.entries(value).some(hasTagDeep) :
-    hasTag([key, value]);
-export const hasKey = (entry: [string, unknown], key: string) =>
-  entry[0] === key &&
-  entry[1] !== undefined;
+export type Draft = { _id?: string } & {
+  [key: string]: Json;
+  [key: `$${string}`]: never;
+  [key: `__${string}`]: never;
+};
 
-// Guards
-export const isDraft = <T extends Draft>(x: unknown): x is T =>
-  isObject(x) &&
-  !Object.entries(x).some(hasTagDeep);
-export const isDoc = <T extends Draft>(x: unknown): x is Doc<T> =>
-  isDraft(x) &&
+export const draft = <T extends Draft>(x: unknown): x is T =>
+  object(x) &&
+  !Object.entries(x).some(has.tagDeep);
+
+export type Doc<T extends Draft> = T & {
+  readonly _id: string;
+  readonly __deleted?: boolean;
+};
+
+export const doc = <T extends Draft>(x: unknown): x is Doc<T> =>
+  draft(x) &&
   typeof x._id === 'string' &&
   x._id.length > 0;
 
-// Query
-export const isQueryMatch = <T extends JsonObject>(
+export type Operators = {
+  // Number
+  $gt: number;
+  $gte: number;
+  $lt: number;
+  $lte: number;
+  // Text
+  $text: string;
+  $regex: RegExp;
+  // Array
+  $has: Json;
+  $size: number;
+  // Logic
+  $not: Json;
+};
+
+export type Query<T> = Partial<{
+  [K in keyof T]: T[K] extends JsonObject ?
+    Query<T[K]> :
+    T[K] | Partial<Operators>
+}>;
+
+export const queryMatch = <T extends JsonObject>(
   doc: T | Json,
   query: Query<T>
 ): boolean => {
@@ -53,8 +77,8 @@ export const isQueryMatch = <T extends JsonObject>(
     .entries(query)
     .every(([key, y]) => {
       // Invalid key and not tag
-      if (isObject(doc) && !(key in doc) && !isTag(key)) return false;
-      const x = isObject(doc) ? doc[key] : doc;
+      if (object(doc) && !(key in doc) && !tag(key)) return false;
+      const x = object(doc) ? doc[key] : doc;
 
       // { [$string]: Json }
       if (key in isMatchNumber) {
@@ -91,9 +115,9 @@ export const isQueryMatch = <T extends JsonObject>(
       }
 
       // { [string]: [string | number | boolean | null] }
-      if (!isObject(y)) return x === y;
+      if (!object(y)) return x === y;
 
       // { [string]: Object }
-      return isQueryMatch(x, y);
+      return queryMatch(x, y);
     });
 };

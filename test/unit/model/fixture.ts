@@ -1,43 +1,45 @@
+import type { Draft } from '../../../src/leafdb.ts';
+
 import fs from 'fs';
 import path from 'path';
 
-import LeafDB, { Draft } from '../../../src/model';
-import datasetMeteorites from '../../assets/nasa_earth-meteorite-landings';
+import LeafDB from '../../../src/leafdb.ts';
+import datasetMeteorites from '../../assets/nasa_earth-meteorite-landings.ts';
 
 export type Doc = {
-  name: string
-  id: string
-  nametype: string
-  recclass: string
-  mass: string
-  fall: string
-  year: string
-  reclat: string
-  reclong: string
+  name: string;
+  id: string;
+  nametype: string;
+  recclass: string;
+  mass: string;
+  fall: string;
+  year: string;
+  reclat: string;
+  reclong: string;
   geolocation: {
-    type: string,
-    coordinates: [number, number]
-  }
+    type: string;
+    coordinates: [number, number];
+  };
 };
 
 export type Options = {
-  root: string
-  name: string
-  data: any[]
-  memory: Record<string, object>
+  root: string;
+  name: string;
+  data: unknown[];
+  memory: Record<string, object>;
 };
 
 export default <T extends Draft = {}>(options?: Partial<Options>) => {
-  let file: string = '';
+  let file = '';
   const name = options?.name ?? 'test';
 
-  if (options?.root) {
+  if (typeof options?.root === 'string') {
     file = path.resolve(options.root, `${name}.txt`);
-    fs.writeFileSync(file, options?.data ? options.data.map(x => JSON.stringify(x)).join('\n') : '');
+    fs.writeFileSync(file, options.data ? options.data.map(x => JSON.stringify(x)).join('\n') : '');
   }
 
   const db = new LeafDB<T>({
-    storage: options?.root ?
+    storage: typeof options?.root === 'string' ?
       { root: options.root, name } :
       undefined
   });
@@ -47,7 +49,7 @@ export default <T extends Draft = {}>(options?: Partial<Options>) => {
     Object.values(options.memory).map(value => db._memory._docs.set(value._id, value));
   }
 
-  return ({ name, file, db });
+  return { name, file, db };
 };
 
 export const memory = Object.fromEntries(datasetMeteorites.map(x => [x._id, x]));

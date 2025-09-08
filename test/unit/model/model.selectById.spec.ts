@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { Doc } from './fixture';
-import setup, { memory } from './fixture';
+import type { Doc } from './fixture.ts';
+import setup, { memory } from './fixture.ts';
 
-test('[model.selectById] returns docs on empty query', t => {
+test('[model.selectById] returns docs on empty query', () => {
   const { db } = setup<Doc>({ memory });
 
   const docs = db.selectById();
@@ -12,7 +12,7 @@ test('[model.selectById] returns docs on empty query', t => {
   assert.strictEqual(docs.length, 0, 'finds docs (empty)');
 });
 
-test('[model.selectById] returns docs on id match', t => {
+test('[model.selectById] returns docs on id match', () => {
   const { db } = setup<Doc>({ memory });
 
   const docs = db.selectById('2', '6');

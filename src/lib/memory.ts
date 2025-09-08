@@ -1,4 +1,4 @@
-import type { Doc, Draft } from './types';
+import type { Doc, Draft } from './is.ts';
 
 export default class Memory<T extends Draft> {
   private readonly _docs: Map<string, Doc<T>>;

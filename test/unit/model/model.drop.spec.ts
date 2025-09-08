@@ -2,9 +2,9 @@ import fs from 'fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import setup, { memory } from './fixture';
+import setup, { memory } from './fixture.ts';
 
-test('[model.drop] drops data', async () => {
+test('[model.drop] drops data', () => {
   const { db } = setup({ memory });
 
   db.drop();

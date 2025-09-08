@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
 
-import setup from './fixture';
+import setup from './fixture.ts';
 
 test('[model.close] throws in memory mode', () => {
   const { db } = setup();
