@@ -4,6 +4,7 @@
     "lib": ["esnext"],
     "strict": true,
     "noImplicitAny": true,
+    "module": "esnext",
     "moduleResolution": "node",
     "strictNullChecks": true,
     "allowJs": true,
