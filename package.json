@@ -1,6 +1,6 @@
 {
   "name": "leaf-db",
-  "version": "10.1.1",
+  "version": "11.0.0",
   "description": "Small file-based database for node.js",
   "type": "module",
   "types": "dist/leafdb.d.ts",
