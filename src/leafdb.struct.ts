@@ -1,10 +1,11 @@
-import type { Draft } from '../../../src/leafdb.ts';
+import type { Draft } from './leafdb.ts';
 
 import fs from 'fs';
 import path from 'path';
 
-import LeafDB from '../../../src/leafdb.ts';
-import datasetMeteorites from '../../assets/nasa_earth-meteorite-landings.ts';
+import datasetMeteorites from '../test/assets/nasa_earth-meteorite-landings.ts';
+
+import LeafDB from './leafdb.ts';
 
 export type Doc = {
   name: string;
