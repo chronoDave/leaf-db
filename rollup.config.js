@@ -1,38 +1,28 @@
-const esbuild = require('rollup-plugin-esbuild').default;
-const dts = require('rollup-plugin-dts').default;
+import fsp from 'fs/promises';
+import esbuild from 'rollup-plugin-esbuild';
+import dts from 'rollup-plugin-dts';
 
-const input = 'src/model.ts';
-const outputFile = type => `dist/leafdb.${type}`;
+await fsp.rm('dist', { recursive: true, force: true });
 
-module.exports = [{
+export default [{
+  input: 'src/model.ts',
+  plugins: [esbuild({ target: 'esnext' })],
   external: [
     'fast-deep-equal',
     'rambda',
+    'crypto',
     'fs',
-    'path',
-    'crypto'
-  ],
-  input,
-  plugins: [
-    esbuild({
-      target: 'esnext'
-    })
+    'path'
   ],
   output: [{
-    file: outputFile('cjs'),
-    exports: 'auto',
-    format: 'cjs'
-  }, {
-    file: outputFile('mjs'),
-    exports: 'auto',
+    file: 'dist/leafdb.js',
     format: 'es'
   }]
 }, {
-  input,
+  input: 'src/model.ts',
   plugins: [dts()],
   output: {
-    file: outputFile('d.ts'),
+    file: 'dist/leafdb.d.ts',
     format: 'es'
-  },
-  external: ['fs']
+  }
 }];

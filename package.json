@@ -2,15 +2,10 @@
   "name": "leaf-db",
   "version": "10.1.1",
   "description": "Small file-based database for node.js",
-  "sideEffects": false,
-  "main": "dist/leafdb.cjs",
-  "module": "dist/leafdb.mjs",
+  "type": "module",
   "types": "dist/leafdb.d.ts",
   "exports": {
-    ".": {
-      "import": "./dist/leafdb.mjs",
-      "require": "./dist/leafdb.cjs"
-    }
+    ".": "./dist/leafdb.js"
   },
   "keywords": [
     "database",
@@ -19,7 +14,6 @@
     "javascript",
     "typescript",
     "nodejs",
-    "es6",
     "nosql",
     "fs"
   ],
@@ -34,15 +28,17 @@
   },
   "scripts": {
     "lint": "tsc --noEmit && eslint src",
-    "build": "rollup -c --bundleConfigAsCjs",
+    "build": "rollup -c",
     "build:test": "node test/build.js",
-    "prepublishOnly": "npm run test && npm run build",
     "test": "npm run build:test && node --test test/build/**/*.spec.js",
     "test:storage": "npm run build:test && node --test test/build/storage/*.spec.js",
     "test:memory": "npm run build:test && node --test test/build/memory/*.spec.js",
     "test:model": "npm run build:test && node --test test/build/model/*.spec.js",
     "test:modifiers": "npm run build:test && node --test test/build/modifiers/*.spec.js",
-    "test:validation": "npm run build:test && node --test test/build/validation/*.spec.js"
+    "test:validation": "npm run build:test && node --test test/build/validation/*.spec.js",
+    "preversion": "npm run lint && npm run test",
+    "version": "npm run build",
+    "postversion": "git push && git push --tags && npm publish"
   },
   "dependencies": {
     "fast-deep-equal": "^3.1.3",
