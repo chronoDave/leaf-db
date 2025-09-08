@@ -1,63 +1,45 @@
-import test from 'tape';
+import fs from 'fs';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
 import setup, { data } from './fixture';
 
-test('[model.insert] inserts docs', t => {
+test('[model.insert] inserts docs', () => {
   const { db } = setup();
 
   const docs = db.insert(data);
-  t.true(Array.isArray(docs), 'is array');
-  t.strictEqual(docs.length, data.length, 'inserts docs');
-  t.deepEqual(docs[0], data[0], 'is doc');
-
-  t.end();
+  assert.ok(Array.isArray(docs), 'is array');
+  assert.strictEqual(docs.length, data.length, 'inserts docs');
+  assert.deepEqual(docs[0], data[0], 'is doc');
 });
 
-test('[model.insert] inserts docs in memory', t => {
+test('[model.insert] inserts docs in memory', () => {
   const { db } = setup();
 
   db.insert(data);
   const docs = db.select({});
-  t.true(Array.isArray(docs), 'is array');
-  t.strictEqual(docs.length, data.length, 'inserts docs');
-  t.deepEqual(docs[0], data[0], 'is doc');
-
-  t.end();
+  assert.ok(Array.isArray(docs), 'is array');
+  assert.strictEqual(docs.length, data.length, 'inserts docs');
+  assert.deepEqual(docs[0], data[0], 'is doc');
 });
 
-test('[model.insert] does not insert duplicate docs', t => {
+test('[model.insert] does not insert duplicate docs', () => {
   const { db } = setup();
 
-  try {
-    db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]);
-    t.fail('should not insert duplicate docs');
-  } catch (err) {
-    t.pass('does not insert duplicates docs');
-  }
-
-  t.end();
+  assert.throws(() => db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]));
 });
 
-test('[model.insert] does not insert docs if any doc is invalid', t => {
+test('[model.insert] does not insert docs if any doc is invalid', () => {
   const { db } = setup();
 
-  try {
-    db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]);
-    t.fail('expected to throw');
-  } catch (err) {
-    t.equal(db.select({}).length, 0, 'does not insert any docs');
-  }
-
-  t.end();
+  assert.throws(() => db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]));
 });
 
-test('[model.insert] inserts duplicate drafts', t => {
+test('[model.insert] inserts duplicate drafts', () => {
   const { db } = setup();
 
   const drafts = [{ a: 1 }, { a: 1 }];
   const docs = db.insert(drafts);
 
-  t.equal(drafts.length, docs.length, 'inserts duplicate drafts');
-
-  t.end();
+  assert.equal(drafts.length, docs.length, 'inserts duplicate drafts');
 });

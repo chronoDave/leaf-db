@@ -10,7 +10,6 @@ fs.rmSync(outdir, { force: true, recursive: true });
 build({
   entryPoints: glob.sync('unit/**/*.spec.ts', { cwd: __dirname, absolute: true }),
   bundle: true,
-  external: ['tape'],
   platform: 'node',
   outdir,
   outbase: 'test/unit'

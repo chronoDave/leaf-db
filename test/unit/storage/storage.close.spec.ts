@@ -1,39 +1,28 @@
-import test from 'tape';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 import fs from 'fs';
 
 import { file, name } from './fixture';
 import Storage from '../../../src/storage';
 
-test('[storage.close] throws if not opened', t => {
+test('[storage.close] throws if not opened', () => {
   const storage = new Storage({ root: __dirname, name });
 
-  try {
-    storage.close();
-    t.fail('expected to throw');
-  } catch (err) {
-    t.pass('throws');
-  }
-
-  t.end();
+  assert.throws(() => storage.close());
 });
 
-test('[storage.close] closes file', t => {
+test('[storage.close] closes file', () => {
   const storage = new Storage({ root: __dirname, name });
   storage.open();
 
   storage.close();
 
   // @ts-expect-error: Access private
-  t.false(storage._fd, 'unsets fd');
-  try {
+  assert.ok(!storage._fd, 'unsets fd');
+  assert.doesNotThrow(() => {
     const fd = fs.openSync(file, 'r+');
-    t.pass('unlocks file');
     fs.closeSync(fd);
-  } catch (err) {
-    t.fail((err as Error).message);
-  }
+  });
 
   fs.rmSync(file);
-
-  t.end();
 });

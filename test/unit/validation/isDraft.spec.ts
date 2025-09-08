@@ -1,29 +1,26 @@
-import test from 'tape';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
 import { production } from './fixture';
 import { isDraft } from '../../../src/validation';
 
-test('[isDraft] should return false if doc is invalid', t => {
-  t.false(isDraft({ $field: 2 }), 'operator');
-  t.false(isDraft({ a: { $field: 2 } }), 'nested operator');
-  t.false(isDraft({ a: [{ $field: 2 }] }), 'array nested operator');
-
-  t.end();
+test('[isDraft] should return false if doc is invalid', () => {
+  assert.ok(!isDraft({ $field: 2 }), 'operator');
+  assert.ok(!isDraft({ a: { $field: 2 } }), 'nested operator');
+  assert.ok(!isDraft({ a: [{ $field: 2 }] }), 'array nested operator');
 });
 
-test('[isDraft] should return true is doc is valid', t => {
-  t.true(isDraft(production));
-  t.true(isDraft({}));
-  t.true(isDraft({ a: null }));
-  t.true(isDraft({ a: [null] }));
-  t.true(isDraft({ date: '2010.09.31' }));
-  t.true(isDraft({ date: {} }));
-  t.true(isDraft({ a: '反復回転時計' }));
-  t.true(isDraft({ a: 'a\\null\\undefined' }));
-  t.true(isDraft({ _id: '1', a: { b: [{ c: [undefined] }] } }));
-  t.true(isDraft({ 'test.field': 2 }));
-  t.true(isDraft({ a: { 'test.field': 2 } }));
-  t.true(isDraft({ a: [{ 'test.field': 2 }] }));
-
-  t.end();
+test('[isDraft] should return true is doc is valid', () => {
+  assert.ok(isDraft(production));
+  assert.ok(isDraft({}));
+  assert.ok(isDraft({ a: null }));
+  assert.ok(isDraft({ a: [null] }));
+  assert.ok(isDraft({ date: '2010.09.31' }));
+  assert.ok(isDraft({ date: {} }));
+  assert.ok(isDraft({ a: '反復回転時計' }));
+  assert.ok(isDraft({ a: 'a\\null\\undefined' }));
+  assert.ok(isDraft({ _id: '1', a: { b: [{ c: [undefined] }] } }));
+  assert.ok(isDraft({ 'test.field': 2 }));
+  assert.ok(isDraft({ a: { 'test.field': 2 } }));
+  assert.ok(isDraft({ a: [{ 'test.field': 2 }] }));
 });

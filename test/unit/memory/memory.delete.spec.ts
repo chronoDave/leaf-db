@@ -1,24 +1,21 @@
-import test from 'tape';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
 import Memory from '../../../src/memory';
 import { data } from './fixture';
 
-test('[memory.delete] should delete document', t => {
+test('[memory.delete] should delete document', () => {
   const memory = new Memory();
   // @ts-expect-error: Access private
   memory._docs.set(data._id, data);
 
-  t.true(memory.delete(data._id), 'deletes doc');
+  assert.ok(memory.delete(data._id), 'deletes doc');
   // @ts-expect-error: Access private
-  t.false(memory._docs.has(data._id), 'doc does not exist');
-
-  t.end();
+  assert.ok(!memory._docs.has(data._id), 'doc does not exist');
 });
 
-test('[memory.delete] should return false if doc does not exist', t => {
+test('[memory.delete] should return false if doc does not exist', () => {
   const memory = new Memory();
 
-  t.false(memory.delete(data._id));
-
-  t.end();
+  assert.ok(!memory.delete(data._id));
 });

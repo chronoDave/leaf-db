@@ -1,20 +1,19 @@
 import fs from 'fs';
-import test from 'tape';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
 import setup, { memory } from './fixture';
 
-test('[model.drop] drops data', async t => {
+test('[model.drop] drops data', async () => {
   const { db } = setup({ memory });
 
   db.drop();
 
   // @ts-expect-error: Read private
-  t.strictEqual(db._memory._docs.size, 0, 'clears memory');
-
-  t.end();
+  assert.strictEqual(db._memory._docs.size, 0, 'clears memory');
 });
 
-test('[model.drop] drops data and persists', t => {
+test('[model.drop] drops data and persists', () => {
   const { db, file } = setup({ memory, root: __dirname });
 
   db.open();
@@ -22,8 +21,6 @@ test('[model.drop] drops data and persists', t => {
   db.close();
 
   // @ts-expect-error: Read private
-  t.strictEqual(db._memory._docs.size, 0, 'clears memory');
-  t.strictEqual(fs.readFileSync(file, 'utf-8'), '', 'clears file');
-
-  t.end();
+  assert.strictEqual(db._memory._docs.size, 0, 'clears memory');
+  assert.strictEqual(fs.readFileSync(file, 'utf-8'), '', 'clears file');
 });
