@@ -4,8 +4,8 @@ import path from 'path';
 import { MISSING_FD } from './errors';
 
 export type StorageOptions = {
-  root: string
-  name: string
+  root: string;
+  name: string;
 };
 
 export default class Storage {

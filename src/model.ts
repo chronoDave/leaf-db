@@ -1,21 +1,22 @@
-import crypto from 'crypto';
-import { merge } from 'rambda';
-
-import {
+import type {
   Doc,
   Query,
   Draft,
   Update
 } from './types';
+
+import crypto from 'crypto';
+import { merge } from 'rambda';
+
 import { isDoc, isQueryMatch } from './validation';
 import { DUPLICATE_DOC, INVALID_DOC, MEMORY_MODE } from './errors';
 import Memory from './memory';
 import Storage from './storage';
 
-export * from './types';
+export type * from './types';
 
 export type LeafDBOptions = {
-  storage?: string | { root: string, name?: string }
+  storage?: string | { root: string; name?: string };
 };
 
 export default class LeafDB<T extends Draft> {
@@ -45,12 +46,12 @@ export default class LeafDB<T extends Draft> {
     this._memory = new Memory();
 
     const root = typeof options?.storage === 'string' ?
-      options?.storage :
+      options.storage :
       options?.storage?.root;
 
-    if (root) {
-      const name = (typeof options?.storage !== 'string') ?
-        (options?.storage?.name ?? 'leaf-db') :
+    if (typeof root === 'string') {
+      const name = typeof options?.storage !== 'string' ?
+        options?.storage?.name ?? 'leaf-db' :
         'leaf-db';
 
       this._storage = new Storage({ root, name });
@@ -60,7 +61,7 @@ export default class LeafDB<T extends Draft> {
   open() {
     if (!this._storage) throw new Error(MEMORY_MODE('open'));
 
-    const corrupted: Array<{ raw: string, err: unknown }> = [];
+    const corrupted: Array<{ raw: string; err: unknown }> = [];
     const docs: Array<Doc<T>> = [];
 
     this._storage.open().forEach(raw => {
@@ -94,7 +95,7 @@ export default class LeafDB<T extends Draft> {
 
   close() {
     if (!this._storage) throw new Error(MEMORY_MODE('close'));
-    return this._storage?.close();
+    this._storage.close();
   }
 
   insert(drafts: T[]) {
@@ -107,7 +108,7 @@ export default class LeafDB<T extends Draft> {
         ) throw new Error(DUPLICATE_DOC(draft));
         docs.push(draft);
       } else {
-        docs.push(({ _id: LeafDB.id(), ...draft }));
+        docs.push({ _id: LeafDB.id(), ...draft });
       }
     });
 

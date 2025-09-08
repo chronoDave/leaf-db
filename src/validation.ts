@@ -1,6 +1,4 @@
-import deepEqual from 'fast-deep-equal';
-
-import {
+import type {
   Doc,
   Draft,
   Json,
@@ -8,13 +6,15 @@ import {
   Query
 } from './types';
 
+import deepEqual from 'fast-deep-equal';
+
 // Guards
 export const isObject = (x: unknown): x is JsonObject =>
   x !== null &&
   !Array.isArray(x) &&
   typeof x === 'object';
 export const isTag = (x: string): x is `$${string}` =>
-  x[0] === '$';
+  x.startsWith('$');
 
 // Validators
 export const hasTag = ([key, value]: [string, unknown]) =>
@@ -53,7 +53,7 @@ export const isQueryMatch = <T extends JsonObject>(
     .entries(query)
     .every(([key, y]) => {
       // Invalid key and not tag
-      if ((isObject(doc) && !(key in doc)) && !isTag(key)) return false;
+      if (isObject(doc) && !(key in doc) && !isTag(key)) return false;
       const x = isObject(doc) ? doc[key] : doc;
 
       // { [$string]: Json }

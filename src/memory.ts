@@ -1,4 +1,4 @@
-import { Doc, Draft } from './types';
+import type { Doc, Draft } from './types';
 
 export default class Memory<T extends Draft> {
   private readonly _docs: Map<string, Doc<T>>;
@@ -8,7 +8,7 @@ export default class Memory<T extends Draft> {
   }
 
   get(_id: string) {
-    return this._docs.get(_id) || null;
+    return this._docs.get(_id) ?? null;
   }
 
   set(doc: Doc<T>) {
@@ -18,7 +18,7 @@ export default class Memory<T extends Draft> {
   }
 
   has(_id?: string) {
-    if (!_id || !this._docs.has(_id)) return false;
+    if (typeof _id !== 'string' || !this._docs.has(_id)) return false;
     return !this._docs.get(_id)?.__deleted;
   }
 

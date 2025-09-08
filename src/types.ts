@@ -1,5 +1,5 @@
 // Helpers
-export type Join<T extends Array<string | number | Symbol>> = T[number];
+export type Join<T extends Array<string | number | symbol>> = T[number];
 export type DeepPartial<T> = Partial<{
   [K in keyof T]?: T[K] extends object ?
     Update<T[K]> :
@@ -15,34 +15,34 @@ export type Json =
   Json[] |
   { [key: string]: Json };
 
-export type JsonObject = { [key: string]: Json };
+export type JsonObject = Record<string, Json>;
 
 // Leaf-DB
 export type Operators = {
   // Number
-  $gt: number
-  $gte: number
-  $lt: number
-  $lte: number
+  $gt: number;
+  $gte: number;
+  $lt: number;
+  $lte: number;
   // Text
-  $text: string
-  $regex: RegExp
+  $text: string;
+  $regex: RegExp;
   // Array
-  $has: Json
-  $size: number
+  $has: Json;
+  $size: number;
   // Logic
-  $not: Json
+  $not: Json;
 };
 
 export type Draft = { _id?: string } & {
-  [key: string]: Json
-  [key: `$${string}`]: never
-  [key: `__${string}`]: never
+  [key: string]: Json;
+  [key: `$${string}`]: never;
+  [key: `__${string}`]: never;
 };
 
 export type Doc<T extends Draft> = T & {
-  readonly _id: string
-  readonly __deleted?: boolean
+  readonly _id: string;
+  readonly __deleted?: boolean;
 };
 
 export type Query<T> = Partial<{
