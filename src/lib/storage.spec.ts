@@ -1,127 +1,110 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'fs';
+import fsp from 'fs/promises';
 
-import Storage from './storage.ts';
-import { name, file } from './storage.struct.ts';
+import struct from './storage.struct.ts';
 
 test('[storage.open]', async t => {
-  await t.test('reads and opens file if file exists', () => {
+  await t.test('reads and opens file if file exists', async () => {
     const text = 'this is test data';
+    const { storage, cleanup } = await struct(text);
   
-    fs.writeFileSync(file, text);
+    const entries = await storage.open();
+    await storage.close();
   
-    const storage = new Storage({ root: import.meta.dirname, name });
-    const data = storage.open();
-  
-    // @ts-expect-error: Access private
-    fs.closeSync(storage._fd);
-    fs.rmSync(file);
-  
-    assert.ok(Array.isArray(data), 'returns data array');
-    assert.equal(data.length, 1, 'has data');
-    assert.equal(data[0], text, 'has file data');
-    // @ts-expect-error: Access private
-    assert.ok(storage._fd, 'opened file');
+    assert.equal(entries.length, 1, 'has data');
+    assert.equal(entries[0], text, 'has file data');
+
+    await cleanup();
   });
   
-  await t.test('creates and opens file if file does not exist', () => {
-    const storage = new Storage({ root: import.meta.dirname, name });
-    const data = storage.open();
+  await t.test('creates and opens file if file does not exist', async () => {
+    const { storage, file, cleanup } = await struct();
+
+    const entries = await storage.open();
+    await storage.close();
   
-    // @ts-expect-error: Access private
-    fs.closeSync(storage._fd);
-  
-    assert.ok(Array.isArray(data), 'returns data array');
-    assert.equal(data.length, 0, 'does not have data');
+    assert.equal(entries.length, 0, 'does not have data');
     assert.ok(fs.existsSync(file), 'created file');
-    // @ts-expect-error: Access private
-    assert.ok(storage._fd, 'opened file');
   
-    fs.rmSync(file);
+    await cleanup();
   });
   
-  await t.test('splits data on newline', () => {
-    const arr = [JSON.stringify({ _id: 'a' }), JSON.stringify({ _id: '\nb' })];
-    fs.writeFileSync(file, arr.join('\n'));
-    const storage = new Storage({ root: import.meta.dirname, name });
-    const data = storage.open();
+  await t.test('splits data on newline', async () => {
+    const text = [{ _id: 'a' }, { _id: 'b' }]
+      .map(x => JSON.stringify(x))
+      .join('\n');
+    const { storage, cleanup } = await struct(text);
+    
+    const entries = await storage.open();
+    await storage.close();
+
+    assert.equal(entries.length, 2, 'splits data');
+    assert.deepEqual(entries[0], JSON.stringify({ _id: 'a' }), 'has correct data');
   
-    // @ts-expect-error: Access private
-    fs.closeSync(storage._fd);
-  
-    assert.equal(data.length, arr.length, 'splits data');
-    assert.ok(data.every((x, i) => x === arr[i]), 'has correct data');
-  
-    fs.rmSync(file);
+    await cleanup();
+  });
+});
+
+test('[storage.write]', async t => {
+  await t.test('writes data', async () => {
+    const data = 'new data';
+    const { storage, file, cleanup } = await struct('this is test data');
+
+    await storage.open();
+    await storage.write(data);
+    await storage.close();
+
+    const raw = await fsp.readFile(file, 'utf-8');
+    assert.equal(data, raw.trim(), 'writes data');
+
+    await cleanup();
   });
 });
 
 test('[storage.append]', async t => {
-  await t.test('throws if not opened', () => {
-    const storage = new Storage({ root: import.meta.dirname, name });
+  await t.test('rejects if not opened', async () => {
+    const { storage } = await struct();
 
-    assert.throws(() => storage.append(''));
+    await assert.rejects(async () => storage.append(''));
   });
 
-  await t.test('appens data', () => {
+  await t.test('appens data', async () => {
     const data = 'this is test data';
-    const storage = new Storage({ root: import.meta.dirname, name });
-    storage.open();
+    const { storage, file, cleanup } = await struct();
 
-    storage.append(data);
-    // @ts-expect-error: Access private
-    fs.closeSync(storage._fd);
+    await storage.open();
+    await storage.append(data);
+    await storage.close();
 
-    assert.ok(fs.readFileSync(file, { encoding: 'utf-8' }).includes(data), 'appends data');
+    const raw = await fsp.readFile(file, 'utf-8');
+    assert.equal(data, raw.trim(), 'appends data');
 
-    fs.rmSync(file);
+    await cleanup();
   });
 });
 
-test('[storage.flush]', async t => {
-  await t.test('throws if not opened', () => {
-    const storage = new Storage({ root: import.meta.dirname, name });
-  
-    assert.throws(() => storage.flush());
-  });
-  
-  await t.test('clears file', () => {
-    fs.writeFileSync(file, 'this is some data');
-    const storage = new Storage({ root: import.meta.dirname, name });
-    storage.open();
-  
-    storage.flush();
-    // @ts-expect-error: Access private
-    fs.closeSync(storage._fd);
-  
-    assert.ok(fs.existsSync(file), 'file exists');
-    assert.equal(fs.readFileSync(file, { encoding: 'utf-8' }).length, 0, 'is empty');
-  
-    fs.rmSync(file);
-  });
+test('[storage.flush] clears file', async () => {  
+  const { storage, file, cleanup } = await struct('this is some data');
+
+  await storage.open();
+  await storage.flush();
+  await storage.close();
+
+  const raw = await fsp.readFile(file, 'utf-8');
+  assert.equal(raw.length, 0, 'is empty');
+
+  await cleanup();
 });
 
-test('[storage.close]', async t => {
-  await t.test('throws if not opened', () => {
-    const storage = new Storage({ root: import.meta.dirname, name });
-  
-    assert.throws(() => storage.close());
-  });
-  
-  await t.test('closes file', () => {
-    const storage = new Storage({ root: import.meta.dirname, name });
-    storage.open();
-  
-    storage.close();
-  
-    // @ts-expect-error: Access private
-    assert.ok(!storage._fd, 'unsets fd');
-    assert.doesNotThrow(() => {
-      const fd = fs.openSync(file, 'r+');
-      fs.closeSync(fd);
-    });
-  
-    fs.rmSync(file);
-  });
+test('[storage.close] closes file', async () => {  
+  const { storage, file, cleanup } = await struct();
+
+  await storage.open();
+  await storage.close();
+
+  await assert.doesNotReject(async () => fsp.readFile(file), 'releases file');
+
+  await cleanup();
 });

@@ -1,4 +1,19 @@
-import path from 'path';
+import type { StorageOptions } from './storage.ts';
 
-export const file = path.resolve(import.meta.dirname, 'test.txt');
-export const { dir, name } = path.parse(file);
+import path from 'path';
+import fsp from 'fs/promises';
+
+import Storage from './storage.ts';
+
+export default async (x?: string) => {
+  const options: StorageOptions = { dir: import.meta.dirname, name: 'test' };
+  const file = path.format({ ...options, ext: '.ndjson' });
+
+  if (typeof x === 'string') await fsp.writeFile(file, x);
+
+  return {
+    storage: new Storage(options),
+    file,
+    cleanup: async () => fsp.rm(file)
+  };
+};

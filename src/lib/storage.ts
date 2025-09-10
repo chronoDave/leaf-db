@@ -1,54 +1,64 @@
-import fs from 'fs';
+import type { FileHandle } from 'fs/promises';
+
+import fsp from 'fs/promises';
 import path from 'path';
 
-import { MISSING_FD } from './errors.ts';
-
 export type StorageOptions = {
-  root: string;
   name: string;
+  dir: string;
 };
 
 export default class Storage {
   private readonly _file: string;
-  private _fd?: number;
+  private _fd?: FileHandle;
+
+  private async _open() {
+    this._fd = await fsp.open(this._file, 'a');
+  }
 
   constructor(options: StorageOptions) {
     this._file = path.format({
-      dir: options.root,
+      dir: options.dir,
       name: options.name,
-      ext: '.txt'
+      ext: '.ndjson'
     });
   }
 
-  open() {
-    let data: string[] = [];
+  async open(): Promise<string[]> {
+    try {
+      const raw = await fsp.readFile(this._file, 'utf-8');
 
-    if (fs.existsSync(this._file)) {
-      data = fs.readFileSync(this._file, { encoding: 'utf-8' })
-        .split('\n');
-    } else {
-      fs.mkdirSync(path.parse(this._file).dir, { recursive: true });
+      await this._open();
+
+      return raw.split('\n');
+    } catch (err) {
+      await fsp.mkdir(path.parse(this._file).dir, { recursive: true });
+
+      await this._open();
+
+      return [];
     }
-
-    this._fd = fs.openSync(this._file, 'a');
-    return data;
   }
 
-  close() {
-    if (typeof this._fd !== 'number') throw new Error(MISSING_FD('close'));
-    fs.closeSync(this._fd);
+  async close() {
+    await this._fd?.close();
     delete this._fd;
   }
 
-  append(raw: string) {
-    if (typeof this._fd !== 'number') throw new Error(MISSING_FD('append'));
-    fs.appendFileSync(this._fd, `${raw}\n`);
+  async write(x: string) {
+    await this._fd?.close();
+    await fsp.writeFile(this._file, x);
+    await this._open();
   }
 
-  flush() {
-    if (typeof this._fd !== 'number') throw new Error(MISSING_FD('flush'));
-    fs.closeSync(this._fd);
-    fs.rmSync(this._file);
-    this._fd = fs.openSync(this._file, 'a');
+  async append(x: string) {
+    if (!this._fd) throw new Error('No file found');
+    return this._fd.appendFile(`\n${x}`);
+  }
+
+  async flush() {
+    await this._fd?.close();
+    await fsp.rm(this._file);
+    await this._open();
   }
 }

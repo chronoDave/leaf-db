@@ -119,7 +119,7 @@ import LeafDB from 'leaf-db';
 
 /**
  * Create a new database under process.cwd()
- * This will create `db.txt` in process.cwd() 
+ * This will create `db.ndjson` in process.cwd() 
  */
 const db = new LeafDB('db');
 db.open();

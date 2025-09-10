@@ -1,386 +1,242 @@
-import type { Doc } from './fixture.ts';
-
-import fs from 'fs';
+import fsp from 'fs/promises';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import setup, { data, invalid, memory } from './leafdb.struct.ts';
+import LeafDB from './leafdb.ts';
+import struct, { invalid } from './leafdb.struct.ts';
 
 test('[leafdb.open]', async t => {
-  await t.test('should not throw if data contains backslash', () => {
-    const { db, file } = setup({
-      data: [{ invalid: '\\' }],
-      root: import.meta.dirname
-    });
+  await t.test('should not throw if storage is not available', async () => {
+    const db = new LeafDB();
 
-    assert.doesNotThrow(() => db.open());
-
-    db.close();
-    fs.unlinkSync(file);
+    await assert.doesNotReject(async () => db.open());
   });
 
-  await t.test('should not throw if data contains quotation mark', () => {
-    const { db, file } = setup({
-      data: [{ invalid: '"' }],
-      root: import.meta.dirname
-    });
+  await t.test('should not throw if data contains backslash', async () => {
+    const { db, cleanup } = await struct([{ invalid: '\\' }]);
 
-    assert.doesNotThrow(() => db.open());
+    await assert.doesNotReject(async () => db.open());
+    await db.close();
 
-    db.close();
-    fs.unlinkSync(file);
+    await cleanup();
   });
 
-  await t.test('parses valid persistent data', () => {
+  await t.test('should not throw if data contains quotation mark', async () => {
+    const { db, cleanup } = await struct([{ invalid: '"' }]);
+
+    await assert.doesNotReject(async () => db.open());
+    await db.close();
+
+    await cleanup();
+  });
+
+  await t.test('should not throw if data contains empty lines', async () => {
+    const { db, cleanup } = await struct(['', '', '']);
+
+    await assert.doesNotReject(async () => db.open());
+    await db.close();
+
+    await cleanup();
+  });
+
+  await t.test('parses valid data', async () => {
     const data = [{ _id: '1' }, { _id: '2' }];
-    const { db, file } = setup({
-      data,
-      root: import.meta.dirname
-    });
+    const { db, cleanup } = await struct(data);
 
-    const corrupted = db.open();
-    db.close();
+    const corrupt = await db.open();
+    const docs = db.select();
+    await db.close();
 
-    // @ts-expect-error: Access private
-    assert.strictEqual(db._memory._docs.size, data.length, 'inserts docs');
-    assert.strictEqual(corrupted.length, 0, 'validates');
-    for (let i = 0; i < data.length; i += 1) {
-      // @ts-expect-error: Access private
-      assert.deepEqual(db._memory._docs.get(data[i]._id), data[i], 'parses docs');
-    }
+    assert.equal(corrupt.length, 0, 'validates');
+    assert.strictEqual(docs.length, data.length, 'sets memory');
+    assert.deepEqual(docs, data, 'parses docs');
 
-    fs.unlinkSync(file);
+    await cleanup();
   });
 
-  await t.test('parses empty file', () => {
-    const data: any[] = [];
-    const { db, file } = setup({ data, root: import.meta.dirname });
+  await t.test('parses empty file', async () => {
+    const { db, cleanup } = await struct([]);
 
-    const corrupted = db.open();
-    db.close();
+    const corrupt = await db.open();
+    const docs = db.select();
+    await db.close();
 
-    assert.strictEqual(corrupted.length, 0, 'validates');
-    // @ts-expect-error: Access private
-    assert.strictEqual(db._memory._docs.size, 0, 'does not parse empty file');
+    assert.strictEqual(corrupt.length, 0, 'validates');
+    assert.strictEqual(docs.length, 0, 'does not parse empty file');
 
-    fs.unlinkSync(file);
+    await cleanup();
   });
 
-  await t.test('ignores corrupted data', () => {
+  await t.test('ignores corrupted data', async () => {
     const valid = { _id: '2', valid: true };
-    const data = [valid, ...invalid];
+    const { db, file, cleanup } = await struct([valid, ...invalid]);
 
-    const { db, file } = setup({ data, root: import.meta.dirname });
+    const corrupt = await db.open();
+    const docs = db.select();
+    await db.close();
 
-    const corrupted = db.open();
-    db.close();
+    const raw = (await fsp.readFile(file, 'utf-8')).trim().split('\n');
 
-    assert.strictEqual(corrupted.length, invalid.length, 'validates');
-    // @ts-expect-error: Access private
-    assert.strictEqual(db._memory._docs.size, 1, 'ignores invalid data');
+    assert.strictEqual(corrupt.length, invalid.length, 'validates');
+    assert.strictEqual(docs.length, 1, 'ignores corrupted data');
+    assert.equal(raw.length, 1, 'removes corrupted data');
 
-    fs.unlinkSync(file);
+    await cleanup();
   });
 
-  await t.test('ignores deleted data', () => {
-    const { db, file } = setup<{ data: string }>({ root: import.meta.dirname });
+  await t.test('ignores deleted data', async () => {
+    const { db, file, cleanup } = await struct([{ _id: '1' }, { _id: '1', __deleted: true }]);
 
-    db.open();
-    db.insert([{ data: 'a' }, { data: 'b' }]);
-    const docs = db.delete({ data: 'a' }, { data: 'b' });
-    assert.strictEqual(docs, 2, 'delete docs (any match)');
-    db.close();
-    db.open();
+    const corrupt = await db.open();
+    const docs = db.select();
+    await db.close();
 
-    assert.strictEqual(db.select({}).length, 0, 'ignores deleted data');
+    const raw = (await fsp.readFile(file, 'utf-8')).trim();
 
-    db.close();
-    fs.unlinkSync(file);
-  });
+    assert.strictEqual(corrupt.length, 0, 'ignores deleted data');
+    assert.equal(docs.length, 0, 'ignores deleted data');
+    assert.equal(raw.length, 0, 'removes deleted data');
 
-  await t.test('throws in memory mode', () => {
-    const { db } = setup();
-
-    assert.throws(() => db.open());
-  });
-
-  await t.test('can read inserted data', () => {
-    const data = [{ _id: '1' }, { _id: '2' }];
-
-    const { file, db } = setup({ root: import.meta.dirname });
-    db.open();
-    db.insert(data);
-    db.close();
-    const corrupted = db.open();
-
-    assert.equal(corrupted.length, 0, 'reads all data');
-    const docs = db.select({});
-    assert.equal(docs.length, data.length, 'inserts all data');
-
-    db.close();
-    fs.unlinkSync(file);
-  });
-
-  await t.test('removes invalid data', () => {
-    const data = [{ _id: '1' }, { _id: '2' }, { _id: '3' }];
-
-    const { file, db } = setup({ root: import.meta.dirname });
-    db.open();
-    db.insert(data);
-    db.drop();
-    db.close();
-    const corrupted = db.open();
-
-    assert.equal(corrupted.length, 0, 'removes invalid data from file');
-    const docs = db.select({});
-    assert.equal(docs.length, 0, 'removes invalid data from memory');
-
-    db.close();
-    fs.unlinkSync(file);
+    await db.close();
+    await cleanup();
   });
 });
 
 test('[leafdb.insert]', async t => {
-  await t.test('inserts docs', () => {
-    const { db } = setup();
+  await t.test('inserts docs', async () => {
+    const db = new LeafDB();
 
-    const docs = db.insert(data);
+    const docs = await db.insert([{ name: 'test' }]);
     assert.ok(Array.isArray(docs), 'is array');
-    assert.strictEqual(docs.length, data.length, 'inserts docs');
-    assert.deepEqual(docs[0], data[0], 'is doc');
+    assert.equal(docs.length, 1, 'returns docs');
+    assert.equal(db.select().length, 1, 'inserts docs');
+
+    const { _id, ...doc } = docs[0];
+    assert.ok(_id, 'has id');
+    assert.deepEqual(doc, { name: 'test' }, 'has doc');
   });
 
-  await t.test('inserts docs in memory', () => {
-    const { db } = setup();
+  await t.test('does not insert duplicate docs', async () => {
+    const db = new LeafDB();
 
-    db.insert(data);
-    const docs = db.select({});
-    assert.ok(Array.isArray(docs), 'is array');
-    assert.strictEqual(docs.length, data.length, 'inserts docs');
-    assert.deepEqual(docs[0], data[0], 'is doc');
+    const docs = await db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]);
+    assert.equal(docs.length, 2, 'returns docs');
+    assert.equal(db.select().length, 2, 'inserts docs');
   });
 
-  await t.test('does not insert duplicate docs', () => {
-    const { db } = setup();
+  await t.test('inserts duplicate drafts', async () => {
+    const db = new LeafDB();
 
-    assert.throws(() => db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]));
-  });
-
-  await t.test('does not insert docs if any doc is invalid', () => {
-    const { db } = setup();
-
-    assert.throws(() => db.insert([{ _id: '1' }, { _id: '2' }, { _id: '1' }]));
-  });
-
-  await t.test('inserts duplicate drafts', () => {
-    const { db } = setup();
-
-    const drafts = [{ a: 1 }, { a: 1 }];
-    const docs = db.insert(drafts);
-
-    assert.equal(drafts.length, docs.length, 'inserts duplicate drafts');
+    const docs = await db.insert([{ a: 1 }, { a: 1 }]);
+    assert.equal(docs.length, 2, 'returns docs');
+    assert.equal(db.select().length, 2, 'inserts docs');
   });
 });
 
-test('[leafdb.select]', async t => {
-  await t.test('returns docs on empty query', () => {
-    const { db } = setup<Doc>({ memory });
+test('[leafdb.select] returns docs', async () => {
+  const db = new LeafDB();
+  await db.insert([{ _id: '1' }, { _id: '2' }, { _id: '3' }]);
 
-    const docs = db.select({});
-    assert.ok(Array.isArray(docs), 'is array');
-    assert.strictEqual(docs.length, Object.keys(memory).length, 'finds docs (empty)');
-  });
-
-  await t.test('returns docs on query match (simple)', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.select({ nametype: 'Valid' });
-    assert.strictEqual(docs.length, 1000, 'finds docs (simple)');
-  });
-
-  await t.test('returns docs on query match (nested)', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.select({ geolocation: { type: 'Point' } });
-    assert.strictEqual(docs.length, 988, 'finds docs (nested)');
-  });
-
-  await t.test('returns docs on query match (complex)', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.select({ geolocation: { coordinates: { $has: 56.18333 } } });
-    assert.strictEqual(docs.length, 1, 'finds docs (complex)');
-  });
-
-  await t.test('returns empty array if query does not match', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.select({ geolocation: { coordinates: { $has: -1 } } });
-    assert.strictEqual(docs.length, 0, 'does not find docs (no match)');
-  });
-
-  await t.test('returns docs if any query matches', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.select(
-      { geolocation: { coordinates: { $has: -1 } } },
-      { geolocation: { coordinates: { $has: 56.18333 } } }
-    );
-    assert.strictEqual(docs.length, 1, 'finds docs (any match)');
-  });
+  assert.strictEqual(db.select().length, 3, 'no ids');
+  assert.strictEqual(db.select('1', '2').length, 2, 'valid ids');
+  assert.strictEqual(db.select('1', '4').length, 1, 'any id');
 });
 
-test('[leafdb.selectById]', async t => {
-  await t.test('returns docs on empty query', () => {
-    const { db } = setup<Doc>({ memory });
+test('[leafdb.query] returns docs', async () => {
+  const db = new LeafDB();
+  await db.insert([
+    { _id: '1', name: 'test', coordinates: { x: 10, y: 20 } },
+    { _id: '2', name: 'query', coordinates: { x: 1, y: 2 } }
+  ]);
 
-    const docs = db.selectById();
-    assert.ok(Array.isArray(docs), 'is array');
-    assert.strictEqual(docs.length, 0, 'finds docs (empty)');
-  });
+  assert.strictEqual(db.query().length, 2, 'no query');
+  assert.strictEqual(db.query({}).length, 2, 'empty query');
+  assert.strictEqual(db.query({ name: 'test' }).length, 1, 'simple query');
+  assert.strictEqual(db.query({ coordinates: { x: 10 } }).length, 1, 'nested query');
+  assert.strictEqual(db.query({ coordinates: { y: { $lte: 20 } } }).length, 2, 'complex query');
 
-  await t.test('returns docs on id match', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.selectById('2', '6');
-    assert.strictEqual(docs.length, 2, 'finds docs');
-    assert.strictEqual(docs[0].name, 'Aarhus', 'finds correct docs');
-  });
+  assert.strictEqual(db.query({ name: 'unknown' }).length, 0, 'no match');
+  assert.strictEqual(db.query({ name: 'unknown' }, { name: 'query' }).length, 1, 'any match');
 });
 
 test('[leafdb.update]', async t => {
-  await t.test('replaces docs on empty query', () => {
-    const { db } = setup<Doc>({ memory });
+  await t.test('throws if update contains invalid properties', async () => {
+    const db = new LeafDB();
 
-    const docs = db.update({}, {});
-    assert.ok(Array.isArray(docs), 'is array');
-    assert.strictEqual(docs.length, Object.keys(memory).length, 'replaced docs (empty)');
+    await assert.rejects(async () => db.update({ _id: '1' }, {}), '_id');
+    await assert.rejects(async () => db.update({ __deleted: true }, {}), '_id');
   });
 
-  await t.test('replaces docs if matches are found (simple)', () => {
-    const { db } = setup<Doc>({ memory });
+  await t.test('does not remove existing keys', async () => {
+    const data = [
+      { _id: '1', name: 'test', coordinates: { x: 10, y: 20 } },
+      { _id: '2', name: 'query', coordinates: { x: 1, y: 2 } }
+    ];
+    const db = new LeafDB();
+    await db.insert(data);
 
-    const docs = db.update({}, { recclass: 'H6' });
-    assert.strictEqual(docs.length, 77, 'replaced docs (simple');
+    const docs = await db.update({}, {});
+    assert.equal(docs.length, 2, 'replaces all docs');
+    assert.deepEqual(docs[0], data[0], 'does not remove existing keys');
   });
 
-  await t.test('replaces docs if matches are found (nested)', () => {
-    const { db } = setup<Doc>({ memory });
+  await t.test('updates existing keys', async () => {
+    const db = new LeafDB<{ name: string; coordinates: { x: number; y: number } }>();
+    await db.insert([
+      { _id: '1', name: 'test', coordinates: { x: 10, y: 20 } },
+      { _id: '2', name: 'query', coordinates: { x: 1, y: 2 } }
+    ]);
 
-    const docs = db.update({}, { geolocation: { type: 'Point' } });
-    assert.strictEqual(docs.length, 988, 'replaced docs (nested');
-  });
-
-  await t.test('replaces docs if matches are found (complex)', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.update({}, { geolocation: { coordinates: { $has: 56.18333 } } });
-    assert.strictEqual(docs.length, 1, 'replaced docs (complex)');
-  });
-
-  await t.test('returns empty array if query does not match', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.update({}, { _id: '-3' });
-    assert.strictEqual(docs.length, 0, 'does not replace docs (no match)');
-  });
-
-  await t.test('replaces docs if any query matches', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.update({},
-      { _id: '-3' },
-      { geolocation: { coordinates: { $has: 56.18333 } } });
-    assert.strictEqual(docs.length, 1, 'replaced docs (any match)');
-  });
-
-  await t.test('throws if update contains _id', () => {
-    const { db } = setup<Doc>({ memory });
-
-    // @ts-expect-error
-    assert.throws(() => db.update({ _id: '3' }, {}));
+    const docs = await db.update({ coordinates: { x: 5 } }, {});
+    assert.equal(docs[1].coordinates.x, 5, 'sets existing key');
   });
 });
 
-test('[leafdb.delete]', async t => {
-  await t.test('deletes docs if matches are found (simple)', () => {
-    const { db } = setup<Doc>({ memory });
+test('[leafdb.delete] deletes documents', async () => {
+  const { db, file, cleanup } = await struct([{ _id: '1' }, { _id: '2' }]);
 
-    const docs = db.delete({ mass: '720' });
-    assert.strictEqual(docs, 2, 'deletes docs (simple)');
-  });
+  await db.open();
+  const n = await db.delete('1', '2');
+  assert.equal(n, 2, 'returns deleted count');
 
-  await t.test('deletes docs if matches are found (nested)', () => {
-    const { db } = setup<Doc>({ memory });
+  const docs = db.query();
+  assert.equal(docs.length, 0, 'deletes in memory');
 
-    const docs = db.delete({ geolocation: { type: 'Point' } });
-    assert.strictEqual(docs, 988, 'deletes docs (nested)');
-  });
+  await db.close();
 
-  await t.test('deletes docs if matches are found (complex)', () => {
-    const { db } = setup<Doc>({ memory });
+  const raw = (await fsp.readFile(file, 'utf-8'))
+    .trim()
+    .split('\n')
+    .map(x => JSON.parse(x));
+  assert.equal(raw.length, 4, 'writes deletes');
+  assert.equal(raw.filter(x => x.__deleted).length, 2, 'has deletes');
 
-    const docs = db.delete({ geolocation: { coordinates: { $has: 10.23333 } } });
-    assert.strictEqual(docs, 1, 'deletes docs (complex)');
-  });
-
-  await t.test('returns 0 if no match is found', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.delete({ _id: '-1' });
-    assert.strictEqual(docs, 0, 'does not delete docs');
-  });
-
-  await t.test('deletes docs if any query matches', () => {
-    const { db } = setup<Doc>({ memory });
-
-    const docs = db.delete(
-      { _id: '-1' },
-      { geolocation: { coordinates: { $has: 10.23333 } } }
-    );
-    assert.strictEqual(docs, 1, 'delete docs (any match)');
-  });
+  await cleanup();
 });
 
-test('[leafdb.drop]', async t => {
-  await t.test('drops data', () => {
-    const { db } = setup({ memory });
+test('[leafdb.drop] deletes all documents', async () => {
+  const { db, file, cleanup } = await struct([{ _id: '1' }, { _id: '2' }]);
 
-    db.drop();
+  await db.drop();
 
-    // @ts-expect-error: Read private
-    assert.strictEqual(db._memory._docs.size, 0, 'clears memory');
-  });
+  const docs = db.query();
+  assert.equal(docs.length, 0, 'deletes in memory');
 
-  await t.test('drops data and persists', () => {
-    const { db, file } = setup({ memory, root: import.meta.dirname });
+  await db.close();
 
-    db.open();
-    db.drop();
-    db.close();
+  const raw = (await fsp.readFile(file, 'utf-8')).trim();
+  assert.equal(raw.length, 0, 'deletes file');
 
-    // @ts-expect-error: Read private
-    assert.strictEqual(db._memory._docs.size, 0, 'clears memory');
-    assert.strictEqual(fs.readFileSync(file, 'utf-8'), '', 'clears file');
-  });
+  await cleanup();
 });
 
-test('[leafdb.close]', async t => {
-  await t.test('throws in memory mode', () => {
-    const { db } = setup();
+test('[leafdb.close] closes file', async () => {
+  const { db, file, cleanup } = await struct([{ _id: '1' }, { _id: '2' }]);
 
-    assert.throws(() => db.close());
-  });
+  await db.open();
+  await db.close();
 
-  await t.test('closes storage', () => {
-    const { db, file } = setup({ root: import.meta.dirname });
-    db.open();
+  await assert.doesNotReject(async () => fsp.readFile(file), 'releases file');
 
-    assert.doesNotThrow(() => db.close());
-
-    const fd = fs.openSync(file, 'r+');
-    fs.closeSync(fd);
-
-    fs.rmSync(file);
-  });
+  await cleanup();
 });

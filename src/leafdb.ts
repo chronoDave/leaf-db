@@ -1,6 +1,4 @@
-import type {
-  Update
-} from './lib/types.ts';
+import type { StorageOptions } from './lib/storage.ts';
 import type {
   Doc,
   Query,
@@ -11,16 +9,21 @@ import crypto from 'crypto';
 import { merge } from 'rambda';
 
 import * as is from './lib/is.ts';
-import { DUPLICATE_DOC, INVALID_DOC, MEMORY_MODE } from './lib/errors.ts';
-import Memory from './lib/memory.ts';
 import Storage from './lib/storage.ts';
 
 export type * from './lib/types.ts';
 export type * from './lib/is.ts';
 
-export type LeafDBOptions = {
-  storage?: string | { root: string; name?: string };
+export type Corrupt = {
+  raw: string;
+  err: Error;
 };
+
+export type Update<T> = Omit<Partial<{
+  [K in keyof T]?: T[K] extends object ?
+    Update<T[K]> :
+    T[K]
+}>, '_id' | '__deted'>;
 
 export default class LeafDB<T extends Draft> {
   static id() {
@@ -30,107 +33,76 @@ export default class LeafDB<T extends Draft> {
     ].join('');
   }
 
-  private readonly _memory: Memory<T>;
+  private readonly _memory: Map<string, Doc<T>>;
   private readonly _storage?: Storage;
 
-  private _set(doc: Doc<T>) {
-    this._memory.set(doc);
-    this._storage?.append(JSON.stringify(doc));
+  private async _set(doc: Doc<T>) {
+    this._memory.set(doc._id, doc);
 
-    return doc;
+    await this._storage?.append(JSON.stringify(doc));
   }
 
-  private _delete(_id: string) {
-    this._memory.delete(_id);
-    this._storage?.append(JSON.stringify({ _id, __deleted: true }));
+  constructor(options?: StorageOptions) {
+    this._memory = new Map();
+
+    if (options) this._storage = new Storage(options);
   }
 
-  constructor(options?: LeafDBOptions) {
-    this._memory = new Memory();
+  async open(): Promise<Corrupt[]> {
+    if (!this._storage) return [];
 
-    const root = typeof options?.storage === 'string' ?
-      options.storage :
-      options?.storage?.root;
-
-    if (typeof root === 'string') {
-      const name = typeof options?.storage !== 'string' ?
-        options?.storage?.name ?? 'leaf-db' :
-        'leaf-db';
-
-      this._storage = new Storage({ root, name });
-    }
-  }
-
-  open() {
-    if (!this._storage) throw new Error(MEMORY_MODE('open'));
-
-    const corrupted: Array<{ raw: string; err: unknown }> = [];
-    const docs: Array<Doc<T>> = [];
-
-    this._storage.open().forEach(raw => {
+    const entries = await this._storage.open();
+    const corrupt = entries.reduce<Corrupt[]>((acc, cur) => {
+      if (cur.length === 0) return acc;
+      
       try {
-        if (raw.length > 0) {
-          const doc = JSON.parse(raw);
-          if (!is.doc<T>(doc)) throw new Error(INVALID_DOC(doc));
-          docs.push(doc);
+        const doc = JSON.parse(cur);
+        if (!is.doc<T>(doc)) throw new Error('Invalid document');
+        if (doc.__deleted) {
+          this._memory.delete(doc._id);
+        } else {
+          this._memory.set(doc._id, doc);
         }
       } catch (err) {
-        corrupted.push({ raw, err });
+        acc.push({ raw: cur, err: err as Error });
       }
-    });
 
-    docs
-      .filter(x => x.__deleted)
-      .map(x => x._id)
-      .forEach(doc => {
-        const i = docs.findIndex(x => x._id === doc);
+      return acc;
+    }, []);
 
-        if (i >= 0) docs.splice(i, 1);
-      });
+    // Overwrite file with clean data
+    const clean = Array.from(this._memory.values())
+      .reduce<string>((acc, cur) => `${acc}\n${JSON.stringify(cur)}`, '');
+    await this._storage.write(clean);
 
-    this._storage.flush();
-    docs
-      .filter(doc => !doc.__deleted)
-      .forEach(doc => this._set(doc));
-
-    return corrupted;
+    return corrupt;
   }
 
-  close() {
-    if (!this._storage) throw new Error(MEMORY_MODE('close'));
-    this._storage.close();
+  async close() {
+    return this._storage?.close();
   }
 
-  insert(drafts: T[]) {
-    const docs: Array<Doc<T>> = [];
-    drafts.forEach(draft => {
-      if (is.doc(draft)) {
-        if (
-          this._memory.has(draft._id) ||
-          docs.some(doc => doc._id === draft._id)
-        ) throw new Error(DUPLICATE_DOC(draft));
-        docs.push(draft);
-      } else {
-        docs.push({ _id: LeafDB.id(), ...draft });
+  async insert(drafts: Array<Draft & T>): Promise<Array<Doc<T>>> {
+    const results: Array<Doc<T>> = [];
+
+    for (const draft of drafts) {
+      if (typeof draft._id !== 'string') {
+        draft._id = LeafDB.id();
+
+        await this._set(draft as Doc<T>);
+        results.push(draft as Doc<T>);
+      } else if (!this._memory.has(draft._id)) {
+        await this._set(draft as Doc<T>);
+
+        results.push(draft as Doc<T>);
       }
-    });
-
-    return docs.map(doc => this._set(doc));
-  }
-
-  select(...queries: Array<Query<Doc<T>>>) {
-    const docs: Array<Doc<T>> = [];
-    for (const doc of this._memory.docs()) {
-      if (
-        !doc.__deleted &&
-        queries.some(query => is.queryMatch(doc, query))
-      ) docs.push(doc);
     }
 
-    return docs;
+    return results;
   }
 
-  selectById(...ids: string[]) {
+  select(...ids: string[]): Array<Doc<T>> {
+    if (ids.length === 0) return Array.from(this._memory.values());
     return ids.reduce<Array<Doc<T>>>((acc, cur) => {
       const doc = this._memory.get(cur);
       if (doc) acc.push(doc);
@@ -138,25 +110,48 @@ export default class LeafDB<T extends Draft> {
     }, []);
   }
 
-  update(update: Update<Doc<T>>, ...queries: Array<Query<Doc<T>>>) {
+  query(...queries: Array<Query<Doc<T>>>): Array<Doc<T>> {
+    const docs = Array.from(this._memory.values());
+
+    if (queries.length === 0) return docs;
+    return docs.reduce<Array<Doc<T>>>((acc, cur) => {
+      if (cur.__deleted) return acc;
+      if (queries.some(query => is.queryMatch(cur, query))) acc.push(cur);
+
+      return acc;
+    }, []);
+  }
+
+  async update(update: Update<Doc<T>>, ...queries: Array<Query<Doc<T>>>): Promise<Array<Doc<T>>> {
     if ('_id' in update) throw new Error('Invalid update, cannot contain key `_id`');
+    if ('__deleted' in update) throw new Error('Invalid update, cannot contain key `__deleted`');
 
-    return this.select(...queries)
-      .map(doc => {
-        this._delete(doc._id);
-        return this._set(merge(doc, update));
-      });
+    const docs: Array<Doc<T>> = [];
+    for (const doc of this.query(...queries)) {
+      const next = merge<Doc<T>>(doc)(update);
+
+      await this._set(next);
+      docs.push(next);
+    }
+
+    return docs;
   }
 
-  delete(...queries: Array<Query<Doc<T>>>) {
-    return this.select(...queries).reduce<number>((acc, cur) => {
-      this._delete(cur._id);
-      return acc + 1;
-    }, 0);
+  async delete(...ids: string[]): Promise<number> {
+    const docs = this.select(...ids);
+
+    for (const doc of docs) {
+      this._memory.delete(doc._id);
+
+      await this._storage?.append(JSON.stringify({ _id: doc._id, __deleted: true }));
+    }
+
+    return docs.length;
   }
 
-  drop() {
-    this._memory.flush();
-    this._storage?.flush();
+  async drop() {
+    this._memory.clear();
+
+    await this._storage?.flush();
   }
 }
