@@ -8,10 +8,9 @@ export default [{
   input: 'src/leafdb.ts',
   plugins: [esbuild({ target: 'esnext' })],
   external: [
-    'fast-deep-equal',
-    'rambda',
     'crypto',
     'fs',
+    'fs/promises',
     'path'
   ],
   output: [{

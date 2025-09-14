@@ -1,45 +1,36 @@
 import type { StorageOptions } from './lib/storage.ts';
-import type {
-  Doc,
-  Query,
-  Draft
-} from './lib/is.ts';
+import type { Doc, Draft } from './lib/parse.ts';
+import type { Query } from './lib/query.ts';
 
 import crypto from 'crypto';
-import { merge } from 'rambda';
 
-import * as is from './lib/is.ts';
 import Storage from './lib/storage.ts';
+import match from './lib/query.ts';
+import parse from './lib/parse.ts';
 
-export type * from './lib/types.ts';
-export type * from './lib/is.ts';
+export type { Json } from './lib/parse.ts';
+export type {
+  Draft,
+  Doc,
+  Query,
+  StorageOptions
+};
 
 export type Corrupt = {
   raw: string;
-  err: Error;
+  error: Error;
 };
-
-export type Update<T> = Omit<Partial<{
-  [K in keyof T]?: T[K] extends object ?
-    Update<T[K]> :
-    T[K]
-}>, '_id' | '__deted'>;
 
 export default class LeafDB<T extends Draft> {
   static id() {
-    return [
-      Date.now().toString(16),
-      crypto.randomBytes(4).toString('hex')
-    ].join('');
+    return `${Date.now().toString(16)}-${crypto.randomBytes(4).toString('hex')}`;
   }
 
   private readonly _memory: Map<string, Doc<T>>;
   private readonly _storage?: Storage;
 
-  private async _set(doc: Doc<T>) {
-    this._memory.set(doc._id, doc);
-
-    await this._storage?.append(JSON.stringify(doc));
+  get docs(): Array<Doc<T>> {
+    return Array.from(this._memory.values());
   }
 
   constructor(options?: StorageOptions) {
@@ -51,29 +42,27 @@ export default class LeafDB<T extends Draft> {
   async open(): Promise<Corrupt[]> {
     if (!this._storage) return [];
 
-    const entries = await this._storage.open();
-    const corrupt = entries.reduce<Corrupt[]>((acc, cur) => {
-      if (cur.length === 0) return acc;
-      
+    let data = '';
+    const corrupt: Corrupt[] = [];
+
+    for (const raw of await this._storage.open()) {
+      if (raw.length === 0) continue;
+
       try {
-        const doc = JSON.parse(cur);
-        if (!is.doc<T>(doc)) throw new Error('Invalid document');
-        if (doc.__deleted) {
+        const doc = parse(raw);
+
+        if ('__deleted' in doc) {
           this._memory.delete(doc._id);
         } else {
-          this._memory.set(doc._id, doc);
+          this._memory.set(doc._id, doc as Doc<T>);
+          data += `\n${raw}`;
         }
       } catch (err) {
-        acc.push({ raw: cur, err: err as Error });
+        corrupt.push({ raw, error: (err as Error) });
       }
+    }
 
-      return acc;
-    }, []);
-
-    // Overwrite file with clean data
-    const clean = Array.from(this._memory.values())
-      .reduce<string>((acc, cur) => `${acc}\n${JSON.stringify(cur)}`, '');
-    await this._storage.write(clean);
+    await this._storage.write(data); // Overwrite file with clean data
 
     return corrupt;
   }
@@ -82,71 +71,34 @@ export default class LeafDB<T extends Draft> {
     return this._storage?.close();
   }
 
-  async insert(drafts: Array<Draft & T>): Promise<Array<Doc<T>>> {
-    const results: Array<Doc<T>> = [];
-
-    for (const draft of drafts) {
-      if (typeof draft._id !== 'string') {
-        draft._id = LeafDB.id();
-
-        await this._set(draft as Doc<T>);
-        results.push(draft as Doc<T>);
-      } else if (!this._memory.has(draft._id)) {
-        await this._set(draft as Doc<T>);
-
-        results.push(draft as Doc<T>);
-      }
-    }
-
-    return results;
+  get(id: string): Doc<T> | null {
+    return this._memory.get(id) ?? null;
   }
 
-  select(...ids: string[]): Array<Doc<T>> {
-    if (ids.length === 0) return Array.from(this._memory.values());
-    return ids.reduce<Array<Doc<T>>>((acc, cur) => {
-      const doc = this._memory.get(cur);
-      if (doc) acc.push(doc);
-      return acc;
-    }, []);
+  async set(draft: T & { _id?: string }): Promise<string> {
+    if ('__deleted' in draft) throw new Error('Invalid draft, cannot contain key `__deleted`');
+    if (typeof draft._id !== 'string') draft._id = LeafDB.id();
+
+    this._memory.set(draft._id, draft as Doc<T>);
+    await this._storage?.append(JSON.stringify(draft));
+
+    return draft._id;
   }
 
-  query(...queries: Array<Query<Doc<T>>>): Array<Doc<T>> {
-    const docs = Array.from(this._memory.values());
-
-    if (queries.length === 0) return docs;
-    return docs.reduce<Array<Doc<T>>>((acc, cur) => {
-      if (cur.__deleted) return acc;
-      if (queries.some(query => is.queryMatch(cur, query))) acc.push(cur);
-
-      return acc;
-    }, []);
-  }
-
-  async update(update: Update<Doc<T>>, ...queries: Array<Query<Doc<T>>>): Promise<Array<Doc<T>>> {
-    if ('_id' in update) throw new Error('Invalid update, cannot contain key `_id`');
-    if ('__deleted' in update) throw new Error('Invalid update, cannot contain key `__deleted`');
-
+  query(query: Query<T>): Array<Doc<T>> {
     const docs: Array<Doc<T>> = [];
-    for (const doc of this.query(...queries)) {
-      const next = merge<Doc<T>>(doc)(update);
 
-      await this._set(next);
-      docs.push(next);
+    for (const doc of this._memory.values()) {
+      if (match(doc)(query)) docs.push(doc);
     }
 
     return docs;
   }
 
-  async delete(...ids: string[]): Promise<number> {
-    const docs = this.select(...ids);
+  async delete(id: string) {
+    this._memory.delete(id);
 
-    for (const doc of docs) {
-      this._memory.delete(doc._id);
-
-      await this._storage?.append(JSON.stringify({ _id: doc._id, __deleted: true }));
-    }
-
-    return docs.length;
+    await this._storage?.append(JSON.stringify({ _id: id, __deleted: true }));
   }
 
   async drop() {

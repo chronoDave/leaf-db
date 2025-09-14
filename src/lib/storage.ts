@@ -20,7 +20,7 @@ export default class Storage {
     this._file = path.format({
       dir: options.dir,
       name: options.name,
-      ext: '.ndjson'
+      ext: '.jsonl'
     });
   }
 

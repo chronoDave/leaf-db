@@ -7,7 +7,7 @@ import Storage from './storage.ts';
 
 export default async (x?: string) => {
   const options: StorageOptions = { dir: import.meta.dirname, name: 'test' };
-  const file = path.format({ ...options, ext: '.ndjson' });
+  const file = path.format({ ...options, ext: '.jsonl' });
 
   if (typeof x === 'string') await fsp.writeFile(file, x);
 
