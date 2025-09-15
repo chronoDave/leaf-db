@@ -43,7 +43,7 @@ test('[query] matches operators', () => {
     b: 'b',
     c: true,
     d: null,
-    e: [2, 'f', false, null],
+    e: [2, 'f', false, null, [4, 5]],
     g: {
       h: { i: 3 },
       j: ['k', true]
@@ -64,6 +64,12 @@ test('[query] matches operators', () => {
 
   assert.ok(query(doc)({ b: { $regexp: /\w{1}/ } }), '$regexp match');
   assert.ok(!query(doc)({ b: { $regexp: /\W/ } }), '$regexp mismatch');
+
+  assert.ok(query(doc)({ e: { $length: 5 } }), '$length match');
+  assert.ok(!query(doc)({ e: { $length: 3 } }), '$length mismatch');
+
+  assert.ok(query(doc)({ e: { $includes: 2 } }), '$includes match');
+  assert.ok(!query(doc)({ e: { $includes: [4] } }), '$includes mismatch');
 
   assert.ok(query(doc)({ $not: { a: 2 } }), '$not match');
   assert.ok(!query(doc)({ $not: { a: 1 } }), '$not mismatch');

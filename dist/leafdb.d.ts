@@ -45,16 +45,27 @@ declare class LeafDB<T extends Draft> {
     static id(): string;
     private readonly _memory;
     private readonly _storage?;
+    private _set;
+    /** Get all documents */
     get docs(): Array<Doc<T>>;
     constructor(options?: StorageOptions);
+    /** Read existing file and store to internal memory */
     open(): Promise<Corrupt[]>;
+    /** Close file */
     close(): Promise<void | undefined>;
+    /** Get document by `id` */
     get(id: string): Doc<T> | null;
-    set(draft: T & {
+    /** Create new document, throws if document already exists */
+    insert(draft: T & {
         _id?: string;
-    }): Promise<string>;
+    }): Promise<Doc<T>>;
+    /** Find document by query */
     query(query: Query<T>): Array<Doc<T>>;
+    /** Update document, throws if document does not exist */
+    update(doc: Doc<T>): Promise<void>;
+    /** Delete document by `id` */
     delete(id: string): Promise<void>;
+    /** Delete all documents */
     drop(): Promise<void>;
 }
 

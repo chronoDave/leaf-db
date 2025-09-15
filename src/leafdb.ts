@@ -29,6 +29,12 @@ export default class LeafDB<T extends Draft> {
   private readonly _memory: Map<string, Doc<T>>;
   private readonly _storage?: Storage;
 
+  private async _set(doc: Doc<T>) {
+    this._memory.set(doc._id, doc);
+    await this._storage?.append(JSON.stringify(doc));
+  }
+
+  /** Get all documents */
   get docs(): Array<Doc<T>> {
     return Array.from(this._memory.values());
   }
@@ -39,6 +45,7 @@ export default class LeafDB<T extends Draft> {
     if (options) this._storage = new Storage(options);
   }
 
+  /** Read existing file and store to internal memory */
   async open(): Promise<Corrupt[]> {
     if (!this._storage) return [];
 
@@ -67,24 +74,30 @@ export default class LeafDB<T extends Draft> {
     return corrupt;
   }
 
+  /** Close file */
   async close() {
     return this._storage?.close();
   }
 
+  /** Get document by `id` */
   get(id: string): Doc<T> | null {
     return this._memory.get(id) ?? null;
   }
 
-  async set(draft: T & { _id?: string }): Promise<string> {
-    if ('__deleted' in draft) throw new Error('Invalid draft, cannot contain key `__deleted`');
-    if (typeof draft._id !== 'string') draft._id = LeafDB.id();
+  /** Create new document, throws if document already exists */
+  async insert(draft: T & { _id?: string }): Promise<Doc<T>> {
+    if (typeof draft._id !== 'string') {
+      draft._id = LeafDB.id();
+    } else if (this._memory.has(draft._id)) {
+      throw new Error('Invalid draft, _id already exists');
+    }
 
-    this._memory.set(draft._id, draft as Doc<T>);
-    await this._storage?.append(JSON.stringify(draft));
+    await this._set(draft as Doc<T>);
 
-    return draft._id;
+    return draft as Doc<T>;
   }
 
+  /** Find document by query */
   query(query: Query<T>): Array<Doc<T>> {
     const docs: Array<Doc<T>> = [];
 
@@ -95,12 +108,22 @@ export default class LeafDB<T extends Draft> {
     return docs;
   }
 
+  /** Update document, throws if document does not exist */
+  async update(doc: Doc<T>) {
+    if (!this._memory.has(doc._id)) throw new Error('Tried to update new document');
+    return this._set(doc);
+  }
+
+  /** Delete document by `id` */
   async delete(id: string) {
+    if (!this._memory.has(id)) return;
+
     this._memory.delete(id);
 
     await this._storage?.append(JSON.stringify({ _id: id, __deleted: true }));
   }
 
+  /** Delete all documents */
   async drop() {
     this._memory.clear();
 

@@ -12,15 +12,7 @@
   <a href="https://www.npmjs.com/package/leaf-db">
     <img alt="NPM" src="https://img.shields.io/npm/v/leaf-db?label=npm">
   </a>
-  <a href="https://bundlephobia.com/result?p=leaf-db@latest">
-    <img alt="Bundle size" src="https://img.shields.io/bundlephobia/minzip/leaf-db@latest.svg">
-  </a>
-  <a href="https://github.com/chronoDave/leaf-db/actions/workflows/ci.yml">
-    <img alt="CI" src="https://github.com/chronoDave/leaf-db/workflows/ci/badge.svg?branch=master">
-  </a>
-  <a href="https://github.com/chronoDave/leaf-db/actions/workflows/codeql.yml">
-     <img alt="CodeQL" src="https://github.com/chronoDave/leaf-db/actions/workflows/codeql.yml/badge.svg?branch=master">
-  </a>
+  <img alt="Bundle size" src="https://img.shields.io/bundlejs/size/leaf-db">
 </div>
 
 ## Features
@@ -40,13 +32,28 @@
   - [Corruption](#corruption)
   - [Queries](#queries)
     - [Operators](#operators)
+      - [Number](#number)
+        - [`$gt`](#gt)
+        - [`$gte`](#gte)
+        - [`$lt`](#lt)
+        - [`$lte`](#lte)
+      - [String](#string)
+        - [`$regexp`](#regexp)
+      - [Array](#array)
+        - [`$length`](#length)
+        - [`$includes`](#includes)
+      - [Logic](#logic)
+        - [`$not`](#not)
+        - [`$and`](#and)
+        - [`$or`](#or)
 - [API](#api)
-  - [`id()`](#open)
+  - [`id()`](#id)
+  - [`docs`](#docs)
   - [`open()`](#open)
   - [`close()`](#close)
+  - [`get()`](#get)
   - [`insert()`](#insert)
-  - [`select()`](#select)
-  - [`selectById()`](#select-by-id)
+  - [`query()`](#query)
   - [`update()`](#update)
   - [`delete()`](#delete)
   - [`drop()`](#drop)
@@ -64,51 +71,59 @@ npm i leaf-db
 Create a database using file storage with strong-typed documents:
 
 ```TS
-import LeafDB, { Draft } from 'leaf-db';
+import LeafDB from 'leaf-db';
 
-interface Document extends Draft {
+type Document = {
   title: string
   name: string
 }
 
-// Use process.cwd() + 'db' as database root
-const db = new LeafDB<Document>('db');
-db.open();
-db.insert([
+const db = new LeafDB<Document>({ name: 'db', dir: process.cwd() });
+
+await db.open();
+
+const drafts = [
   { title: 'Lady', name: 'Mipha' },
   { title: 'Young Rito Warrior', name: 'Tulin' }
-]);
+]
+await Promise.all(drafts.map(async draft => db.insert(draft)));
 
-// [{ _id: <string>, title: 'Lady', name: 'Mipha' }]
-const characters = db.select({ title: 'Lady' });
+// [{ _id: <string>, title: 'Young Rito Warrior', name: 'Tulin' }]
+const characters = db.query({ name: 'Tulin' });
+
+const tulin = characters[0];
+tulin.title = 'Rito Warrior';
+
+await db.update(tulin); // Overwrite existing document
+
+await db.close();
 ```
 
 ## Concepts
 
 ### Document
 
-Leaf-db stores data as [JSON](https://www.json.org/json-en.html) documents.
+Leaf-db stores data as [JSON](https://www.json.org/json-en.html) documents and saves them inside a [JSONL](https://jsonlines.org/) file.
 
 #### Keys
 
 Document keys must be of type `string` and cannot start with `$`.
 
-Every document is required to have an `_id` field. Leaf-db automatically creates an `_id` if the field does not exist on insertion. Keys have the following restrictions:
-
-- `_id` cannot be mutated once created.
-- `_id` must be unique.
+Every document is required to have an `_id` field. Leaf-db automatically creates an `_id` if the field does not exist on insertion. `_id` is required to be unique when inserting documents.
 
 ### Values
 
-Leaf-db only supports JSON values, which are:
+Leaf-db only supports JSON values, which is defined as:
 
-- `object`
-- `array`
-- `string`
-- `number`
-- `true`
-- `false`
-- `null`
+```TS
+type Json =
+  string |
+  number |
+  boolean |
+  null |
+  Json[] |
+  { [key: string]: Json };
+```
 
 ### Persistence
 
@@ -121,8 +136,8 @@ import LeafDB from 'leaf-db';
  * Create a new database under process.cwd()
  * This will create `db.jsonl` in process.cwd() 
  */
-const db = new LeafDB('db');
-db.open();
+const db = new LeafDB({ name: 'db', dir: process.cwd() });
+await db.open();
 ```
 
 ### Corruption
@@ -132,9 +147,15 @@ When opening a database from storage, leaf-db will return any documents that are
 ```TS
 import LeafDB from 'leaf-db';
 
-const db = new LeafDB('db');
-// []
-const corrupt = db.open();
+const db = new LeafDB({ name: 'db', dir: process.cwd() });
+const corrupt = await db.open(); // Corrupt[]
+```
+
+```TS
+type Corrupt = {
+  raw: string;
+  error: Error;
+};
 ```
 
 ### Queries
@@ -150,45 +171,146 @@ Leaf-db supports both literal values and [operators](#operators). Example:
 const a = { name: 'Tulin' };
 
 /**
- * Objects and arrays must be equal for it to match:
- * { eras: [] } // No match
+ * Objects and arrays match on partial matches
+ * { eras: [] } // Match
  * { eras: ['era of the wilds'] } // No match
- * { eras: ['Era of the Wilds', 'Sky Era'] } // No match
+ * { eras: [Sky Era'] } // No Match
  */
 const b = { eras: ['Era of the Wilds'] }
 ```
 
 #### Operators
 
-Operators allow for more complex queries. Operators must always be used in combination with values. For example:
+Operators allow for more complex queries. Operators must always be used in combination with values.
+
+##### Number
+
+###### `$gt`
+
+Is greater than
 
 ```TS
-/**
- * Operator query where values must be greater than number
- */
-const a = { age: { $gt: 3 } }
+const query = { a: { $gt: 3 } };
+
+const a = { a: 2 }; // false
+const b = { a: 3 }; // false
+const c = { a: 4 }; // true
 ```
 
-<b>Number operators</b>:
+###### `$gte`
 
-- [`$gt`](#gt) - Is greater than
-- [`$gte`](#gte) - Is greater or equal than
-- [`$lt`](#lt) - Is less than
-- [`$lte`](#lte) - Is less or equal than
+Is greater than or equal to
 
-<b>String operators</b>:
+```TS
+const query = { a: { $gte: 3 } };
 
-- [`$text`](#text) - Includes string (case insensitive)
-- [`$regex`](#regex) - Matches RegExp
+const a = { a: 2 }; // false
+const b = { a: 3 }; // true
+const c = { a: 4 }; // true
+```
 
-<b>Array operators</b>:
+###### `$lt`
 
-- [`$has`](#has) - Has value
-- [`$size`](#size) - Equal to size
+Is less than
 
-<b>Logic operators</b>:
+```TS
+const query = { a: { $lt: 3 } };
 
-- [`$not`](#not) - Does not equal literal
+const a = { a: 2 }; // true
+const b = { a: 3 }; // false
+const c = { a: 4 }; // false
+```
+
+###### `$lte`
+
+Is less than or equal to
+
+```TS
+const query = { a: { $lte: 3 } };
+
+const a = { a: 2 }; // true
+const b = { a: 3 }; // true
+const c = { a: 4 }; // false
+```
+
+##### String
+
+###### `$regexp`
+
+Matches strings against RegExp
+
+```TS
+const query = { a: { $regexp: /\w+/g } }
+
+const a = { a: '' }; // false
+const b = { a: '0' }; // false
+const c = { a: 'a' }; // true
+```
+
+##### Array
+
+###### `$length`
+
+Equal to length
+
+```TS
+const query = { a: { $length: 3 } }
+
+const a = { a: [] }; // false
+const b = { a: [1, 2, 3] }; // true
+const c = { a: [1, 2, 3, 4] }; // false
+```
+
+###### `$includes`
+
+Has value in array. Does not partial match on arrays or objects.
+
+```TS
+const query = { a: { $includes: 3 } };
+
+const a = { a: [] }; // false
+const b = { a: [1, 2, 3] }; // true
+
+const query = { b: { $includes: [3] } };
+
+const a = { b: [ [3] ] }; // true
+const b = { b: [ [3, 4] ] }; // false
+```
+
+##### Logic
+
+###### `$not`
+
+Invert query
+
+```TS
+const query = { $not: { a: { $lt: 3 } } };
+
+const a = { a: 2 }; // false
+const b = { a: 4 }; // true
+```
+
+###### `$and`
+
+Must match all queries
+
+```TS
+const query = { $and: [{ a: 2 }, { b: { $lt: 3 } }] };
+
+const a = { a: 2, b: 2 }; // true
+const b = { a: 2, b: 4 }; // false
+```
+
+###### `$or`
+
+Matches any query
+
+```TS
+const query = { $and: [{ a: 2 }, { b: { $lt: 3 } }] };
+
+const a = { a: 2, b: 2 }; // true
+const b = { a: 2, b: 4 }; // true
+```
 
 ## API
 
@@ -202,6 +324,14 @@ import LeafDB from 'leaf-db';
 const id = LeafDB.id();
 ```
 
+### `docs`
+
+Get all documents
+
+```TS
+const docs = db.docs // Doc<T>[]
+```
+
 ### `open()`
 
 Open persistent storage.
@@ -209,10 +339,9 @@ Open persistent storage.
 ```TS
 import LeafDB from 'leaf-db';
 
-const db = new LeafDB('db');
+const db = new LeafDB({ name: 'db', dir: process.cwd() });
 
-// Draft[]
-const corrupted = db.open();
+const corrupted = await db.open(); // Corrupt[]
 ```
 
 ### `close()`
@@ -220,11 +349,15 @@ const corrupted = db.open();
 Close persistent storage.
 
 ```TS
-import LeafDB from 'leaf-db';
+await db.close();
+```
 
-const db = new LeafDB('db');
-db.open();
-db.close();
+### `get()`
+
+Get document by id
+
+```TS
+db.get('a'); // { _id: 'a' }
 ```
 
 ### `insert()`
@@ -232,68 +365,38 @@ db.close();
 Insert document(s) into the database. Will throw an error if duplicate `_id`'s are found.
 
 ```TS
-import LeafDB from 'leaf-db';
-
-const db = new LeafDB('db');
-
+const drafts = [{ name: 'Tulin', }, { name: 'Mipha' }];
 // [{ _id: <string>, name: 'Tulin' }, { _id: <string>, name: 'Mipha' }]
-const docs = db.insert([{ name: 'Tulin', }, { name: 'Mipha' }]);
+const docs = await Promise.all(drafts.map(async draft => draft.insert(draft)));
 ```
 
-### `select()`
+### `query()`
 
-Find document(s) based on [query](#queries). Multiple queries can be used.
+Find document(s) based by [query](#queries).
 
 ```TS
-import LeafDB from 'leaf-db';
-
-const db = new LeafDB('db');
-
 // Return docs where `name` is equal to `Mipha`
-const docs = db.select({ name: 'Mipha' });
+const docs = db.query({ name: 'Mipha' });
 // Return docs where `name` is equal to `Mipha` or where `name` is equal to `Tulin`
-const docs = db.select({ name: 'Mipha' }, { name: 'Tulin' });
-```
-
-### `selectById()`
-
-Find document(s) based on `_id`. Multiple ids can be used.
-
-```TS
-import LeafDB from 'leaf-db';
-
-const db = new LeafDB('db');
-
-// Return docs where `_id` is equal to `Mipha`
-const docs = db.selectById('Mipha');
-// Return docs where `_id` is equal to `Mipha` or where `_id` is equal to `Tulin`
-const docs = db.selectById('Mipha', 'Tulin');
+const docs = db.query({ $or: [{ name: 'Mipha' }, { name: 'Tulin' }] });
 ```
 
 ### `update()`
 
-Update document(s) based on [query](#queries). Multiple queries can be used. Updated document cannot change shape.
+Update existing document. Throws if document does not exist
 
 ```TS
-import LeafDB from 'leaf-db';
-
-const db = new LeafDB('db');
-
-// Update docs where `name` is equal to `Tulin` and replace `name` with `Mipha`
-const docs = db.update({ name: 'Mipha' }, { name: 'Tulin' });
+// Update document `a` with new name `Tulin`
+const docs = db.update({ _id: 'a', name: 'Tulin' });
 ```
 
 ### `delete()`
 
-Delete document(s) based on [query](#queries).
+Delete document by `_id`
 
 ```TS
-import LeafDB from 'leaf-db';
-
-const db = new LeafDB('db');
-
-// Delete docs where `name` is equal to `Mipha`
-const docs = db.delete({ name: 'Mipha' });
+// Delete document `a`
+await db.delete('a');
 ```
 
 ### `drop()`
@@ -301,13 +404,10 @@ const docs = db.delete({ name: 'Mipha' });
 Delete all documents in the database.
 
 ```TS
-import LeafDB from 'leaf-db';
-
-const db = new LeafDB('db');
-db.drop();
+await db.drop();
 ```
 
 ## Acknowledgements
- 
-- <div>Icon made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
-- This project is inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb).
+
+- Icon made by [Freepik](https://www.freepik.com) from [www.flaticon.com](https://www.flaticon.com/)
+- This project is inspired by [louischatriot/nedb](https://github.com/louischatriot/nedb)

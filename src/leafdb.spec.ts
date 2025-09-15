@@ -5,6 +5,24 @@ import assert from 'node:assert/strict';
 import LeafDB from './leafdb.ts';
 import struct, { invalid } from './leafdb.struct.ts';
 
+test('[leafdb.id] generates unique ids', () => {
+  const length = 10000;
+
+  assert.equal(
+    new Set(Array.from({ length }).map(() => LeafDB.id())).size,
+    length
+  );
+});
+
+test('[leafdb.docs] returns all docs', async () => {
+  const db = new LeafDB();
+  const length = 10;
+
+  await Promise.all(Array.from({ length }).map(async () => db.insert({})));
+
+  assert.equal(db.docs.length, length);
+});
+
 test('[leafdb.open]', async t => {
   await t.test('should not throw if storage is not available', async () => {
     const db = new LeafDB();
@@ -113,44 +131,29 @@ test('[leafdb.get] returns docs', async () => {
   const db = new LeafDB();
   const data = [{ _id: '1' }, { _id: '2' }, { _id: '3' }];
 
-  await Promise.all(data.map(async x => db.set(x)));
+  await Promise.all(data.map(async x => db.insert(x)));
 
   assert.strictEqual(db.docs.length, 3, 'no ids');
   assert.strictEqual(['1', '2'].map(id => db.get(id)).length, 2, 'valid ids');
   assert.strictEqual(['1', '4'].map(id => db.get(id)).filter(x => x).length, 1, 'any id');
 });
 
-test('[leafdb.set]', async t => {
+test('[leafdb.insert]', async t => {
+  await t.test('throws if doc already exists duplicate drafts', async () => {
+    const db = new LeafDB();
+    
+    await db.insert({ _id: '1' });
+    await assert.rejects(async () => db.insert({ _id: '1' }));
+  });
+
   await t.test('inserts docs', async () => {
     const db = new LeafDB<{ name: string }>();
 
-    const id = await db.set({ name: 'test' });
-    const doc = db.get(id);
+    const doc = await db.insert({ name: 'test' });
 
     assert.equal(db.docs.length, 1, 'inserts docs');
-    assert.ok(typeof doc?._id === 'string', 'has id');
+    assert.ok(typeof doc._id === 'string', 'has id');
     assert.deepEqual(doc.name, 'test', 'has doc');
-  });
-
-  await t.test('overwrites docs', async () => {
-    const db = new LeafDB();
-    const data = [{ _id: '1', a: 1 }, { _id: '2', a: 1 }, { _id: '1', a: 2 }];
-
-    const ids = await Promise.all(data.map(async draft => db.set(draft)));
-
-    assert.equal(ids.length, 3, 'returns ids');
-    assert.equal(db.docs.length, 2, 'inserts docs');
-    assert.equal(db.get(ids[2])?.a, 2, 'overwrites docs');
-  });
-
-  await t.test('inserts duplicate drafts', async () => {
-    const db = new LeafDB();
-    const data = [{ a: 1 }, { a: 1 }];
-
-    const ids = await Promise.all(data.map(async draft => db.set(draft)));
-
-    assert.equal(ids.length, 2, 'returns ids');
-    assert.equal(db.docs.length, 2, 'inserts docs');
   });
 });
 
@@ -161,7 +164,7 @@ test('[leafdb.query] returns docs', async () => {
     { _id: '2', name: 'query', coordinates: { x: 1, y: 2 } }
   ];
 
-  await Promise.all(data.map(async x => db.set(x)));
+  await Promise.all(data.map(async x => db.insert(x)));
   
   assert.strictEqual(db.query({ name: 'test' }).length, 1, 'simple query');
   assert.strictEqual(db.query({ coordinates: { x: 10 } }).length, 1, 'nested query');
@@ -170,6 +173,26 @@ test('[leafdb.query] returns docs', async () => {
   assert.strictEqual(db.query({ name: 'unknown' }).length, 0, 'no match');
   assert.strictEqual(db.query({ $or: [{ name: 'unknown' }, { name: 'query' }] }).length, 1, 'or match');
   assert.strictEqual(db.query({ $and: [{ coordinates: { x: 10 } }, { coordinates: { y: 20 } }] }).length, 1, 'and match');
+});
+
+test('[leafdb.update]', async t => {
+  await t.test('throws if document does not exist', async () => {
+    const db = new LeafDB();
+
+    await assert.rejects(async () => db.update({ _id: 'a' }));
+  });
+
+  await t.test('updates doc', async () => {
+    const db = new LeafDB();
+
+    const doc = { _id: 'a', name: 'a' };
+
+    await db.insert(doc);
+    doc.name = 'b';
+    await db.update(doc);
+
+    assert.equal(db.get('a')?.name, 'b');
+  });
 });
 
 test('[leafdb.delete] deletes documents', async () => {

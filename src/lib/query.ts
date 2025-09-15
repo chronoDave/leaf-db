@@ -43,7 +43,7 @@ const match = <T extends Draft>(doc: T) =>
 
           if (operator === '$regexp') return (b as RegExp).test(a as string);
 
-          if (operator === '$size') return (a as unknown[]).length === b;
+          if (operator === '$length') return (a as unknown[]).length === b;
           if (operator === '$includes') return (a as unknown[]).includes(b);
 
           if (isObject(a)) return match(a as Draft)(rule);

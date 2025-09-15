@@ -31,7 +31,7 @@
     "build": "rollup -c",
     "test": "node --no-warnings --experimental-strip-types --test src/**/*.spec.ts",
     "preversion": "npm run lint && npm run test",
-    "version": "npm run build",
+    "version": "npm run build && git add -A dist",
     "postversion": "git push && git push --tags && npm publish"
   },
   "optionalDependencies": {
