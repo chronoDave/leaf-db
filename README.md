@@ -20,6 +20,7 @@
 - **Strong-typed** documents and queries.
 - **Easy to embed** as it does not require an HTTP server to run.
 - Uses **JSON** documents.
+- Tiny and **0** depedencies.
 
 ## Table of Contents
 
@@ -59,6 +60,10 @@
   - [`drop()`](#drop)
 
 ## Getting Started
+
+`leaf-db` is meant as a simple database that allows for basic querying over JSON data without needing to set up a database server / connection like with MongoDB or SQLite.
+
+Node does support working with [SQLite directly](https://nodejs.org/api/sqlite.html), if you prefer a more stable, feature-complete database.
 
 ### Installation
 
