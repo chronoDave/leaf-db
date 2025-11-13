@@ -15,8 +15,8 @@ export default async <T extends Draft = {}>(entries: unknown[]) => {
   const db = new LeafDB<T>(options);
   const file = path.format({ ...options, ext: '.jsonl' });
   const raw = entries
-    .map(x => JSON.stringify(x))
-    .join('\n');
+    .map(x => `${JSON.stringify(x)}\n`)
+    .join('');
 
   await fsp.writeFile(file, raw);
 

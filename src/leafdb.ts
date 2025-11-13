@@ -62,7 +62,7 @@ export default class LeafDB<T extends Draft> {
           this._memory.delete(doc._id);
         } else {
           this._memory.set(doc._id, doc as Doc<T>);
-          data += `\n${raw}`;
+          data += `${raw}\n`;
         }
       } catch (err) {
         corrupt.push({ raw, error: (err as Error) });

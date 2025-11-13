@@ -53,7 +53,8 @@ export default class Storage {
 
   async append(x: string) {
     if (!this._fd) throw new Error('No file found');
-    return this._fd.appendFile(`\n${x}`);
+
+    return this._fd.appendFile(`${x}\n`);
   }
 
   async flush() {

@@ -205,12 +205,13 @@ test('[leafdb.delete] deletes documents', async () => {
 
   await db.close();
 
-  const raw = (await fsp.readFile(file, 'utf-8'))
+  const raw = await fsp.readFile(file, 'utf-8');
+  const docs = raw
     .trim()
     .split('\n')
     .map(x => JSON.parse(x));
-  assert.equal(raw.length, 3, 'writes deletes');
-  assert.equal(raw.filter(x => x.__deleted).length, 1, 'has deletes');
+  assert.equal(docs.length, 3, 'writes deletes');
+  assert.equal(docs.filter(x => x.__deleted).length, 1, 'has deletes');
 
   await cleanup();
 });
