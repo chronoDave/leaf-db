@@ -37,8 +37,8 @@ class Storage {
   }
   async append(x) {
     if (!this._fd) throw new Error("No file found");
-    return this._fd.appendFile(`
-${x}`);
+    return this._fd.appendFile(`${x}
+`);
   }
   async flush() {
     await this._fd?.close();
@@ -127,8 +127,8 @@ class LeafDB {
           this._memory.delete(doc._id);
         } else {
           this._memory.set(doc._id, doc);
-          data += `
-${raw}`;
+          data += `${raw}
+`;
         }
       } catch (err) {
         corrupt.push({ raw, error: err });
