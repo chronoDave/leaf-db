@@ -10,9 +10,10 @@ export type Options = {
   entries?: unknown[];
 };
 
+export const options: StorageOptions = { name: 'test', dir: import.meta.dirname };
+
 export default async <T extends Draft = {}>(entries: unknown[]) => {
-  const options: StorageOptions = { name: 'test', dir: import.meta.dirname };
-  const db = new LeafDB<T>(options);
+  const db = new LeafDB<T>();
   const file = path.format({ ...options, ext: '.jsonl' });
   const raw = entries
     .map(x => `${JSON.stringify(x)}\n`)

@@ -1,10 +1,8 @@
 import type { StorageOptions } from './lib/storage.ts';
 import type { Doc, Draft } from './lib/parse.ts';
 import type { Query } from './lib/query.ts';
+import type Storage from './lib/storage.ts';
 
-import crypto from 'crypto';
-
-import Storage from './lib/storage.ts';
 import match from './lib/query.ts';
 import parse from './lib/parse.ts';
 
@@ -23,11 +21,11 @@ export type Corrupt = {
 
 export default class LeafDB<T extends Draft> {
   static id() {
-    return `${Date.now().toString(16)}-${crypto.randomBytes(4).toString('hex')}`;
+    return `${Date.now().toString(16)}-${Math.floor(Math.random() * 4294967296).toString(16)}`;
   }
 
   private readonly _memory: Map<string, Doc<T>>;
-  private readonly _storage?: Storage;
+  private _storage?: Storage;
 
   private async _set(doc: Doc<T>) {
     this._memory.set(doc._id, doc);
@@ -39,15 +37,14 @@ export default class LeafDB<T extends Draft> {
     return Array.from(this._memory.values());
   }
 
-  constructor(options?: StorageOptions) {
+  constructor() {
     this._memory = new Map();
-
-    if (options) this._storage = new Storage(options);
   }
 
   /** Read existing file and store to internal memory */
-  async open(): Promise<Corrupt[]> {
-    if (!this._storage) return [];
+  async open(options: StorageOptions): Promise<Corrupt[]> {
+    const { default: Storage } = await import('./lib/storage.ts');
+    this._storage = new Storage(options);
 
     let data = '';
     const corrupt: Corrupt[] = [];

@@ -44,13 +44,13 @@ type Corrupt = {
 declare class LeafDB<T extends Draft> {
     static id(): string;
     private readonly _memory;
-    private readonly _storage?;
+    private _storage?;
     private _set;
     /** Get all documents */
     get docs(): Array<Doc<T>>;
-    constructor(options?: StorageOptions);
+    constructor();
     /** Read existing file and store to internal memory */
-    open(): Promise<Corrupt[]>;
+    open(options: StorageOptions): Promise<Corrupt[]>;
     /** Close file */
     close(): Promise<void | undefined>;
     /** Get document by `id` */

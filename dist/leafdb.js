@@ -1,52 +1,3 @@
-import crypto from 'crypto';
-import fsp from 'fs/promises';
-import path from 'path';
-
-class Storage {
-  _file;
-  _fd;
-  async _open() {
-    this._fd = await fsp.open(this._file, "a");
-  }
-  constructor(options) {
-    this._file = path.format({
-      dir: options.dir,
-      name: options.name,
-      ext: ".jsonl"
-    });
-  }
-  async open() {
-    try {
-      const raw = await fsp.readFile(this._file, "utf-8");
-      await this._open();
-      return raw.split("\n");
-    } catch (err) {
-      await fsp.mkdir(path.parse(this._file).dir, { recursive: true });
-      await this._open();
-      return [];
-    }
-  }
-  async close() {
-    await this._fd?.close();
-    delete this._fd;
-  }
-  async write(x) {
-    await this._fd?.close();
-    await fsp.writeFile(this._file, x);
-    await this._open();
-  }
-  async append(x) {
-    if (!this._fd) throw new Error("No file found");
-    return this._fd.appendFile(`${x}
-`);
-  }
-  async flush() {
-    await this._fd?.close();
-    await fsp.rm(this._file);
-    await this._open();
-  }
-}
-
 const equals = (a) => (b) => {
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
@@ -98,7 +49,7 @@ const match = (doc) => (query) => {
 
 class LeafDB {
   static id() {
-    return `${Date.now().toString(16)}-${crypto.randomBytes(4).toString("hex")}`;
+    return `${Date.now().toString(16)}-${Math.floor(Math.random() * 4294967296).toString(16)}`;
   }
   _memory;
   _storage;
@@ -110,13 +61,13 @@ class LeafDB {
   get docs() {
     return Array.from(this._memory.values());
   }
-  constructor(options) {
+  constructor() {
     this._memory = /* @__PURE__ */ new Map();
-    if (options) this._storage = new Storage(options);
   }
   /** Read existing file and store to internal memory */
-  async open() {
-    if (!this._storage) return [];
+  async open(options) {
+    const { default: Storage } = await import('./storage.js');
+    this._storage = new Storage(options);
     let data = "";
     const corrupt = [];
     for (const raw of await this._storage.open()) {

@@ -2,7 +2,7 @@
   <img src="/assets/icon.svg" width="128" alt="leaf-db">
 
   <h1>leaf-db</h1>
-  <p><b>leaf-db</b> is a simple <a href="https://en.wikipedia.org/wiki/NoSQL">NoSQL</a> embeddable database for <a href="https://nodejs.org/en/">Node.js</a>.</p>
+  <p><b>leaf-db</b> is a simple <a href="https://en.wikipedia.org/wiki/NoSQL">NoSQL</a> embeddable database.</p>
 </div>
 
 <div align="center">
@@ -19,8 +19,9 @@
 
 - **Strong-typed** documents and queries.
 - **Easy to embed** as it does not require an HTTP server to run.
+- Can be used **in the browser** if persistent storage isn't required.
 - Uses **JSON** documents.
-- Tiny and **0** depedencies.
+- Tiny and **0** dependencies.
 
 ## Table of Contents
 
@@ -65,6 +66,8 @@
 
 Node does support working with [SQLite directly](https://nodejs.org/api/sqlite.html), if you prefer a more stable, feature-complete database.
 
+`leaf-db` can be used in the browser if persistent read / write isn't required.
+
 ### Installation
 
 ```sh
@@ -83,9 +86,9 @@ type Document = {
   name: string
 }
 
-const db = new LeafDB<Document>({ name: 'db', dir: process.cwd() });
+const db = new LeafDB<Document>();
 
-await db.open();
+await db.open({ name: 'db', dir: process.cwd() });
 
 const drafts = [
   { title: 'Lady', name: 'Mipha' },
@@ -132,22 +135,19 @@ type Json =
 
 ### Persistence
 
-Leaf-db stores the database in memory by default. To make use of persistence, simply provide a path in the constructor and open the database.
+Leaf-db stores the database in memory by default. To make use of persistence, simply open the database.
 
 ```TS
 import LeafDB from 'leaf-db';
 
-/**
- * Create a new database under process.cwd()
- * This will create `db.jsonl` in process.cwd() 
- */
-const db = new LeafDB({ name: 'db', dir: process.cwd() });
-await db.open();
+/** Create a new database, `db.jsonl`, in process.cwd() */
+const db = new LeafDB();
+await db.open({ name: 'db', dir: process.cwd() });
 ```
 
 ### Corruption
 
-When opening a database from storage, leaf-db will return any documents that are corrupt. These documents will be deleted once opened.
+When opening a database from storage, leaf-db will return documents that are corrupt. These documents are deleted once opened and cannot be recovered afterwards.
 
 ```TS
 import LeafDB from 'leaf-db';
@@ -321,7 +321,7 @@ const b = { a: 2, b: 4 }; // true
 
 ### `id()`
 
-Generate a new, unique id.
+Generate a new, unique id with format `[timestamp]-[random]`.
 
 ```TS
 import LeafDB from 'leaf-db';
@@ -344,9 +344,8 @@ Open persistent storage.
 ```TS
 import LeafDB from 'leaf-db';
 
-const db = new LeafDB({ name: 'db', dir: process.cwd() });
-
-const corrupted = await db.open(); // Corrupt[]
+const db = new LeafDB();
+const corrupted = await db.open({ name: 'db', dir: process.cwd() }); // Corrupt[]
 ```
 
 ### `close()`

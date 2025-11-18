@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import LeafDB from './leafdb.ts';
-import struct, { invalid } from './leafdb.struct.ts';
+import struct, { invalid, options } from './leafdb.struct.ts';
 
 test('[leafdb.id] generates unique ids', () => {
   const length = 10000;
@@ -27,13 +27,13 @@ test('[leafdb.open]', async t => {
   await t.test('should not throw if storage is not available', async () => {
     const db = new LeafDB();
 
-    await assert.doesNotReject(async () => db.open());
+    await assert.doesNotReject(async () => db.open(options));
   });
 
   await t.test('should not throw if data contains backslash', async () => {
     const { db, cleanup } = await struct([{ invalid: '\\' }]);
 
-    await assert.doesNotReject(async () => db.open());
+    await assert.doesNotReject(async () => db.open(options));
     await db.close();
 
     await cleanup();
@@ -42,7 +42,7 @@ test('[leafdb.open]', async t => {
   await t.test('should not throw if data contains quotation mark', async () => {
     const { db, cleanup } = await struct([{ invalid: '"' }]);
 
-    await assert.doesNotReject(async () => db.open());
+    await assert.doesNotReject(async () => db.open(options));
     await db.close();
 
     await cleanup();
@@ -51,7 +51,7 @@ test('[leafdb.open]', async t => {
   await t.test('should not throw if data contains empty lines', async () => {
     const { db, cleanup } = await struct(['', '', '']);
 
-    await assert.doesNotReject(async () => db.open());
+    await assert.doesNotReject(async () => db.open(options));
     await db.close();
 
     await cleanup();
@@ -61,7 +61,7 @@ test('[leafdb.open]', async t => {
     const data = [{ _id: '1' }, { _id: '2' }];
     const { db, cleanup } = await struct(data);
 
-    const corrupt = await db.open();
+    const corrupt = await db.open(options);
     await db.close();
 
     assert.equal(corrupt.length, 0, 'validates');
@@ -74,7 +74,7 @@ test('[leafdb.open]', async t => {
   await t.test('parses empty file', async () => {
     const { db, cleanup } = await struct([]);
 
-    const corrupt = await db.open();
+    const corrupt = await db.open(options);
     await db.close();
 
     assert.strictEqual(corrupt.length, 0, 'validates');
@@ -87,7 +87,7 @@ test('[leafdb.open]', async t => {
     const valid = { _id: '2', valid: true };
     const { db, file, cleanup } = await struct([valid, ...invalid]);
 
-    const corrupt = await db.open();
+    const corrupt = await db.open(options);
     await db.close();
 
     const raw = (await fsp.readFile(file, 'utf-8')).trim().split('\n');
@@ -102,7 +102,7 @@ test('[leafdb.open]', async t => {
   await t.test('ignores deleted data', async () => {
     const { db, file, cleanup } = await struct([{ _id: '1' }, { _id: '1', __deleted: true }]);
 
-    const corrupt = await db.open();
+    const corrupt = await db.open(options);
     await db.close();
 
     const raw = (await fsp.readFile(file, 'utf-8')).trim().split('\n');
@@ -119,7 +119,7 @@ test('[leafdb.open]', async t => {
 test('[leafdb.close] closes file', async () => {
   const { db, file, cleanup } = await struct([{ _id: '1' }, { _id: '2' }]);
 
-  await db.open();
+  await db.open(options);
   await db.close();
 
   await assert.doesNotReject(async () => fsp.readFile(file), 'releases file');
@@ -198,7 +198,7 @@ test('[leafdb.update]', async t => {
 test('[leafdb.delete] deletes documents', async () => {
   const { db, file, cleanup } = await struct([{ _id: '1' }, { _id: '2' }]);
 
-  await db.open();
+  await db.open(options);
   await db.delete('1');
 
   assert.equal(db.docs.length, 1, 'deletes in memory');
@@ -219,6 +219,7 @@ test('[leafdb.delete] deletes documents', async () => {
 test('[leafdb.drop] deletes all documents', async () => {
   const { db, file, cleanup } = await struct([{ _id: '1' }, { _id: '2' }]);
 
+  await db.open(options);
   await db.drop();
 
   assert.equal(db.docs.length, 0, 'deletes in memory');

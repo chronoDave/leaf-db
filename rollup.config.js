@@ -8,20 +8,27 @@ export default [{
   input: 'src/leafdb.ts',
   plugins: [esbuild({ target: 'esnext' })],
   external: [
-    'crypto',
     'fs',
     'fs/promises',
     'path'
   ],
-  output: [{
-    file: 'dist/leafdb.js',
-    format: 'es'
-  }]
+  output: {
+    dir: 'dist',
+    format: 'es',
+    chunkFileNames: chunk => `${chunk.name}.js`
+  }
 }, {
   input: 'src/leafdb.ts',
   plugins: [dts()],
   output: {
     file: 'dist/leafdb.d.ts',
+    format: 'es'
+  }
+}, {
+  input: 'src/lib/storage.ts',
+  plugins: [dts()],
+  output: {
+    file: 'dist/storage.d.ts',
     format: 'es'
   }
 }];
