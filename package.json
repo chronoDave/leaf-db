@@ -35,7 +35,7 @@
     "postversion": "git push && git push --tags && npm publish"
   },
   "optionalDependencies": {
-    "@chronocide/eslint-config": "github:chronoDave/eslint-config",
+    "@chronocide/eslint-config": "0.7.0",
     "eslint": "^9.35.0"
   },
   "devDependencies": {
