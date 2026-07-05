@@ -133,7 +133,7 @@ test('[leafdb.get] returns docs', async () => {
 test('[leafdb.insert]', async t => {
   await t.test('throws if doc already exists duplicate drafts', async () => {
     const db = new LeafDB();
-    
+
     await db.insert({ _id: '1' });
     await assert.rejects(async () => db.insert({ _id: '1' }));
   });
@@ -157,7 +157,7 @@ test('[leafdb.query] returns docs', async () => {
   ];
 
   await Promise.all(data.map(async x => db.insert(x)));
-  
+
   assert.strictEqual(db.query({ name: 'test' }).length, 1, 'simple query');
   assert.strictEqual(db.query({ coordinates: { x: 10 } }).length, 1, 'nested query');
   assert.strictEqual(db.query({ coordinates: { y: { $lte: 20 } } }).length, 2, 'complex query');

@@ -10,6 +10,7 @@ export type StorageOptions = {
 
 export default class Storage {
   readonly #file: string;
+
   #fd?: FileHandle;
 
   async #open() {
@@ -31,7 +32,7 @@ export default class Storage {
       await this.#open();
 
       return raw.split('\n');
-    } catch (err) {
+    } catch (_) {
       await fsp.mkdir(path.parse(this.#file).dir, { recursive: true });
 
       await this.#open();

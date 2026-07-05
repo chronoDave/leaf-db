@@ -9,40 +9,40 @@ test('[storage.open]', async t => {
   await t.test('reads and opens file if file exists', async () => {
     const text = 'this is test data';
     const { storage, cleanup } = await struct(text);
-  
+
     const entries = await storage.open();
     await storage.close();
-  
+
     assert.equal(entries.length, 1, 'has data');
     assert.equal(entries[0], text, 'has file data');
 
     await cleanup();
   });
-  
+
   await t.test('creates and opens file if file does not exist', async () => {
     const { storage, file, cleanup } = await struct();
 
     const entries = await storage.open();
     await storage.close();
-  
+
     assert.equal(entries.length, 0, 'does not have data');
     assert.ok(fs.existsSync(file), 'created file');
-  
+
     await cleanup();
   });
-  
+
   await t.test('splits data on newline', async () => {
     const text = [{ _id: 'a' }, { _id: 'b' }]
       .map(x => JSON.stringify(x))
       .join('\n');
     const { storage, cleanup } = await struct(text);
-    
+
     const entries = await storage.open();
     await storage.close();
 
     assert.equal(entries.length, 2, 'splits data');
     assert.deepEqual(entries[0], JSON.stringify({ _id: 'a' }), 'has correct data');
-  
+
     await cleanup();
   });
 });
@@ -85,7 +85,7 @@ test('[storage.append]', async t => {
   });
 });
 
-test('[storage.flush] clears file', async () => {  
+test('[storage.flush] clears file', async () => {
   const { storage, file, cleanup } = await struct('this is some data');
 
   await storage.open();
@@ -98,7 +98,7 @@ test('[storage.flush] clears file', async () => {
   await cleanup();
 });
 
-test('[storage.close] closes file', async () => {  
+test('[storage.close] closes file', async () => {
   const { storage, file, cleanup } = await struct();
 
   await storage.open();

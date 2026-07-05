@@ -21,6 +21,7 @@ export type Corrupt = {
 
 export default class LeafDB<T extends Draft> {
   readonly #memory: Map<string, Doc<T>>;
+
   #storage?: Storage;
 
   async #set(doc: Doc<T>) {

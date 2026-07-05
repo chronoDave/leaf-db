@@ -21,20 +21,24 @@ test('[query] matches properties', () => {
   assert.ok(query(doc)({ c: true }), 'boolean');
   assert.ok(query(doc)({ d: null }), 'null');
   assert.ok(query(doc)({ e: [2, 'f', false, null] }), 'array');
-  assert.ok(query(doc)({ g: {
-    h: { i: 3 },
-    j: ['k', true]
-  } }), 'object');
+  assert.ok(query(doc)({
+    g: {
+      h: { i: 3 },
+      j: ['k', true]
+    }
+  }), 'object');
   assert.ok(query(doc)({ g: { h: { i: 3 } } }), 'partial object');
 
   assert.ok(!query(doc)({ a: 2 }), 'number mismatch');
   assert.ok(!query(doc)({ b: 'c' }), 'string mismatch');
   assert.ok(!query(doc)({ c: false }), 'boolean mismatch');
   assert.ok(!query(doc)({ e: [2, 'f', null] }), 'array mismatch');
-  assert.ok(!query(doc)({ g: {
-    h: { i: 3 },
-    j: ['k', false]
-  } }), 'object mismatch');
+  assert.ok(!query(doc)({
+    g: {
+      h: { i: 3 },
+      j: ['k', false]
+    }
+  }), 'object mismatch');
 });
 
 test('[query] matches operators', () => {
