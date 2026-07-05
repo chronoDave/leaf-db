@@ -6,7 +6,7 @@
   "types": "dist/leafdb.d.ts",
   "exports": {
     ".": "./dist/leafdb.js",
-    "./storage.js": "./dist/storage.js"
+    "./storage": "./dist/storage.js"
   },
   "keywords": [
     "database",

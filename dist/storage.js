@@ -1,14 +1,14 @@
-import fsp from 'fs/promises';
-import path from 'path';
-
-class Storage {
-  _file;
-  _fd;
-  async _open() {
-    this._fd = await fsp.open(this._file, "a");
+// src/lib/storage.ts
+import fsp from "fs/promises";
+import path from "path";
+var Storage = class {
+  #file;
+  #fd;
+  async #open() {
+    this.#fd = await fsp.open(this.#file, "a");
   }
   constructor(options) {
-    this._file = path.format({
+    this.#file = path.format({
       dir: options.dir,
       name: options.name,
       ext: ".jsonl"
@@ -16,34 +16,35 @@ class Storage {
   }
   async open() {
     try {
-      const raw = await fsp.readFile(this._file, "utf-8");
-      await this._open();
+      const raw = await fsp.readFile(this.#file, "utf-8");
+      await this.#open();
       return raw.split("\n");
     } catch (err) {
-      await fsp.mkdir(path.parse(this._file).dir, { recursive: true });
-      await this._open();
+      await fsp.mkdir(path.parse(this.#file).dir, { recursive: true });
+      await this.#open();
       return [];
     }
   }
   async close() {
-    await this._fd?.close();
-    delete this._fd;
+    await this.#fd?.close();
+    this.#fd = void 0;
   }
   async write(x) {
-    await this._fd?.close();
-    await fsp.writeFile(this._file, x);
-    await this._open();
+    await this.#fd?.close();
+    await fsp.writeFile(this.#file, x);
+    await this.#open();
   }
   async append(x) {
-    if (!this._fd) throw new Error("No file found");
-    return this._fd.appendFile(`${x}
+    if (!this.#fd) throw new Error("No file found");
+    return this.#fd.appendFile(`${x}
 `);
   }
   async flush() {
-    await this._fd?.close();
-    await fsp.rm(this._file);
-    await this._open();
+    await this.#fd?.close();
+    await fsp.rm(this.#file);
+    await this.#open();
   }
-}
-
-export { Storage as default };
+};
+export {
+  Storage as default
+};

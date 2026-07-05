@@ -10,20 +10,20 @@ const run = async (cmd: string) =>
     }
   }));
 
-const measure = (label: string) =>
-  async <T>(fn: () => Promise<T>) => {
-    console.time(label);
-    await fn();
-    console.timeEnd(label);
-  };
-
 await Promise.all([
-  measure('esbuild')(async () => esbuild.build({
+  esbuild.build({
     entryPoints: ['src/leafdb.ts'],
     outdir: 'dist',
-    platform: 'node',
     bundle: true,
     format: 'esm'
-  })),
-  measure('dts-bundle-generator')(async () => run('dts-bundle-generator -o dist/leafdb.d.ts src/leafdb.ts --export-referenced-types=false --no-banner=true --no-check=true'))
+  }),
+  esbuild.build({
+    entryPoints: ['src/lib/storage.ts'],
+    outdir: 'dist',
+    bundle: true,
+    platform: 'node',
+    format: 'esm'
+  }),
+  run('dts-bundle-generator -o dist/leafdb.d.ts src/leafdb.ts --export-referenced-types=false --no-banner=true --no-check=true'),
+  run('dts-bundle-generator -o dist/storage.d.ts src/lib/storage.ts --export-referenced-types=false --no-banner=true --no-check=true')
 ]);

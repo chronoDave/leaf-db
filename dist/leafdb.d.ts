@@ -2,6 +2,15 @@ export type StorageOptions = {
 	name: string;
 	dir: string;
 };
+declare class Storage$1 {
+	#private;
+	constructor(options: StorageOptions);
+	open(): Promise<string[]>;
+	close(): Promise<void>;
+	write(x: string): Promise<void>;
+	append(x: string): Promise<void>;
+	flush(): Promise<void>;
+}
 export type Json = string | number | boolean | null | Json[] | {
 	[key: string]: Json;
 };
@@ -39,15 +48,12 @@ export type Corrupt = {
 	error: Error;
 };
 declare class LeafDB<T extends Draft> {
-	static id(): string;
-	private readonly _memory;
-	private _storage?;
-	private _set;
+	#private;
+	constructor();
 	/** Get all documents */
 	get docs(): Array<Doc<T>>;
-	constructor();
 	/** Read existing file and store to internal memory */
-	open(options: StorageOptions): Promise<Corrupt[]>;
+	open(storage: Storage$1): Promise<Corrupt[]>;
 	/** Close file */
 	close(): Promise<void | undefined>;
 	/** Get document by `id` */

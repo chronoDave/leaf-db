@@ -1,6 +1,6 @@
 import type { Draft, Json } from './parse.ts';
 
-import * as fn from './fn.ts';
+import { equals } from './fn.ts';
 import { isObject } from './parse.ts';
 
 export type Operator<T extends Record<string, Json>> = {
@@ -49,7 +49,7 @@ const match = <T extends Draft>(doc: T) =>
           if (isObject(a)) return match(a as Draft)(rule);
         }
 
-        return fn.equals(doc[key])(rule);
+        return equals(doc[key])(rule);
       });
   };
 
