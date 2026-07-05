@@ -19,7 +19,7 @@ var Storage = class {
       const raw = await fsp.readFile(this.#file, "utf-8");
       await this.#open();
       return raw.split("\n");
-    } catch (err) {
+    } catch (_) {
       await fsp.mkdir(path.parse(this.#file).dir, { recursive: true });
       await this.#open();
       return [];
