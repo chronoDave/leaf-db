@@ -310,10 +310,10 @@ const b = { a: 2, b: 4 }; // false
 Matches any query
 
 ```TS
-const query = { $and: [{ a: 2 }, { b: { $lt: 3 } }] };
+const query = { $or: [{ a: 2 }, { b: { $lt: 3 } }] };
 
 const a = { a: 2, b: 2 }; // true
-const b = { a: 2, b: 4 }; // true
+const b = { a: 1, b: 4 }; // true
 ```
 
 ## API
