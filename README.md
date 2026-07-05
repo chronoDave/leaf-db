@@ -1,6 +1,5 @@
 <div align="center">
   <img src="/assets/icon.svg" width="128" alt="leaf-db">
-
   <h1>leaf-db</h1>
   <p><b>leaf-db</b> is a simple <a href="https://en.wikipedia.org/wiki/NoSQL">NoSQL</a> embeddable database.</p>
 </div>

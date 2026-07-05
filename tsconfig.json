@@ -21,7 +21,7 @@
   "include": [
     "src",
     "test",
-    "eslint.config.js",
-    "rollup.config.js",
+    "scripts",
+    "eslint.config.js"
   ]
 }

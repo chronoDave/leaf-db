@@ -1,4 +1,73 @@
-const equals = (a) => (b) => {
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// src/lib/storage.ts
+var storage_exports = {};
+__export(storage_exports, {
+  default: () => Storage
+});
+import fsp from "fs/promises";
+import path from "path";
+var Storage;
+var init_storage = __esm({
+  "src/lib/storage.ts"() {
+    "use strict";
+    Storage = class {
+      _file;
+      _fd;
+      async _open() {
+        this._fd = await fsp.open(this._file, "a");
+      }
+      constructor(options) {
+        this._file = path.format({
+          dir: options.dir,
+          name: options.name,
+          ext: ".jsonl"
+        });
+      }
+      async open() {
+        try {
+          const raw = await fsp.readFile(this._file, "utf-8");
+          await this._open();
+          return raw.split("\n");
+        } catch (err) {
+          await fsp.mkdir(path.parse(this._file).dir, { recursive: true });
+          await this._open();
+          return [];
+        }
+      }
+      async close() {
+        await this._fd?.close();
+        delete this._fd;
+      }
+      async write(x) {
+        await this._fd?.close();
+        await fsp.writeFile(this._file, x);
+        await this._open();
+      }
+      async append(x) {
+        if (!this._fd) throw new Error("No file found");
+        return this._fd.appendFile(`${x}
+`);
+      }
+      async flush() {
+        await this._fd?.close();
+        await fsp.rm(this._file);
+        await this._open();
+      }
+    };
+  }
+});
+
+// src/lib/fn.ts
+var equals = (a) => (b) => {
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
     return a.every((v, i) => equals(b[i])(v));
@@ -11,12 +80,13 @@ const equals = (a) => (b) => {
   return a === b;
 };
 
-const isObject = (x) => x !== null && !Array.isArray(x) && typeof x === "object";
-const hasModifier = (x) => Object.entries(x).some(([k, v]) => {
+// src/lib/parse.ts
+var isObject = (x) => x !== null && !Array.isArray(x) && typeof x === "object";
+var hasModifier = (x) => Object.entries(x).some(([k, v]) => {
   if (k.startsWith("$")) return true;
   return isObject(v) ? hasModifier(v) : false;
 });
-var parse = (x) => {
+var parse_default = (x) => {
   const raw = JSON.parse(x);
   if (!isObject(raw)) throw new Error("Not an object");
   if (!("_id" in raw)) throw new Error("Missing _id");
@@ -24,7 +94,8 @@ var parse = (x) => {
   return raw;
 };
 
-const match = (doc) => (query) => {
+// src/lib/query.ts
+var match = (doc) => (query) => {
   if ("$not" in query) return !match(doc)(query.$not);
   if ("$or" in query) return query.$or.some(match(doc));
   if ("$and" in query) return query.$and.every(match(doc));
@@ -46,8 +117,10 @@ const match = (doc) => (query) => {
     return equals(doc[key])(rule);
   });
 };
+var query_default = match;
 
-class LeafDB {
+// src/leafdb.ts
+var LeafDB = class _LeafDB {
   static id() {
     return `${Date.now().toString(16)}-${Math.floor(Math.random() * 4294967296).toString(16)}`;
   }
@@ -66,14 +139,14 @@ class LeafDB {
   }
   /** Read existing file and store to internal memory */
   async open(options) {
-    const { default: Storage } = await import('./storage.js');
-    this._storage = new Storage(options);
+    const { default: Storage2 } = await Promise.resolve().then(() => (init_storage(), storage_exports));
+    this._storage = new Storage2(options);
     let data = "";
     const corrupt = [];
     for (const raw of await this._storage.open()) {
       if (raw.length === 0) continue;
       try {
-        const doc = parse(raw);
+        const doc = parse_default(raw);
         if ("__deleted" in doc) {
           this._memory.delete(doc._id);
         } else {
@@ -99,7 +172,7 @@ class LeafDB {
   /** Create new document, throws if document already exists */
   async insert(draft) {
     if (typeof draft._id !== "string") {
-      draft._id = LeafDB.id();
+      draft._id = _LeafDB.id();
     } else if (this._memory.has(draft._id)) {
       throw new Error("Invalid draft, _id already exists");
     }
@@ -110,7 +183,7 @@ class LeafDB {
   query(query) {
     const docs = [];
     for (const doc of this._memory.values()) {
-      if (match(doc)(query)) docs.push(doc);
+      if (query_default(doc)(query)) docs.push(doc);
     }
     return docs;
   }
@@ -130,6 +203,7 @@ class LeafDB {
     this._memory.clear();
     await this._storage?.flush();
   }
-}
-
-export { LeafDB as default };
+};
+export {
+  LeafDB as default
+};
